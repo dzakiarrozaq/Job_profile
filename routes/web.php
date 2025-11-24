@@ -101,6 +101,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])->name('persetujuan');
     });
 
+    Route::get('/notifications/mark-read', function () {
+        Auth::user()->unreadNotifications->markAsRead();
+        return redirect()->back();
+    })->name('notifications.markRead');
+
     Route::get('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'create'])->name('role.selection');
     Route::post('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'store'])->name('role.set');
 

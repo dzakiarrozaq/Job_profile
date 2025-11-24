@@ -33,13 +33,78 @@
                 </a>
 
                 <!-- Notifications -->
-                <a href="#" class="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition">
-                    <ion-icon name="notifications-outline" class="text-2xl mr-1"></ion-icon>
-                    <span class="relative">
-                        <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                    </span>
+                <div class="hidden sm:flex sm:items-center sm:ml-6">
+    
+                    <div class="relative" x-data="{ open: false }">
+                        
+                        <button @click="open = !open" class="relative p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <span class="sr-only">View notifications</span>
+                            <ion-icon name="notifications-outline" class="h-6 w-6 text-2xl"></ion-icon>
+                            
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+                            @endif
+                        </button>
 
-                </a>
+                        <div x-show="open" 
+                            @click.away="open = false"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="transform opacity-100 scale-100"
+                            x-transition:leave-end="transform opacity-0 scale-95"
+                            class="absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                            style="display: none;">
+                            
+                            <div class="py-1">
+                                <div class="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                                    <span class="text-sm font-semibold text-gray-700">Notifikasi</span>
+                                    @if(Auth::user()->unreadNotifications->count() > 0)
+                                        <a href="{{ route('notifications.markRead') }}" class="text-xs text-indigo-600 hover:text-indigo-800">Tandai sudah dibaca</a>
+                                    @endif
+                                </div>
+
+                                <div class="max-h-64 overflow-y-auto">
+                                    @forelse(Auth::user()->unreadNotifications as $notification)
+                                        <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
+                                            <div class="flex items-start">
+                                                <div class="flex-shrink-0">
+                                                    @if($notification->data['type'] == 'success')
+                                                        <ion-icon name="checkmark-circle" class="text-green-500 text-lg"></ion-icon>
+                                                    @elseif($notification->data['type'] == 'warning')
+                                                        <ion-icon name="alert-circle" class="text-yellow-500 text-lg"></ion-icon>
+                                                    @else
+                                                        <ion-icon name="information-circle" class="text-blue-500 text-lg"></ion-icon>
+                                                    @endif
+                                                </div>
+                                                <div class="ml-3 w-0 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900">
+                                                        {{ $notification->data['title'] }}
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 mt-0.5">
+                                                        {{ $notification->data['message'] }}
+                                                    </p>
+                                                    <p class="text-[10px] text-gray-400 mt-1">
+                                                        {{ $notification->created_at->diffForHumans() }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-6 text-center text-gray-500 text-sm">
+                                            Tidak ada notifikasi baru.
+                                        </div>
+                                    @endforelse
+                                </div>
+                                
+                                <a href="#" class="block px-4 py-2 text-xs text-center text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-b-md">
+                                    Lihat Semua Riwayat
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 @if(Auth::user()->roles->contains('name', 'Supervisor'))
                     <div class="hidden sm:flex sm:items-center ml-4">

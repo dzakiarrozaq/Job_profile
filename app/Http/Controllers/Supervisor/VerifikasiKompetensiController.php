@@ -3,126 +3,123 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\JobProfile;
 use App\Models\EmployeeProfile;
 use App\Models\GapRecord;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
+use App\Notifications\JobProfileStatusNotification; // 1. JANGAN LUPA INI
 
 class VerifikasiKompetensiController extends Controller
 {
     /**
-     * Menampilkan halaman verifikasi untuk Supervisor.
-     * (Dipanggil oleh GET /supervisor/verifikasi-kompetensi/{user})
+     * Menampilkan halaman formulir verifikasi untuk satu karyawan.
      */
-    public function show(User $user): View
+    public function show($userId)
     {
-        // 1. Dapatkan Job Profile user
-        $user->load('position.jobProfile.requirements', 'employeeProfiles');
-        $jobProfile = $user->position?->jobProfile;
+        // ... (kode show() Anda sudah benar, biarkan saja) ...
+        $supervisor = Auth::user();
+        $employee = User::where('id', $userId)->firstOrFail();
+        $employee->load('position.jobProfile.competencies.master', 'employeeProfiles'); 
+        $jobProfile = $employee->position->jobProfile;
 
         if (!$jobProfile) {
-            abort(404, 'User ini tidak memiliki Job Profile.');
+            return redirect()->back()->with('error', 'Karyawan ini posisi jabatannya belum memiliki Job Profile.');
         }
 
-        // 2. Ambil data self-assessment (employee_profiles)
-        $employeeProfiles = $user->employeeProfiles
-                            ->keyBy('competency_code'); // Ubah jadi array asosiatif
+        $competencies = $jobProfile->competencies->map(function ($comp) use ($employee) {
+            $employeeProfile = $employee->employeeProfiles
+                ->where('competency_code', $comp->master->competency_code)
+                ->first();
 
-        // 3. Gabungkan data
-        $assessments = $jobProfile->requirements->map(function ($req) use ($employeeProfiles) {
-            $profile = $employeeProfiles->get($req->competency_code);
             return (object) [
-                'competency_name' => $req->competency_name,
-                'competency_code' => $req->competency_code,
-                'ideal_level' => $req->ideal_level,
-                'weight' => $req->weight, // Kita butuh weight untuk menghitung gap
-                'submitted_level' => $profile?->submitted_level,
-                'status' => $profile?->status,
-                'reviewer_notes' => $profile?->reviewer_notes,
+                'competency_code' => $comp->master->competency_code,
+                'competency_name' => $comp->master->competency_name,
+                'type'            => $comp->master->type,
+                'ideal_level'     => $comp->ideal_level,
+                'submitted_level' => $employeeProfile->submitted_level ?? 0,
+                'current_level'   => $employeeProfile->current_level ?? 0,
+                'status'          => $employeeProfile->status ?? 'draft',
+                'reviewer_notes'  => $employeeProfile->reviewer_notes ?? '',
             ];
         });
 
-        // Tampilkan view verifikasi supervisor
-        return view('supervisor.verifikasi-penilaian', [
-            'karyawan' => $user, // Data karyawan yang dinilai
-            'assessments' => $assessments // Data gabungan
+        return view('supervisor.persetujuan.verifikasi', [
+            'employee' => $employee,
+            'competencies' => $competencies
         ]);
     }
 
     /**
      * Menyimpan hasil verifikasi Supervisor.
-     * Di sinilah perhitungan GAP terjadi!
-     * (Dipanggil oleh POST /supervisor/verifikasi-kompetensi/{user})
      */
-    public function store(Request $request, User $user)
+    public function store(Request $request, $userId)
     {
-        $supervisor = Auth::user(); 
-        $user->load('position.jobProfile.requirements');
-        $jobProfile = $user->position?->jobProfile;
+        $employee = User::findOrFail($userId);
+        $jobProfile = $employee->position->jobProfile;
 
-        if (!$jobProfile) {
-            return redirect()->back()->with('error', 'User ini tidak memiliki Job Profile.');
-        }
-        
-        $requirements = $jobProfile->requirements->keyBy('competency_code');
+        $request->validate([
+            'verified_level' => 'required|array',
+            'verified_level.*' => 'required|integer|min:1|max:5',
+            'notes' => 'nullable|array',
+        ]);
 
         DB::beginTransaction();
         try {
-            foreach ($request->input('level', []) as $code => $verified_level) {
+            foreach ($request->input('verified_level') as $code => $level) {
                 
-                $req = $requirements->get($code);
-                if (!$req) continue; 
-
-                $ideal_level = $req->ideal_level;
-                $weight = $req->weight;
-                $catatan = $request->input("notes.{$code}", null);
+                $compData = $jobProfile->competencies->first(fn($c) => $c->master->competency_code == $code);
+                $compName = $compData ? $compData->master->competency_name : $code;
 
                 EmployeeProfile::updateOrCreate(
+                    ['user_id' => $userId, 'competency_code' => $code],
                     [
-                        'user_id' => $user->id,
-                        'competency_code' => $code,
-                    ],
-                    [
-                        'competency_name' => $req->competency_name, 
-                        'current_level' => $verified_level, 
-                        'status' => 'verified',
-                        'verified_by' => $supervisor->id,
+                        'competency_name' => $compName,
+                        'current_level' => $level,
                         'verified_at' => now(),
-                        'reviewer_notes' => $catatan
+                        'verified_by' => Auth::id(),
+                        'status' => 'verified',
+                        'reviewer_notes' => $request->input("notes.$code")
                     ]
                 );
 
-                $gap_value = $verified_level - $ideal_level;
-                $weighted_gap = $gap_value * $weight;
+                if ($compData) {
+                    $ideal = $compData->ideal_level;
+                    $gap = $level - $ideal;
+                    $weightedGap = $gap * $compData->weight;
 
-                GapRecord::updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'job_profile_id' => $jobProfile->id,
-                        'competency_code' => $code,
-                    ],
-                    [
-                        'competency_name' => $req->competency_name,
-                        'ideal_level' => $ideal_level,
-                        'current_level' => $verified_level,
-                        'gap_value' => $gap_value,
-                        'weighted_gap' => $weighted_gap,
-                        'calculated_at' => now()
-                    ]
-                );
+                    GapRecord::updateOrCreate(
+                        [
+                            'user_id' => $userId, 
+                            'job_profile_id' => $jobProfile->id,
+                            'competency_code' => $code
+                        ],
+                        [
+                            'competency_name' => $compName,
+                            'ideal_level' => $ideal,
+                            'current_level' => $level,
+                            'gap_value' => $gap,
+                            'weighted_gap' => $weightedGap,
+                            'calculated_at' => now()
+                        ]
+                    );
+                }
             }
             
             DB::commit();
 
-            return redirect()->route('supervisor.dashboard')->with('success', 'Penilaian untuk ' . $user->name . ' berhasil diverifikasi.');
+            $employee->notify(new JobProfileStatusNotification(
+                'Penilaian Diverifikasi', 
+                'Supervisor telah memverifikasi penilaian kompetensi Anda.',
+                'success'
+            ));
+
+            return redirect()->route('supervisor.persetujuan')->with('success', 'Verifikasi kompetensi berhasil disimpan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }
