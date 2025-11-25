@@ -18,6 +18,7 @@ use App\Http\Controllers\Supervisor\VerifikasiKompetensiController;
 use App\Http\Controllers\Lp\DashboardController as LpDashboardController;
 use App\Http\Controllers\Lp\PersetujuanController as LpPersetujuanController;
 use App\Http\Controllers\Auth\RoleSelectionController;
+use App\Http\Controllers\Supervisor\TeamController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,6 @@ use App\Http\Controllers\Auth\RoleSelectionController;
 |--------------------------------------------------------------------------
 */
 
-// Halaman 'Welcome' (Publik)
 Route::get('/', function () {
     return view('welcome');
 });
@@ -39,6 +39,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/profile/keahlian', [ProfileController::class, 'editSkills'])->name('profile.skills.edit');
     Route::patch('/profile/keahlian', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
+    Route::get('/profile/minat', [ProfileController::class, 'editInterests'])->name('profile.interests.edit');
+    Route::patch('/profile/minat', [ProfileController::class, 'updateInterests'])->name('profile.interests.update');
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor'])->group(function () {
@@ -46,7 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
         Route::post('/penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
         Route::get('/katalog', function () { return view('karyawan.katalog'); })->name('katalog');
-        Route::get('/riwayat', function () { return view('karyawan.riwayat'); })->name('riwayat');
+        Route::get('/riwayat', [DashboardController::class, 'riwayat'])->name('riwayat');
         Route::get('/rencana', function () { return view('karyawan.rencana'); })->name('rencana');
         
     });
@@ -74,6 +76,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Rute AI & Search (Nama rute akan menjadi 'supervisor.job-profile.suggestText')
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/competencies/search', [App\Http\Controllers\Admin\JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+
+        Route::get('/tim', [TeamController::class, 'index'])->name('tim.index');
+        Route::get('/tim/{user}', [TeamController::class, 'show'])->name('tim.show');
     });
 
     

@@ -85,7 +85,7 @@
                             <ion-icon name="checkbox-outline"></ion-icon>
                             Persetujuan
                         </a>
-                        <a href="#" class="sidebar-link {{ request()->routeIs('supervisor.tim*') ? 'active' : '' }}">
+                        <a href="{{ route('supervisor.tim.index') }}" class="sidebar-link {{ request()->routeIs('supervisor.tim*') ? 'active' : '' }}">
                             <ion-icon name="people-outline"></ion-icon>
                             Anggota Tim
                         </a>

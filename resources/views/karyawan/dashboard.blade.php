@@ -101,9 +101,9 @@
                                 🔄 Perbarui level Kompetensi
                             </a>
                             
-                            <button @click="showRecommendations = true" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700">
+                            {{-- <button @click="showRecommendations = true" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700">
                                 🤖 Dapatkan Rekomendasi Pelatihan
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
     
@@ -133,74 +133,79 @@
                                 Buka Keranjang Rencana (3) </a>
                         </div>
                     </div>
-    
+                    
+                    @if(false)
                     <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4">Riwayat & Status Pelatihan</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm">
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Riwayat & Status Pelatihan</h2>    
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h2 class="text-lg font-bold text-gray-900 mb-4">Riwayat & Status Pelatihan</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm">
                                 <thead class="bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Judul Pelatihan</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tindakan</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Judul Pelatihan</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
 
-                                    @forelse ($recentTrainings as $plan)
-                                    <tr>
-                                        <td class="px-4 py-3 text-gray-900">
-                                            {{ $plan->items->first() ? $plan->items->first()->training->title : 'Pelatihan Tidak Ditemukan' }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            @if ($plan->status == 'pending_supervisor')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    MENUNGGU PERSETUJUAN SUPERVISOR
-                                                </span>
-                                            @elseif ($plan->status == 'pending_lp')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    MENUNGGU PERSETUJUAN LEARNING PARTNER
-                                                </span>
-                                            @elseif ($plan->status == 'approved')
-                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    DISETUJUI FINAL
-                                                </span>
-                                            @elseif ($plan->status == 'completed')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-600 text-white">
-                                                    COMPLETE & FINAL
-                                                </span>
-                                            @elseif ($plan->status == 'rejected')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    DITOLAK
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            @if ($plan->status == 'approved')
-                                                <a href="{{-- route('unggah-sertifikat', $plan->id) --}}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Unggah Sertifikat</a>
-                                            @elseif ($plan->status == 'completed')
-                                                <a href="{{-- route('lihat-sertifikat', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Sertifikat</a>
-                                            @elseif ($plan->status == 'rejected')
-                                                <a href="{{-- route('catatan-ditolak', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Catatan</a>
-                                            @elseif ($plan->status == 'pending_supervisor')
-                                                <a href="#" class="text-red-600 hover:text-red-800 text-sm font-medium">Batalkan</a>
-                                            @else
-                                                <span class="text-gray-400 text-sm">Menunggu...</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="3" class="px-4 py-4 text-center text-gray-500">
-                                            Anda belum memiliki riwayat pelatihan.
-                                        </td>
-                                    </tr>
-                                    @endforelse
-                                    
-                                </tbody>
-                            </table>
+                                        @forelse ($recentTrainings as $plan)
+                                        <tr>
+                                            <td class="px-4 py-3 text-gray-900">
+                                                {{ $plan->items->first() ? $plan->items->first()->training->title : 'Pelatihan Tidak Ditemukan' }}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                @if ($plan->status == 'pending_supervisor')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        MENUNGGU PERSETUJUAN SUPERVISOR
+                                                    </span>
+                                                @elseif ($plan->status == 'pending_lp')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        MENUNGGU PERSETUJUAN LEARNING PARTNER
+                                                    </span>
+                                                @elseif ($plan->status == 'approved')
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        DISETUJUI FINAL
+                                                    </span>
+                                                @elseif ($plan->status == 'completed')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-600 text-white">
+                                                        COMPLETE & FINAL
+                                                    </span>
+                                                @elseif ($plan->status == 'rejected')
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        DITOLAK
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                @if ($plan->status == 'approved')
+                                                    <a href="{{-- route('unggah-sertifikat', $plan->id) --}}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Unggah Sertifikat</a>
+                                                @elseif ($plan->status == 'completed')
+                                                    <a href="{{-- route('lihat-sertifikat', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Sertifikat</a>
+                                                @elseif ($plan->status == 'rejected')
+                                                    <a href="{{-- route('catatan-ditolak', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Catatan</a>
+                                                @elseif ($plan->status == 'pending_supervisor')
+                                                    <a href="#" class="text-red-600 hover:text-red-800 text-sm font-medium">Batalkan</a>
+                                                @else
+                                                    <span class="text-gray-400 text-sm">Menunggu...</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="3" class="px-4 py-4 text-center text-gray-500">
+                                                Anda belum memiliki riwayat pelatihan.
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                    @endif
                 </div>
                 </div> </div>
     </div>

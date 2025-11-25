@@ -71,4 +71,33 @@ class DashboardController extends Controller
             'assessmentStatus' => $assessmentStatus,
         ]);
     }
+    /**
+     * Menampilkan halaman Riwayat Pelatihan Saya.
+     */
+    public function riwayat(Request $request)
+    {
+        $user = Auth::user();
+
+        // Query Dasar
+        $query = TrainingPlan::where('user_id', $user->id)
+                            ->with('items.training');
+
+        // Filter Status (Opsional)
+        if ($request->has('status') && $request->status != 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter Tahun (Opsional)
+        if ($request->has('year') && $request->year != 'all') {
+            $query->whereYear('created_at', $request->year);
+        }
+
+        // Ambil Data
+        $trainingHistory = $query->orderBy('created_at', 'desc')->get();
+
+        return view('karyawan.riwayat', [
+            'trainingHistory' => $trainingHistory,
+            'filters' => $request->all()
+        ]);
+    }
 }

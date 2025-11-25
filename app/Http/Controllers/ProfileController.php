@@ -126,4 +126,41 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit')->with('success', 'Data keahlian berhasil diperbarui.');
     }
+
+    /**
+     * Menampilkan form edit minat karir.
+     */
+    public function editInterests(Request $request): View
+    {
+        return view('profile.minat', [
+            'user' => $request->user(),
+            'interests' => $request->user()->interests // Ambil data minat
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan minat karir.
+     */
+    public function updateInterests(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'interests' => 'nullable|array',
+            'interests.*.position_name' => 'required|string|max:255',
+            'interests.*.interest_level' => 'required|in:Tinggi,Sedang,Rendah',
+        ]);
+
+        $user = $request->user();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request) {
+            // 1. Hapus semua minat lama
+            $user->interests()->delete();
+
+            // 2. Masukkan data baru jika ada
+            if ($request->has('interests')) {
+                $user->interests()->createMany($request->interests);
+            }
+        });
+
+        return redirect()->route('profile.edit')->with('success', 'Data minat karir berhasil diperbarui.');
+    }
 }

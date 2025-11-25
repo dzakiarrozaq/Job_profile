@@ -8,27 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class UserInterest extends Model
 {
     use HasFactory;
-
     public $timestamps = false; 
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'user_id',          
-        'skill_name',       
-        'years_experience', 
-        'certification',    
+        'user_id',
+        'position_name',
+        'interest_level',
     ];
 
     public function user()
-    /**
-     * Mendapatkan data user pemilik skill ini.
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     {
         return $this->belongsTo(User::class);
     }

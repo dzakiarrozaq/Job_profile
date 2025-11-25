@@ -114,9 +114,9 @@
                 @endforelse
 
              </div>
-             <button class="w-full mt-6 px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+            <a href="{{ route('supervisor.tim.index') }}" class="block w-full mt-6 px-4 py-3 text-sm font-medium text-center text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">
                 Kelola Semua Anggota Tim
-             </button>
+            </a>
         </div>
         
     </div>

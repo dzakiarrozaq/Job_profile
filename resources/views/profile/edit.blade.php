@@ -270,7 +270,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Posisi yang Diminati</h2>
-                         <button class="text-xs text-indigo-600 hover:underline">Tambah/Ubah</button>
+                         <a href="{{ route('profile.interests.edit') }}" class="text-xs text-indigo-600 hover:underline">Tambah/Ubah</a>
                     </div>
                     <ul class="space-y-3">
                         @forelse ($user->interests as $interest)

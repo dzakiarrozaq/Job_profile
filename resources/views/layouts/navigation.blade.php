@@ -15,9 +15,9 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('katalog')" :active="request()->routeIs('katalog*')">
+                    {{-- <x-nav-link :href="route('katalog')" :active="request()->routeIs('katalog*')">
                         {{ __('Katalog Pelatihan') }}
-                    </x-nav-link>
+                    </x-nav-link> --}}
                     <x-nav-link :href="route('riwayat')" :active="request()->routeIs('riwayat*')">
                         {{ __('Riwayat Saya') }}
                     </x-nav-link>
@@ -27,10 +27,10 @@
             <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                 <!-- Cart Link -->
-                <a href="{{ route('rencana') }}" class="flex items-center text-sm font-medium {{ request()->routeIs('rencana') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600' }} transition">
+                {{-- <a href="{{ route('rencana') }}" class="flex items-center text-sm font-medium {{ request()->routeIs('rencana') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600' }} transition">
                     <ion-icon name="{{ request()->routeIs('rencana') ? 'cart' : 'cart-outline' }}" class="text-2xl mr-1"></ion-icon>
                     Rencana Saya (3)
-                </a>
+                </a> --}}
 
                 <!-- Notifications -->
                 <div class="hidden sm:flex sm:items-center sm:ml-6">
