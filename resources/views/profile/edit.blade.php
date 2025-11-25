@@ -242,8 +242,8 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Keahlian (Job Function)</h2>
-                        {{-- Tombol ke halaman edit skill (opsional) --}}
-                        <button class="text-xs text-indigo-600 hover:underline">Tambah/Ubah</button>
+                        {{-- Update Link Di Sini --}}
+                        <a href="{{ route('profile.skills.edit') }}" class="text-xs text-indigo-600 hover:underline">Tambah/Ubah</a>
                     </div>
                     <ul class="space-y-4">
                         @forelse ($user->skills as $skill)

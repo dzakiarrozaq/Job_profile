@@ -37,6 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/profile/keahlian', [ProfileController::class, 'editSkills'])->name('profile.skills.edit');
+    Route::patch('/profile/keahlian', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor'])->group(function () {

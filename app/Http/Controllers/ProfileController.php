@@ -90,4 +90,40 @@ class ProfileController extends Controller
 
         return Redirect::route('supervisor.profile')->with('status', 'profile-updated');
     }
+
+    public function editSkills(Request $request): View
+    {
+        return view('profile.keahlian', [
+            'user' => $request->user(),
+            'skills' => $request->user()->skills // Ambil data skill yang sudah ada
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan keahlian.
+     */
+    public function updateSkills(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'skills' => 'nullable|array',
+            'skills.*.skill_name' => 'required|string|max:255',
+            'skills.*.years_experience' => 'required|integer|min:0',
+            'skills.*.certification' => 'nullable|string|max:500',
+        ]);
+
+        $user = $request->user();
+
+        // Gunakan Transaksi agar aman
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request) {
+            // 1. Hapus semua skill lama (cara paling bersih untuk update list dinamis)
+            $user->skills()->delete();
+
+            // 2. Masukkan data baru jika ada
+            if ($request->has('skills')) {
+                $user->skills()->createMany($request->skills);
+            }
+        });
+
+        return redirect()->route('profile.edit')->with('success', 'Data keahlian berhasil diperbarui.');
+    }
 }
