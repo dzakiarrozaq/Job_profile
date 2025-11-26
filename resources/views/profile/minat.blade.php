@@ -60,7 +60,6 @@
                         <template x-for="(item, index) in interests" :key="index">
                             <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 relative flex items-start gap-4">
                                 
-                                {{-- Input Nama Posisi --}}
                                 <div class="flex-1">
                                     <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Nama Posisi / Jabatan
@@ -72,7 +71,6 @@
                                            placeholder="Contoh: Senior Software Engineer">
                                 </div>
 
-                                {{-- Input Level Minat --}}
                                 <div class="w-1/3">
                                     <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Tingkat Minat
@@ -86,7 +84,6 @@
                                     </select>
                                 </div>
 
-                                {{-- Tombol Hapus --}}
                                 <div class="pt-6">
                                     <button type="button" @click="removeInterest(index)" class="text-red-500 hover:text-red-700 transition">
                                         <ion-icon name="trash-outline" class="text-xl"></ion-icon>

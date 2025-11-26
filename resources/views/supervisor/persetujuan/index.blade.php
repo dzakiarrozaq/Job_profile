@@ -88,7 +88,6 @@
                             <p class="text-xs text-gray-500 mt-2">Provider: {{ $training->provider ?? 'Internal' }} • Durasi: {{ $training->duration_hours ?? '-' }} Jam</p>
                         </div>
                         <div class="flex flex-col gap-2">
-                            {{-- (Nanti buat route untuk approve training) --}}
                             <button class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm">
                                 Review & Setujui
                             </button>

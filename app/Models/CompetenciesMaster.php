@@ -17,7 +17,7 @@ class CompetenciesMaster extends Model
     /**
      * Tabel ini tidak menggunakan timestamps (created_at/updated_at).
      */
-    public $timestamps = false; // Sesuai migrasi Anda
+    public $timestamps = false; 
 
     /**
      * Kolom yang bisa diisi.

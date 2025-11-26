@@ -1,4 +1,3 @@
-{{-- File: resources/views/supervisor/persetujuan/verifikasi.blade.php --}}
 <x-supervisor-layout>
     <x-slot name="header">
         <div class="flex items-center">

@@ -31,22 +31,17 @@ class AuthenticatedSessionController extends Controller
         AuditLog::record('Login', 'Pengguna berhasil login ke dalam sistem.');
 
         $user = Auth::user();
-        $user->load('roles'); // Load semua peran
+        $user->load('roles'); 
 
-        // Skenario 1: User tidak punya role sama sekali
         if ($user->roles->count() === 0) {
             Auth::logout();
             return redirect('login')->with('error', 'Akun Anda tidak memiliki akses peran.');
         }
 
-        // Skenario 2: User punya BANYAK role (Multi-Role)
-        // -> Arahkan ke halaman "Pilih Peran"
         if ($user->roles->count() > 1) {
             return redirect()->route('role.selection');
         }
 
-        // Skenario 3: User hanya punya 1 role (Single-Role)
-        // -> Langsung set session dan masuk dashboard
         $roleName = $user->roles->first()->name;
         $request->session()->put('active_role_name', $roleName);
 

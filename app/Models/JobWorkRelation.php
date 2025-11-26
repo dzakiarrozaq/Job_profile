@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class JobWorkRelation extends Model
 {
     use HasFactory;
-    public $timestamps = false; // Sesuai DBML
+    public $timestamps = false; 
 
     protected $fillable = [
         'job_profile_id',

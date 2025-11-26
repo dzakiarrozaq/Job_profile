@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\EmployeeProfile;
 use App\Models\Training;
 use App\Models\JobProfile;
-use App\Models\Position; // Pastikan Import ini ada
+use App\Models\Position; 
 
 class PersetujuanController extends Controller
 {

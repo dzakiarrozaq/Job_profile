@@ -50,7 +50,6 @@
             <div class="space-y-4">
                 @forelse($trainingHistory as $plan)
                     @php
-                        // Ambil judul pelatihan pertama (jika ada)
                         $trainingTitle = $plan->items->first() ? ($plan->items->first()->training->title ?? 'Pelatihan Kustom') : 'Rencana Pelatihan';
                         $competency = $plan->items->first() ? ($plan->items->first()->training->skill_tags ?? '-') : '-';
                         $type = $plan->items->first() ? ($plan->items->first()->training->type ?? 'Internal') : 'Internal';

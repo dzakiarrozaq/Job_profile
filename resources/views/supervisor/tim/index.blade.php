@@ -5,10 +5,10 @@
             <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
                 Anggota Tim Saya
             </h2>
-            <button class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm flex items-center">
+            <a href="{{ route('supervisor.tim.create') }}" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm flex items-center">
                 <ion-icon name="person-add-outline" class="mr-2"></ion-icon>
                 Tambah Anggota Tim
-            </button>
+            </a>
         </div>
     </x-slot>
 
@@ -59,7 +59,6 @@
                         <select name="role" class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="all">Semua Role</option>
                             <option value="Karyawan Organik" {{ request('role') == 'Karyawan Organik' ? 'selected' : '' }}>Karyawan Organik</option>
-                            {{-- Tambah opsi lain jika ada --}}
                         </select>
                     </div>
                     <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 font-medium text-sm">

@@ -21,9 +21,6 @@ class EmployeeProfile extends Model
     ];
 
     /**
-     * ========================================================
-     * ## TAMBAHKAN ARRAY $fillable INI ##
-     * ========================================================
      *
      * Kolom yang diizinkan untuk diisi secara massal (mass assignment).
      */
@@ -32,7 +29,7 @@ class EmployeeProfile extends Model
         'competency_code',
         'competency_name',
         'current_level',
-        'submitted_level', // <-- Ini yang menyebabkan error
+        'submitted_level', 
         'status',
         'submitted_at',
         'verified_by',

@@ -220,16 +220,11 @@ class JobProfileController extends Controller
             }
 
             if ($request->input('action') === 'submit_verification') {
-                // Jika tombol "Ajukan" ditekan, ubah status
                 $jobProfile->update([
-                    'status' => 'pending_verification',
-                    // (Opsional) Catat waktu pengajuan jika ada kolomnya
-                    // 'submitted_at' => now(), 
+                    'status' => 'pending_verification', 
                 ]);
                 $message = 'Job Profile berhasil disimpan dan diajukan ke Supervisor.';
             } else {
-                // Jika tombol "Simpan Draf" ditekan, pastikan status tetap/jadi draft
-                // (Kecuali jika sudah verified, jangan ubah jadi draft lagi)
                 if ($jobProfile->status !== 'verified') {
                     $jobProfile->update(['status' => 'draft']);
                 }

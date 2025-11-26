@@ -132,8 +132,6 @@
             <div x-show="currentTab === 'rencana'" class="space-y-4">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white">Rencana Pelatihan Aktif</h3>
-                    {{-- Jika ingin Supervisor bisa menambahkan rencana untuk karyawan --}}
-                    {{-- <button class="text-sm text-indigo-600 hover:underline">Usulkan Pelatihan</button> --}}
                 </div>
 
                 @forelse($activePlans as $plan)

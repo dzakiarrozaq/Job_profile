@@ -31,14 +31,14 @@ class AuditLog extends Model
     public static function record($action, $description, $model = null)
     {
         self::create([
-            'user_id'     => Auth::id(), // Siapa yang melakukan
-            'action'      => $action,    // Apa tindakannya (misal: "Update Job Profile")
-            'description' => $description, // Detailnya
-            'entity_type' => $model ? get_class($model) : null, // Objek apa yang diubah
-            'entity_id'   => $model ? $model->id : null, // ID objek tersebut
+            'user_id'     => Auth::id(), 
+            'action'      => $action,    
+            'description' => $description, 
+            'entity_type' => $model ? get_class($model) : null, 
+            'entity_id'   => $model ? $model->id : null, 
             'timestamp'   => now(),
-            'ip_address'  => Request::ip(), // IP Address user
-            'user_agent'  => Request::userAgent(), // Browser user
+            'ip_address'  => Request::ip(), 
+            'user_agent'  => Request::userAgent(), 
         ]);
     }
 }

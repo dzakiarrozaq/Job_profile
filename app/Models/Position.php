@@ -12,7 +12,6 @@ class Position extends Model
 {
     use HasFactory;
     
-    // (Tambahkan $fillable jika Anda belum)
     protected $fillable = [
         'title',
         'department_id',
@@ -47,10 +46,6 @@ class Position extends Model
     {
         return $this->hasMany(User::class);
     }
-
-    // ==============================================
-    // ## TAMBAHKAN SEMUA FUNGSI RELASI DI BAWAH INI ##
-    // ==============================================
 
     /**
      * Mendapatkan Job Grade dari posisi ini.
@@ -89,7 +84,6 @@ class Position extends Model
      */
     public function atasan(): BelongsTo
     {
-        // Relasi ke tabel 'positions' sendiri
         return $this->belongsTo(Position::class, 'atasan_id');
     }
 }

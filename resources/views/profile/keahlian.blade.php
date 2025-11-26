@@ -61,14 +61,12 @@
                         <template x-for="(skill, index) in skills" :key="index">
                             <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 relative">
                                 
-                                {{-- Tombol Hapus --}}
                                 <button type="button" @click="removeSkill(index)" class="absolute top-4 right-4 text-red-500 hover:text-red-700 transition">
                                     <ion-icon name="trash-outline" class="text-xl"></ion-icon>
                                 </button>
 
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 pr-8">
                                     
-                                    {{-- Nama Keahlian --}}
                                     <div class="md:col-span-5">
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Nama Keahlian / Job Function
@@ -80,7 +78,6 @@
                                                placeholder="Contoh: UI/UX Design, Project Management">
                                     </div>
 
-                                    {{-- Pengalaman (Tahun) --}}
                                     <div class="md:col-span-2">
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Pengalaman (Tahun)
@@ -92,7 +89,6 @@
                                                class="block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm sm:text-sm">
                                     </div>
 
-                                    {{-- Sertifikasi --}}
                                     <div class="md:col-span-5">
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Sertifikasi / Keterangan (Opsional)

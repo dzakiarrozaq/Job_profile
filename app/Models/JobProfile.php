@@ -37,10 +37,6 @@ class JobProfile extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    // ==============================================
-    // ## TAMBAHKAN DUA FUNGSI RELASI INI ##
-    // ==============================================
-
     /**
      * Mendapatkan semua tanggung jawab untuk job profile ini.
      */

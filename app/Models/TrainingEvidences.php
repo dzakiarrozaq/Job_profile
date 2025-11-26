@@ -11,7 +11,7 @@ class TrainingEvidences extends Model
 
     protected $casts = [
         'verified_at' => 'datetime',
-        'created_at' => 'datetime', // <-- Tambahkan ini jika Anda menambahkan kolomnya
-        'updated_at' => 'datetime', // <-- Tambahkan ini jika Anda menambahkan kolomnya
+        'created_at' => 'datetime', 
+        'updated_at' => 'datetime', 
     ];
 }

@@ -40,7 +40,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The attributes that should be hidden for serialization.
-     * (Ini sudah benar)
      * @var list<string>
      */
     protected $hidden = [
@@ -50,7 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Get the attributes that should be cast.
-     * (Ini sudah benar)
      * @return array<string, string>
      */
     protected function casts(): array
@@ -61,7 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function position(): BelongsTo // <-- Ditambahkan
+    public function position(): BelongsTo 
     {
         return $this->belongsTo(Position::class);
     }
@@ -69,7 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Mendapatkan Departemen dari user.
      */
-    public function department(): BelongsTo // <-- Ditambahkan
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
@@ -77,9 +75,8 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Mendapatkan Atasan (Supervisor) dari user.
      */
-    public function manager(): BelongsTo // <-- Ditambahkan
+    public function manager(): BelongsTo 
     {
-        // Ini adalah relasi ke tabel 'users' sendiri
         return $this->belongsTo(User::class, 'manager_id');
     }
 
@@ -94,7 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Mendapatkan Rencana Pelatihan (Training Plans) milik user.
      */
-    public function trainingPlans(): HasMany // <-- Ditambahkan
+    public function trainingPlans(): HasMany 
     {
         return $this->hasMany(TrainingPlan::class);
     }

@@ -21,7 +21,7 @@ class JobProfileStatusNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database']; // Simpan ke database
+        return ['database']; 
     }
 
     public function toDatabase($notifiable)

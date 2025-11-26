@@ -13,7 +13,7 @@ class GapRecord extends Model
     /**
      * timestamps (created_at, updated_at) tidak digunakan di tabel ini.
      */
-    public $timestamps = false; // Sesuai skema DBML Anda
+    public $timestamps = false; 
 
     /**
      * Kolom yang bisa diisi.
@@ -22,7 +22,7 @@ class GapRecord extends Model
         'user_id',
         'job_profile_id',
         'competency_code',
-        'competency_name', // <-- TAMBAHKAN BARIS INI
+        'competency_name', 
         'ideal_level',
         'current_level',
         'gap_value',

@@ -95,7 +95,7 @@ class ProfileController extends Controller
     {
         return view('profile.keahlian', [
             'user' => $request->user(),
-            'skills' => $request->user()->skills // Ambil data skill yang sudah ada
+            'skills' => $request->user()->skills
         ]);
     }
 
@@ -113,12 +113,9 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // Gunakan Transaksi agar aman
         \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request) {
-            // 1. Hapus semua skill lama (cara paling bersih untuk update list dinamis)
             $user->skills()->delete();
 
-            // 2. Masukkan data baru jika ada
             if ($request->has('skills')) {
                 $user->skills()->createMany($request->skills);
             }
@@ -134,7 +131,7 @@ class ProfileController extends Controller
     {
         return view('profile.minat', [
             'user' => $request->user(),
-            'interests' => $request->user()->interests // Ambil data minat
+            'interests' => $request->user()->interests 
         ]);
     }
 
@@ -152,10 +149,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request) {
-            // 1. Hapus semua minat lama
             $user->interests()->delete();
 
-            // 2. Masukkan data baru jika ada
             if ($request->has('interests')) {
                 $user->interests()->createMany($request->interests);
             }

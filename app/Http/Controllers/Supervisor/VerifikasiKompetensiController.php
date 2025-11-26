@@ -9,7 +9,7 @@ use App\Models\EmployeeProfile;
 use App\Models\GapRecord;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\JobProfileStatusNotification; // 1. JANGAN LUPA INI
+use App\Notifications\JobProfileStatusNotification; 
 
 class VerifikasiKompetensiController extends Controller
 {
@@ -18,7 +18,6 @@ class VerifikasiKompetensiController extends Controller
      */
     public function show($userId)
     {
-        // ... (kode show() Anda sudah benar, biarkan saja) ...
         $supervisor = Auth::user();
         $employee = User::where('id', $userId)->firstOrFail();
         $employee->load('position.jobProfile.competencies.master', 'employeeProfiles'); 

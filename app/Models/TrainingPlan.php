@@ -25,10 +25,6 @@ class TrainingPlan extends Model
         return $this->belongsTo(User::class);
     }
 
-    // ==============================================
-    // ## 2. TAMBAHKAN FUNGSI INI (JIKA BELUM ADA) ##
-    // ==============================================
-
     /**
      * Mendapatkan semua item (pelatihan) dalam rencana ini.
      */

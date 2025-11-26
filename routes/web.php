@@ -61,11 +61,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'show'])->name('penilaian.show');
         Route::post('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'store'])->name('penilaian.store');
         
-        // Rute Profil Kustom Supervisor
         Route::get('/profile', function () { return view('supervisor.profile', ['user' => Auth::user()]); })->name('profile');
         Route::patch('/profile', [ProfileController::class, 'updateSupervisorProfile'])->name('profile.update');
         
-        // Rute Job Profile (Menggunakan Controller Admin)
         Route::get('/job-profile', [JobProfileController::class, 'index'])->name('job-profile.index');
         Route::get('/job-profile/create', [JobProfileController::class, 'create'])->name('job-profile.create');
         Route::post('/job-profile', [JobProfileController::class, 'store'])->name('job-profile.store');
@@ -73,11 +71,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/job-profile/{job_profile}', [JobProfileController::class, 'update'])->name('job-profile.update');
         Route::delete('/job-profile/{job_profile}', [JobProfileController::class, 'destroy'])->name('job-profile.destroy');
         
-        // Rute AI & Search (Nama rute akan menjadi 'supervisor.job-profile.suggestText')
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/competencies/search', [App\Http\Controllers\Admin\JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
 
         Route::get('/tim', [TeamController::class, 'index'])->name('tim.index');
+        Route::get('/tim/create', [TeamController::class, 'create'])->name('tim.create'); // <-- WAJIB DI ATAS
+        Route::post('/tim', [TeamController::class, 'store'])->name('tim.store');
         Route::get('/tim/{user}', [TeamController::class, 'show'])->name('tim.show');
     });
 
@@ -88,7 +87,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
         Route::resource('positions', PositionController::class);
         
-        // Rute Job Profile (Menggunakan Controller Admin)
         Route::get('/job-profile', [JobProfileController::class, 'index'])->name('job-profile.index');
         Route::get('/job-profile/create', [JobProfileController::class, 'create'])->name('job-profile.create');
         Route::post('/job-profile', [JobProfileController::class, 'store'])->name('job-profile.store');
@@ -96,7 +94,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/job-profile/{job_profile}', [JobProfileController::class, 'update'])->name('job-profile.update');
         Route::delete('/job-profile/{job_profile}', [JobProfileController::class, 'destroy'])->name('job-profile.destroy');
 
-        // Rute AI & Search (Nama rute akan menjadi 'admin.job-profile.suggestText')
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
     });

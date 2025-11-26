@@ -93,7 +93,7 @@ class PenilaianController extends Controller
                         'competency_code' => $code
                     ],
                     [
-                        'competency_name' => $master?->competency_name ?? $code, // Ambil nama dari master
+                        'competency_name' => $master?->competency_name ?? $code, 
                         'submitted_level' => $level,
                         'status' => $newStatus,
                         'submitted_at' => ($newStatus === 'pending_verification') ? now() : null,

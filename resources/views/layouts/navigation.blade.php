@@ -2,7 +2,6 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <!-- Logo -->
                 <div class="flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center">
                         <ion-icon name="analytics-outline" class="text-3xl text-blue-600"></ion-icon>
@@ -10,7 +9,6 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
@@ -24,15 +22,12 @@
                 </div>
             </div>
 
-            <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
-                <!-- Cart Link -->
                 {{-- <a href="{{ route('rencana') }}" class="flex items-center text-sm font-medium {{ request()->routeIs('rencana') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600' }} transition">
                     <ion-icon name="{{ request()->routeIs('rencana') ? 'cart' : 'cart-outline' }}" class="text-2xl mr-1"></ion-icon>
                     Rencana Saya (3)
                 </a> --}}
 
-                <!-- Notifications -->
                 <div class="hidden sm:flex sm:items-center sm:ml-6">
     
                     <div class="relative" x-data="{ open: false }">
@@ -116,7 +111,6 @@
                     </div>
                 @endif
 
-                <!-- Profile Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="flex items-center space-x-2 rounded-full p-1 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-150">
@@ -154,7 +148,6 @@
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger -->
             <div class="-mr-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -166,7 +159,6 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -187,7 +179,6 @@
             </x-responsive-nav-link>
         </div>
 
-        <!-- Responsive User Info -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
                 <div class="flex items-center">

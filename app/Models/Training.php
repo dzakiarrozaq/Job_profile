@@ -20,7 +20,6 @@ class Training extends Model
         'lp_approved_at' => 'datetime',
     ];
 
-    // Relasi ke pembuat (User yang mengusulkan)
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
