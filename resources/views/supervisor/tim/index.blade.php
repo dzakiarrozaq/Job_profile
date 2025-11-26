@@ -31,7 +31,7 @@
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Karyawan Organik</p>
                     {{-- Anda bisa hitung ini di controller jika perlu angka pasti --}}
-                    <p class="text-2xl font-bold text-gray-800 dark:text-white">6</p> 
+                    <p class="text-2xl font-bold text-gray-800 dark:text-white">0</p> 
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex items-center border border-gray-100 dark:border-gray-700">
@@ -40,7 +40,7 @@
                 </div>
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Karyawan Outsourcing</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-white">2</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
                 </div>
             </div>
         </div>

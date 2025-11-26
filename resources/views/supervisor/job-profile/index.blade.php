@@ -42,10 +42,12 @@
                                 {{ $profile->updated_at->format('d F Y') }}
                             </td>
                             <td class="px-6 py-4 text-right flex justify-end space-x-2">
+                                {{-- Tombol Edit --}}
                                 <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
                                     Edit
                                 </a>
 
+                                {{-- Tombol Hapus --}}
                                 <form action="{{ route('supervisor.job-profile.destroy', $profile->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Job Profile ini? Tindakan ini tidak dapat dibatalkan.');">
                                     @csrf
                                     @method('DELETE')

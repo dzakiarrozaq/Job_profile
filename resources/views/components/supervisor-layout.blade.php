@@ -89,7 +89,7 @@
                             <ion-icon name="people-outline"></ion-icon>
                             Anggota Tim
                         </a>
-                        <a href="#" class="sidebar-link {{ request()->routeIs('supervisor.laporan*') ? 'active' : '' }}">
+                        <a href="{{ route('supervisor.laporan.index') }}" class="sidebar-link {{ request()->routeIs('supervisor.laporan*') ? 'active' : '' }}">
                             <ion-icon name="bar-chart-outline"></ion-icon>
                             Laporan Kompetensi
                         </a>

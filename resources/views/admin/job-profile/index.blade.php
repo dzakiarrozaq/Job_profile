@@ -1,4 +1,3 @@
-{{-- File: resources/views/admin/job-profile/index.blade.php --}}
 <x-admin-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">

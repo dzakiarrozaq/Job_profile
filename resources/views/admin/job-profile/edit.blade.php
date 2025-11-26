@@ -338,11 +338,11 @@
                                         <td class="p-2">
                                             <input type="hidden" :name="'competencies['+index+'][competency_master_id]'" x-model="row.competency_master_id">
                                             <input type="text" x-model="row.type" :name="'competencies['+index+'][type]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-800" readonly>
+                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 " readonly>
                                         </td>
                                         <td class="p-2">
                                             <input type="text" x-model="row.competency_code" :name="'competencies['+index+'][competency_code]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-800" readonly>
+                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 " readonly>
                                         </td>
                                         <td class="p-2 relative">
                                             <input type="text" 

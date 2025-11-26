@@ -63,8 +63,8 @@
                             <ion-icon name="library-outline"></ion-icon>
                             Katalog Pelatihan
                         </a>
-                        <a href="#" class="sidebar-link">
-                            <ion-icon name="bar-chart-outline"></ion-icon>
+                        <a href="{{ route('admin.laporan.index') }}" class="sidebar-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
+                            <ion-icon name="pie-chart-outline"></ion-icon>
                             Laporan Sistem
                         </a>
                         <a href="#" class="sidebar-link">

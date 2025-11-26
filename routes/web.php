@@ -19,6 +19,8 @@ use App\Http\Controllers\Lp\DashboardController as LpDashboardController;
 use App\Http\Controllers\Lp\PersetujuanController as LpPersetujuanController;
 use App\Http\Controllers\Auth\RoleSelectionController;
 use App\Http\Controllers\Supervisor\TeamController;
+use App\Http\Controllers\Supervisor\LaporanController;
+use App\Http\Controllers\Admin\SystemReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +34,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     
-    // --- Rute Umum (Semua role bisa akses) ---
+    // --- Rute Umum ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -75,9 +77,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/competencies/search', [App\Http\Controllers\Admin\JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
 
         Route::get('/tim', [TeamController::class, 'index'])->name('tim.index');
-        Route::get('/tim/create', [TeamController::class, 'create'])->name('tim.create'); // <-- WAJIB DI ATAS
+        Route::get('/tim/create', [TeamController::class, 'create'])->name('tim.create'); 
         Route::post('/tim', [TeamController::class, 'store'])->name('tim.store');
         Route::get('/tim/{user}', [TeamController::class, 'show'])->name('tim.show');
+
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
     });
 
     
@@ -96,6 +101,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+
+        Route::resource('users', AdminUserController::class);
+
+        Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
     });
 
     
