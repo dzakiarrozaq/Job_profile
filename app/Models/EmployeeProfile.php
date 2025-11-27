@@ -13,7 +13,7 @@ class EmployeeProfile extends Model
     /**
      * timestamps (created_at, updated_at) tidak digunakan di tabel ini.
      */
-    public $timestamps = false; // Sesuai skema DBML Anda
+    public $timestamps = false; 
 
     protected $casts = [
         'submitted_at' => 'datetime',
@@ -36,7 +36,6 @@ class EmployeeProfile extends Model
         'verified_at',
         'reviewer_notes',
     ];
-    // ========================================================
 
 
     /**

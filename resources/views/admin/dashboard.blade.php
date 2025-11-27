@@ -1,6 +1,3 @@
-{{-- Ini adalah file: resources/views/admin/dashboard.blade.php --}}
-
-{{-- 1. Gunakan layout ADMIN yang baru saja kita buat --}}
 <x-admin-layout>
     
     <x-slot name="header">

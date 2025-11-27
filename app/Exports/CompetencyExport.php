@@ -62,7 +62,7 @@ class CompetencyExport implements FromCollection, WithHeadings, WithMapping, Sho
                 $gap->ideal_level,         
                 $gap->current_level,       
                 $gap->gap_value,           
-                $gap->gap_value < 0 ? 'Perlu Perbaikan' : 'Aman' // Kolom H
+                $gap->gap_value < 0 ? 'Perlu Perbaikan' : 'Aman' 
             ];
         }
 

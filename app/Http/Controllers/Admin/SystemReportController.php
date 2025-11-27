@@ -15,7 +15,6 @@ class SystemReportController extends Controller
 {
     public function index()
     {
-        // 1. Statistik User
         $totalUsers = User::count();
         $activeUsers = User::where('status', 'active')->count();
         $usersByRole = DB::table('role_user')
@@ -24,25 +23,20 @@ class SystemReportController extends Controller
             ->groupBy('roles.name')
             ->get();
 
-        // 2. Kesehatan Job Profile
         $totalPositions = Position::count();
         $coveredPositions = JobProfile::where('status', 'verified')->count();
         $draftProfiles = JobProfile::where('status', '!=', 'verified')->count();
         $coverageRatio = $totalPositions > 0 ? ($coveredPositions / $totalPositions) * 100 : 0;
 
-        // 3. Performa Departemen (Kompleks Query)
-        // Kita hitung berapa % karyawan di setiap dept yang sudah "verified" penilaiannya
         $departments = Department::withCount(['users' => function($q) {
             $q->where('status', 'active');
         }])->get()->map(function($dept) {
             
-            // Hitung user di dept ini yang sudah verified penilaiannya
             $verifiedUsersCount = User::where('department_id', $dept->id)
                 ->whereHas('employeeProfiles', function($q) {
                     $q->where('status', 'verified');
                 })->count();
 
-            // Hitung progress persentase
             $dept->completion_rate = $dept->users_count > 0 
                 ? round(($verifiedUsersCount / $dept->users_count) * 100, 1) 
                 : 0;
