@@ -105,6 +105,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', AdminUserController::class);
 
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
+
+        Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); // Nama beda dgn supervisor
     });
 
     
