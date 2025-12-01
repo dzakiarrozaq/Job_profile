@@ -67,7 +67,7 @@
                             <ion-icon name="pie-chart-outline"></ion-icon>
                             Laporan Sistem
                         </a>
-                        <a href="#" class="sidebar-link">
+                        <a href="{{ route('admin.logs.index') }}" class="sidebar-link {{ request()->routeIs('admin.logs.*') ? 'active' : '' }}">
                             <ion-icon name="receipt-outline"></ion-icon>
                             Log Aktivitas
                         </a>

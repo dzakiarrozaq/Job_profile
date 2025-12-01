@@ -1,4 +1,3 @@
-{{-- File: resources/views/admin/laporan/index.blade.php --}}
 <x-admin-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
@@ -48,7 +47,6 @@
                 <div class="space-y-6">
                     @foreach($criticalCompetencies as $comp)
                         @php 
-                            // Hitung persentase visual (misal gap -2 dianggap 80% penuh bar merahnya)
                             $width = min(abs($comp->avg_gap) * 40, 100); 
                             $color = $comp->avg_gap <= -1.5 ? 'bg-red-600' : 'bg-yellow-500';
                             $textColor = $comp->avg_gap <= -1.5 ? 'text-red-600' : 'text-yellow-600';
@@ -75,7 +73,6 @@
                 <div class="space-y-6">
                     @foreach($popularTrainings as $training)
                          @php 
-                            // Hitung persentase visual (misal 32 orang = 100%)
                             $max = $popularTrainings->max('total_participants');
                             $width = ($max > 0) ? ($training->total_participants / $max) * 100 : 0;
                         @endphp

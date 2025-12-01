@@ -1,8 +1,6 @@
-{{-- File: resources/views/admin/job-profile/create.blade.php --}}
-<x-admin-layout> {{-- 1. Layout Admin --}}
+<x-admin-layout> 
     <x-slot name="header">
         <div class="flex items-center">
-            {{-- 2. Link Kembali --}}
             <a href="{{ route('admin.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -60,7 +58,6 @@
                 </div>
 
                 <div class="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 pt-6 mt-6">
-                    {{-- Link Batal ke Admin --}}
                     <a href="{{ route('admin.job-profile.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600">
                         Batal
                     </a>

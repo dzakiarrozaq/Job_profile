@@ -21,6 +21,7 @@ use App\Http\Controllers\Auth\RoleSelectionController;
 use App\Http\Controllers\Supervisor\TeamController;
 use App\Http\Controllers\Supervisor\LaporanController;
 use App\Http\Controllers\Admin\SystemReportController;
+use App\Http\Controllers\Admin\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,7 +108,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
 
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
-        Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); // Nama beda dgn supervisor
+        Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
     });
 
     
