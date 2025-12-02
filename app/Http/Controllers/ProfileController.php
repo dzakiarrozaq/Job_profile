@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Password;
 use App\Models\GapRecord;
 
 class ProfileController extends Controller
@@ -157,5 +158,20 @@ class ProfileController extends Controller
         });
 
         return redirect()->route('profile.edit')->with('success', 'Data minat karir berhasil diperbarui.');
+    }
+
+    /**
+    * Mengirim link reset password ke email pengguna yang sedang login.
+    */
+    public function triggerResetPassword(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        // Kirim link reset password menggunakan broker default Laravel
+        $status = Password::broker()->sendResetLink(['email' => $user->email]);
+
+        return $status == Password::RESET_LINK_SENT
+            ? back()->with('success', 'Link reset password telah dikirim ke email Anda.')
+            : back()->with('error', 'Gagal mengirim link reset password.');
     }
 }

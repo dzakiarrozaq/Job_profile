@@ -95,7 +95,7 @@ class UserController extends Controller
     public function edit(User $user): View
     {
         return view('admin.users.edit', [
-            'user' => $user,
+            'user' => $user, 
             'roles' => Role::all(),
             'departments' => Department::orderBy('name')->get(),
             'positions' => Position::orderBy('title')->get(),

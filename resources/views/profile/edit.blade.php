@@ -288,23 +288,84 @@
                 </div>
             </div>
 
-            <div x-show="currentTab === 'pengaturan'" class="space-y-6">
-                <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                    <div class="max-w-xl">
-                        @include('profile.partials.update-profile-information-form')
+            <div x-show="currentTab === 'pengaturan'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="lg:col-span-2">
+                    <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Informasi Pribadi</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Perbarui informasi profil akun dan alamat email Anda.</p>
+
+                        <form method="post" action="{{ route('profile.update') }}" class="space-y-6">
+                            @csrf
+                            @method('patch')
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <x-input-label for="name" :value="__('Nama Lengkap')" />
+                                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+                                    <x-input-error class="mt-2" :messages="$errors->get('name')" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="email" :value="__('Email')" />
+                                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
+                                    <x-input-error class="mt-2" :messages="$errors->get('email')" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="place_of_birth" :value="__('Tempat Lahir')" />
+                                    <x-text-input id="place_of_birth" name="place_of_birth" type="text" class="mt-1 block w-full" :value="old('place_of_birth', $user->place_of_birth)" placeholder="Kota Kelahiran" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="date_of_birth" :value="__('Tanggal Lahir')" />
+                                    <x-text-input id="date_of_birth" name="date_of_birth" type="date" class="mt-1 block w-full" :value="old('date_of_birth', $user->date_of_birth)" />
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <x-input-label for="domicile" :value="__('Alamat Domisili')" />
+                                    <x-text-input id="domicile" name="domicile" type="text" class="mt-1 block w-full" :value="old('domicile', $user->domicile)" placeholder="Alamat tempat tinggal saat ini" />
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <x-primary-button>{{ __('Simpan Perubahan') }}</x-primary-button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                    <div class="max-w-xl">
-                        @include('profile.partials.update-password-form')
-                    </div>
-                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 border-l-4 border-yellow-400">
+                        <div class="flex items-center mb-4">
+                            <div class="p-2 bg-yellow-100 text-yellow-600 rounded-full mr-3">
+                                <ion-icon name="key-outline" class="text-xl"></ion-icon>
+                            </div>
+                            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Lupa Password?</h2>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                            Jika Anda ingin mengubah password atau merasa password Anda tidak aman, kami akan mengirimkan link reset password ke email Anda (<strong>{{ $user->email }}</strong>).
+                        </p>
 
-                <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                    <div class="max-w-xl">
+                        <form method="POST" action="{{ route('profile.trigger-reset') }}">
+                            @csrf
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 focus:bg-yellow-600 active:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                <ion-icon name="mail-outline" class="mr-2 text-lg"></ion-icon>
+                                Kirim Link Reset Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 border-l-4 border-red-500">
+                        <h2 class="text-lg font-bold dark:text-white mb-2">Area Berbahaya</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Setelah akun dihapus, semua data akan hilang permanen.
+                        </p>
                         @include('profile.partials.delete-user-form')
                     </div>
+
                 </div>
             </div>
 

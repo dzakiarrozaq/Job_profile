@@ -44,6 +44,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile/keahlian', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
     Route::get('/profile/minat', [ProfileController::class, 'editInterests'])->name('profile.interests.edit');
     Route::patch('/profile/minat', [ProfileController::class, 'updateInterests'])->name('profile.interests.update');
+
+    Route::post('/profile/trigger-reset-password', [ProfileController::class, 'triggerResetPassword'])
+         ->name('profile.trigger-reset');
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor'])->group(function () {

@@ -17,14 +17,12 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
-            ],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            
+            // Tambahkan validasi untuk field baru
+            'place_of_birth' => ['nullable', 'string', 'max:100'],
+            'date_of_birth' => ['nullable', 'date'],
+            'domicile' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
