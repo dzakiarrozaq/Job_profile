@@ -17,6 +17,18 @@ class DashboardController extends Controller
         
         $user->load('position.jobProfile', 'manager');
 
+        $employeeProfiles = $user->employeeProfiles;
+        
+        if ($employeeProfiles->isEmpty()) {
+            $globalStatus = 'not_started'; // Belum pernah mengisi
+        } elseif ($employeeProfiles->contains('status', 'pending_verification')) {
+            $globalStatus = 'pending'; // Menunggu verifikasi
+        } elseif ($employeeProfiles->every(fn($p) => $p->status === 'verified')) {
+            $globalStatus = 'verified'; // Selesai
+        } else {
+            $globalStatus = 'draft'; // Masih draft
+        }
+
         $jobProfile = $user->position?->jobProfile; 
 
         $gapAnalysisData = collect([]);
@@ -69,6 +81,7 @@ class DashboardController extends Controller
             'recommendations' => $recommendations,
             'recentTrainings' => $recentTrainings,
             'assessmentStatus' => $assessmentStatus,
+            'globalStatus' => $globalStatus,
         ]);
     }
     /**

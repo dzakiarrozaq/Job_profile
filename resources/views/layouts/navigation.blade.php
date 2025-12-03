@@ -1,4 +1,7 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    @php
+        $user = Auth::user();
+    @endphp
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
@@ -17,7 +20,7 @@
                         {{ __('Katalog Pelatihan') }}
                     </x-nav-link> --}}
                     <x-nav-link :href="route('riwayat')" :active="request()->routeIs('riwayat*')">
-                        {{ __('Riwayat Saya') }}
+                        {{ __('Riwayat Pelatihan Saya') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -114,7 +117,11 @@
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="flex items-center space-x-2 rounded-full p-1 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-150">
-                            <img class="h-9 w-9 rounded-full object-cover border-2 border-gray-200" src="https://i.pravatar.cc/150?u={{ Auth::user()->name }}" alt="Foto Profil">
+                            <div class="relative inline-block">
+                                <img class="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-md mx-auto" 
+                                    src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" 
+                                    alt="Foto Profil">
+                            </div>
                             <svg class="fill-current h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
@@ -171,7 +178,7 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('riwayat')" :active="request()->routeIs('riwayat*')">
                 <ion-icon name="time-outline" class="text-lg mr-2"></ion-icon>
-                {{ __('Riwayat Saya') }}
+                {{ __('Riwayat PelatihanSaya') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('rencana')" :active="request()->routeIs('rencana*')">
                 <ion-icon name="cart-outline" class="text-lg mr-2"></ion-icon>

@@ -35,7 +35,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'batch_number',
         'department_id',
         'position_id',
-        'role_id',
+        'role_id','phone_number',
+        'hiring_date',  
+        'gender',            
+        'profile_photo_path',
     ];
 
     /**

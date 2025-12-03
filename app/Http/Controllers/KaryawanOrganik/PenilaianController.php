@@ -36,15 +36,15 @@ class PenilaianController extends Controller
         $employeeProfiles = $user->employeeProfiles
                             ->keyBy('competency_code');
 
-        $hasDrafts = $jobCompetencies->contains(function($comp) use ($employeeProfiles) {
-            $profile = $employeeProfiles->get($comp->master->competency_code); 
-            return is_null($profile) || $profile->status === 'draft';
-        });
-        $isPending = $employeeProfiles->contains('status', 'pending_verification');
-        
-        $globalStatus = 'verified';
-        if ($hasDrafts) $globalStatus = 'draft';
-        if ($isPending) $globalStatus = 'pending';
+        if ($employeeProfiles->isEmpty()) {
+            $globalStatus = 'not_started'; // Status Baru
+        } elseif ($employeeProfiles->contains('status', 'pending_verification')) {
+            $globalStatus = 'pending';
+        } elseif ($employeeProfiles->every(fn($p) => $p->status === 'verified')) {
+            $globalStatus = 'verified';
+        } else {
+            $globalStatus = 'draft';
+        }
 
         $assessments = $jobCompetencies->map(function ($comp) use ($employeeProfiles) {
             $competencyCode = $comp->master->competency_code;
@@ -65,8 +65,8 @@ class PenilaianController extends Controller
 
         return view('karyawan.penilaian', [
             'assessments' => $assessments,
-            'globalStatus' => $globalStatus,
-            'hasDrafts' => $hasDrafts,
+            'globalStatus' => $globalStatus, 
+            'hasDrafts' => $globalStatus === 'draft',
         ]);
     }
 

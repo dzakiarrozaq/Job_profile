@@ -15,7 +15,8 @@
                 
                 <div class="relative inline-block">
                     <img class="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md mx-auto" 
-                         src="https://i.pravatar.cc/150?u={{ $employee->email }}" alt="Foto">
+                        src="{{ $employee->profile_photo_path ? asset('storage/' . $employee->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($employee->name) }}" 
+                        alt="Foto">
                     <span class="absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></span>
                 </div>
                 

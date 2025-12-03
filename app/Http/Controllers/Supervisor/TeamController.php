@@ -43,10 +43,14 @@ class TeamController extends Controller
 
         foreach ($teamMembers as $member) {
             $latestAssessment = EmployeeProfile::where('user_id', $member->id)
-                                    ->orderBy('submitted_at', 'desc')
-                                    ->first();
+                    ->orderBy('submitted_at', 'desc')
+                    ->first();
             
-            $member->assessment_status = $latestAssessment ? $latestAssessment->status : 'belum_mulai';
+            if (!$latestAssessment) {
+                $member->assessment_status = 'not_started'; 
+            } else {
+                $member->assessment_status = $latestAssessment->status;
+            }
         }
 
         return view('supervisor.tim.index', [
@@ -118,9 +122,18 @@ class TeamController extends Controller
             'position_id' => ['required', 'exists:positions,id'],
             'department_id' => ['required', 'exists:departments,id'],
             'batch_number' => ['nullable', 'string', 'max:50'],
+
+            'gender' => ['required', 'in:Laki-laki,Perempuan'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'], // Max 2MB, harus gambar
+            'phone_number' => ['nullable', 'string', 'max:20'],
+            'hiring_date' => ['nullable', 'date'],
         ]);
 
-        // Buat User Baru
+        $photoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            $photoPath = $request->file('profile_photo')->store('profile-photos', 'public');
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -130,6 +143,11 @@ class TeamController extends Controller
             'batch_number' => $request->batch_number,
             'manager_id' => Auth::id(), 
             'status' => 'active',
+
+            'gender' => $request->gender,
+            'profile_photo_path' => $photoPath,
+            'phone_number' => $request->phone_number,
+            'hiring_date' => $request->hiring_date,
         ]);
 
         $user->roles()->attach($request->role_id);

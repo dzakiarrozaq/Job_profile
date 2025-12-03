@@ -24,16 +24,16 @@
                 
                 <h2 class="text-xl font-bold text-gray-900">Formulir Self-Assessment</h2>
 
-                <p class="text-sm text-gray-600 mb-6">
-                    @if ($globalStatus === 'pending')
-                        Status saat ini: <span class="font-semibold text-yellow-800">Menunggu Verifikasi Supervisor</span>
-                        <span class="text-xs block text-gray-500">(Anda masih bisa menyimpan draf untuk item lain)</span>
-                    @elseif ($globalStatus === 'draft')
-                        Status saat ini: <span class="font-semibold text-blue-800">Draft (Belum Diajukan)</span>
-                    @elseif ($globalStatus === 'no_profile')
-                        Status saat ini: <span class="font-semibold text-red-800">Job Profile tidak ditemukan. Hubungi Admin.</span>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Status saat ini: 
+                    @if($globalStatus === 'verified')
+                        <span class="font-bold text-green-600">Semua Sudah Terverifikasi</span>
+                    @elseif($globalStatus === 'pending')
+                        <span class="font-bold text-yellow-600">Menunggu Verifikasi Supervisor</span>
+                    @elseif($globalStatus === 'not_started') {{-- KONDISI BARU --}}
+                        <span class="font-bold text-red-600">Belum Mengisi (Wajib Diisi)</span>
                     @else
-                        Status saat ini: <span class="font-semibold text-green-800">Semua Sudah Terverifikasi</span>
+                        <span class="font-bold text-gray-600">Draf / Belum Diajukan</span>
                     @endif
                 </p>
 
@@ -81,19 +81,15 @@
                                             </select>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-4">
-                                        @if ($item->status == 'verified')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                VERIFIED
-                                            </span>
-                                        @elseif ($item->status == 'pending_verification')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                PENDING
-                                            </span>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($item->status === 'verified')
+                                            <span class="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">VERIFIED</span>
+                                        @elseif($item->status === 'pending_verification')
+                                            <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800">PENDING</span>
+                                        @elseif($globalStatus === 'not_started') {{-- KONDISI BARU --}}
+                                            <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800">EMPTY</span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                DRAFT
-                                            </span>
+                                            <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-600">DRAFT</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -114,12 +110,18 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-4">
-                        <x-secondary-button type="submit" name="action" value="draft" :disabled="!$hasDrafts">
-                            Simpan sebagai Draf
-                        </x-secondary-button>
-                        <x-primary-button type="submit" name="action" value="submit" :disabled="!$hasDrafts">
-                            Ajukan Verifikasi ke Supervisor
-                        </x-primary-button>
+                        @if($globalStatus === 'verified' || $globalStatus === 'pending')
+                            <button type="button" disabled class="px-6 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+                                {{ $globalStatus === 'verified' ? 'Penilaian Selesai' : 'Menunggu Verifikasi' }}
+                            </button>
+                        @else
+                            <button type="submit" name="action" value="save_draft" class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Simpan sebagai Draf
+                            </button>
+                            <button type="submit" name="action" value="submit" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm">
+                                {{ $globalStatus === 'not_started' ? 'Mulai & Ajukan Verifikasi' : 'Ajukan Verifikasi ke Supervisor' }}
+                            </button>
+                        @endif
                     </div>
                 </form>
             </div>

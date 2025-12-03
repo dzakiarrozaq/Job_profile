@@ -48,8 +48,12 @@
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                         <div class="flex items-center space-x-4 mb-6">
-                            <img class="h-20 w-20 rounded-full object-cover border-4 border-indigo-50 dark:border-indigo-900" 
-                                 src="https://i.pravatar.cc/150?u={{ $user->email }}" alt="Foto Profil">
+                            <div class="relative inline-block">
+                                <img class="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md mx-auto" 
+                                    src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" 
+                                    alt="Foto Profil">
+                                <span class="absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></span>
+                            </div>
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $user->name }}</h2>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $user->batch_number ?? 'No Batch' }}</p>
