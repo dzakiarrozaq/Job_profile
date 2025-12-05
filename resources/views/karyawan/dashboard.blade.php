@@ -1,5 +1,17 @@
 @php
     $user = Auth::user();
+
+    // 1. Ambil Job Profile dengan Aman (Pakai ?->)
+    // Jika user belum punya posisi, atau posisi belum punya job profile, ini akan jadi NULL (bukan error)
+    $jobProfile = $user->position?->jobProfile;
+
+    // 2. Hitung Kompetensi (Gunakan collect([]) jika null agar tidak error saat di-count)
+    $competencies = $jobProfile?->competencies ?? collect([]);
+    $totalComp = $competencies->count();
+
+    // 3. Hitung Gap Terpenuhi
+    $gapRecords = $user->gapRecords ?? collect([]);
+    $metComp = $gapRecords->where('gap_value', '>=', 0)->count();
 @endphp
 
 <x-app-layout>
@@ -11,6 +23,38 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            
+            {{-- ALERT JIKA DATA BELUM LENGKAP --}}
+            @if(!$user->position)
+                <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <ion-icon name="warning-outline" class="text-yellow-400 text-2xl"></ion-icon>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Profil Belum Lengkap</h3>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Akun Anda belum memiliki <strong>Posisi/Jabatan</strong>. Hubungi Admin atau Supervisor untuk mengatur posisi Anda agar fitur penilaian dapat digunakan.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @elseif(!$jobProfile)
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <ion-icon name="information-circle-outline" class="text-blue-400 text-2xl"></ion-icon>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Menunggu Job Profile</h3>
+                            <p class="text-sm text-blue-700 mt-1">
+                                Posisi Anda <strong>({{ $user->position->title }})</strong> belum memiliki standar kompetensi (Job Profile). Fitur penilaian akan aktif setelah Admin/Supervisor melengkapinya.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <div class="lg:col-span-1 space-y-6">
@@ -19,7 +63,7 @@
                         <div class="p-6 text-gray-900 dark:text-gray-100">
                             <h3 class="text-lg font-bold mb-4">Profil Saya</h3>
                             <div class="flex items-center gap-4 mb-4">
-                                <img class="h-16 w-16 rounded-full object-cover" 
+                                <img class="h-16 w-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700" 
                                      src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" 
                                      alt="Foto Profil">
                                 <div>
@@ -28,9 +72,10 @@
                                 </div>
                             </div>
                             <div class="space-y-2 text-sm">
-                                <p><span class="font-semibold">Jabatan:</span> {{ $user->position->title ?? '-' }}</p>
-                                <p><span class="font-semibold">Unit:</span> {{ $user->position->unit->name ?? '-' }}</p>
-                                <p><span class="font-semibold">Supervisor:</span> {{ $user->manager->name ?? '-' }}</p>
+                                {{-- Gunakan ?-> untuk Nullsafe Access --}}
+                                <p><span class="font-semibold">Jabatan:</span> {{ $user->position?->title ?? '-' }}</p>
+                                <p><span class="font-semibold">Unit:</span> {{ $user->position?->unit?->name ?? '-' }}</p>
+                                <p><span class="font-semibold">Supervisor:</span> {{ $user->manager?->name ?? '-' }}</p>
                             </div>
                         </div>
                     </div>
@@ -41,11 +86,6 @@
                             <div class="space-y-3 text-sm">
                                 <div class="flex justify-between">
                                     <span>Kompetensi Terpenuhi</span>
-                                    {{-- Logika hitung kompetensi (Contoh) --}}
-                                    @php 
-                                        $totalComp = $user->position->jobProfile->competencies->count() ?? 0;
-                                        $metComp = $user->gapRecords->where('gap_value', '>=', 0)->count();
-                                    @endphp
                                     <span class="font-bold text-green-600">{{ $metComp }} / {{ $totalComp }}</span>
                                 </div>
                                 <div class="flex justify-between">
@@ -59,14 +99,13 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="lg:col-span-2 space-y-6">
                     
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900 dark:text-gray-100">
-                            <h3 class="text-lg font-bold mb-4">Analisis Kesenjangan Nilai Kompetensi (Gap Analysis)</h3>
+                            <h3 class="text-lg font-bold mb-4">Analisis Kesenjangan Kompetensi</h3>
                             
                             <div class="overflow-x-auto mb-6">
                                 <table class="min-w-full text-sm text-left">
@@ -79,7 +118,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                        @forelse($user->gapRecords as $gap)
+                                        @forelse($gapRecords as $gap)
                                         <tr>
                                             <td class="px-4 py-3 font-medium">{{ $gap->competency_name }}</td>
                                             <td class="px-4 py-3 text-center">{{ $gap->ideal_level }}</td>
@@ -100,161 +139,51 @@
                             </div>
 
                             @php
-                                $statusColor = match($globalStatus) {
-                                    'not_started' => 'red',    
-                                    'draft'       => 'gray',   
-                                    'pending'     => 'yellow', 
-                                    'verified'    => 'green',  
+                                // Warna Dinamis
+                                $statusColor = match($globalStatus ?? 'not_started') {
+                                    'not_started' => 'red',
+                                    'draft'       => 'gray',
+                                    'pending'     => 'yellow',
+                                    'verified'    => 'green',
                                     default       => 'blue',
                                 };
                             @endphp
 
-                            <div class="bg-{{ $statusColor }}-50 border border-{{ $statusColor }}-200 rounded-lg p-4 mb-4 transition-colors duration-300">
-                                
+                            <div class="bg-{{ $statusColor }}-50 border border-{{ $statusColor }}-200 rounded-lg p-4 mb-4">
                                 <h4 class="font-bold text-{{ $statusColor }}-800 mb-1">
                                     Status Penilaian: 
-                                    @if($globalStatus == 'not_started')
-                                        BELUM MENGISI
-                                    @elseif($globalStatus == 'draft')
-                                        DRAFT / BELUM DIAJUKAN
-                                    @elseif($globalStatus == 'pending')
-                                        MENUNGGU VERIFIKASI
-                                    @elseif($globalStatus == 'verified')
-                                        SUDAH TERVERIFIKASI
+                                    @if(($globalStatus ?? 'not_started') == 'not_started') BELUM MENGISI
+                                    @elseif($globalStatus == 'draft') DRAFT
+                                    @elseif($globalStatus == 'pending') MENUNGGU VERIFIKASI
+                                    @elseif($globalStatus == 'verified') SUDAH TERVERIFIKASI
                                     @endif
                                 </h4>
-
                                 <p class="text-sm text-{{ $statusColor }}-600">
-                                    @if($globalStatus == 'not_started')
-                                        Anda belum melakukan penilaian mandiri tahun ini. Mohon segera lengkapi agar kami dapat merekomendasikan pelatihan.
-                                    @elseif($globalStatus == 'verified')
-                                        Penilaian Anda sudah diverifikasi. Anda dapat memperbaruinya kapan saja jika ada perubahan skill.
+                                    @if(($globalStatus ?? 'not_started') == 'not_started')
+                                        Anda belum melakukan penilaian.
                                     @else
-                                        Penilaian Anda sedang dalam proses atau masih draft. Silakan selesaikan pengajuan Anda.
+                                        Status penilaian Anda saat ini.
                                     @endif
                                 </p>
                             </div>
 
                             <div class="flex gap-3">
-                                <a href="{{ route('penilaian') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <ion-icon name="refresh-outline" class="mr-1 align-middle"></ion-icon>
-                                    Perbarui Level Kompetensi
-                                </a>
-                                
-                                {{-- Jika verified, munculkan tombol rekomendasi --}}
-                                @if($globalStatus == 'verified')
-                                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm">
-                                        <ion-icon name="sparkles-outline" class="mr-1 align-middle"></ion-icon>
-                                        Dapatkan Rekomendasi Pelatihan
+                                @if($jobProfile)
+                                    <a href="{{ route('penilaian') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        <ion-icon name="create-outline" class="mr-1 align-middle"></ion-icon>
+                                        Isi Penilaian
+                                    </a>
+                                @else
+                                    <button disabled class="px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        Penilaian Belum Tersedia
                                     </button>
                                 @endif
                             </div>
                         </div>
                     </div>
-    
-                    {{-- <div class="bg-white rounded-lg shadow p-6" x-show="showRecommendations" x-transition>
-                        <h2 class="text-lg font-bold text-gray-900 mb-4">Rekomendasi Pelatihan Untuk Anda</h2>
-                        <div class="space-y-3">
 
-                            @forelse ($recommendations as $rec)
-                            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-900 text-sm">{{ $rec->title }}</p>
-                                    <p class="text-xs text-gray-500 mt-1">Kompetensi: {{ $rec->skill_tags }} | Tipe: {{ $rec->type }}</p>
-                                </div>
-                                <button class="ml-4 inline-flex items-center justify-center px-3 py-1.5 bg-blue-50 text-blue-800 rounded-lg text-sm font-medium hover:bg-blue-100">
-                                    ➕ Tambah
-                                </button>
-                            </div>
-                            @empty
-                            <p class="text-center text-gray-500">Tidak ada rekomendasi yang sesuai dengan gap Anda saat ini.</p>
-                            @endforelse
-                            
-                        </div>
-                        
-                        <div class="mt-4 border-t pt-4">
-                            <a href="{{ route('rencana') }}" class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700">
-                                <ion-icon name="cart-outline" class="mr-2 text-lg"></ion-icon>
-                                Buka Keranjang Rencana (3) </a>
-                        </div>
-                    </div> --}}
-                    
-                    
-                    @if(false)
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h2 class="text-lg font-bold text-gray-900 mb-4">Riwayat & Status Pelatihan</h2> 
-                            <div class="bg-white rounded-lg shadow p-6">
-                                <h2 class="text-lg font-bold text-gray-900 mb-4">Riwayat & Status Pelatihan</h2>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full text-sm">
-                                        <thead class="bg-gray-50 border-b border-gray-200">
-                                            <tr>
-                                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Judul Pelatihan</th>
-                                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tindakan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-200">
-
-                                            @forelse ($recentTrainings as $plan)
-                                            <tr>
-                                                <td class="px-4 py-3 text-gray-900">
-                                                    {{ $plan->items->first() ? $plan->items->first()->training->title : 'Pelatihan Tidak Ditemukan' }}
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    @if ($plan->status == 'pending_supervisor')
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                            MENUNGGU PERSETUJUAN SUPERVISOR
-                                                        </span>
-                                                    @elseif ($plan->status == 'pending_lp')
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                            MENUNGGU PERSETUJUAN LEARNING PARTNER
-                                                        </span>
-                                                    @elseif ($plan->status == 'approved')
-                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            DISETUJUI FINAL
-                                                        </span>
-                                                    @elseif ($plan->status == 'completed')
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-600 text-white">
-                                                            COMPLETE & FINAL
-                                                        </span>
-                                                    @elseif ($plan->status == 'rejected')
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                            DITOLAK
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    @if ($plan->status == 'approved')
-                                                        <a href="{{-- route('unggah-sertifikat', $plan->id) --}}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Unggah Sertifikat</a>
-                                                    @elseif ($plan->status == 'completed')
-                                                        <a href="{{-- route('lihat-sertifikat', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Sertifikat</a>
-                                                    @elseif ($plan->status == 'rejected')
-                                                        <a href="{{-- route('catatan-ditolak', $plan->id) --}}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">Lihat Catatan</a>
-                                                    @elseif ($plan->status == 'pending_supervisor')
-                                                        <a href="#" class="text-red-600 hover:text-red-800 text-sm font-medium">Batalkan</a>
-                                                    @else
-                                                        <span class="text-gray-400 text-sm">Menunggu...</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                            @empty
-                                            <tr>
-                                                <td colspan="3" class="px-4 py-4 text-center text-gray-500">
-                                                    Anda belum memiliki riwayat pelatihan.
-                                                </td>
-                                            </tr>
-                                            @endforelse
-                                            
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-               
                 </div>
-                </div> 
             </div>
+        </div>
     </div>
 </x-app-layout>

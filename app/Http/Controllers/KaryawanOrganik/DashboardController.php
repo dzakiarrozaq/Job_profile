@@ -14,6 +14,14 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+        $user->load([
+            'position.jobProfile.competencies', // Load Posisi -> Job Profile -> Kompetensi
+            'position.unit',                   // Load Unit
+            'manager',                         // Load Supervisor
+            'gapRecords',                      // Load Gap Analysis
+            'employeeProfiles'                 // Load Status Penilaian
+        ]);
         
         $user->load('position.jobProfile', 'manager');
 

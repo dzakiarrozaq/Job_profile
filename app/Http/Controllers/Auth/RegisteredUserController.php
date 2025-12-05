@@ -38,33 +38,42 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // 1. Tambahkan Validasi untuk Departemen & Posisi
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'batch_number' => ['required', 'string', 'max:255'],
-            'department_id' => ['required', 'integer', 'exists:departments,id'],
-            'position_id' => ['required', 'integer', 'exists:positions,id'],
+            'department_id' => ['required', 'exists:departments,id'], // <-- TAMBAHKAN INI
+            'position_id' => ['required', 'exists:positions,id'],     // <-- TAMBAHKAN INI
         ]);
 
-        $defaultRole = Role::where('name', 'Karyawan Organik')->first();
-        
-        $defaultRoleId = $defaultRole ? $defaultRole->id : 4;
+        // (Logika Role Outsourcing tetap sama)
+        $outsourcingRole = Role::where('name', 'Karyawan Outsourcing')->first();
 
+        // 2. Tambahkan Data ke User::create
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'batch_number' => $request->batch_number,
+            'status' => 'active',
+
             'department_id' => $request->department_id,
             'position_id' => $request->position_id,
-            'role_id' => $defaultRoleId, 
+
         ]);
+
+        // Assign Role
+        if ($outsourcingRole) {
+            $user->roles()->attach($outsourcingRole->id);
+        }
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->route('verification.notice');
+        // Set session role
+        $request->session()->put('active_role_name', 'Karyawan Outsourcing');
+
+        return redirect(route('dashboard', absolute: false));
     }
 }
