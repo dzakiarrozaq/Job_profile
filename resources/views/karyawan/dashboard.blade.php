@@ -170,7 +170,7 @@
                             <div class="flex gap-3">
                                 @if($jobProfile)
                                     <a href="{{ route('penilaian') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        <ion-icon name="create-outline" class="mr-1 align-middle"></ion-icon>
+                                        <ion-icon name="create-outline" class="mr-1 align-center"></ion-icon>
                                         Isi Penilaian
                                     </a>
                                 @else

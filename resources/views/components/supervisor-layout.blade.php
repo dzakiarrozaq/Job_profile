@@ -67,7 +67,7 @@
                         <h1 class="text-xl font-bold tracking-tight text-white">DevHub</h1>
                     </div>
                     
-                    <a href="{{ route('supervisor.profile') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
+                    <a href="{{ route('profile.edit') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
                         <img class="h-10 w-10 rounded-full object-cover" src="https://i.pravatar.cc/150?u={{ Auth::id() }}" alt="Foto Profil">
                         <div>
                             <p class="font-semibold text-sm text-white">{{ Auth::user()->name }}</p>
