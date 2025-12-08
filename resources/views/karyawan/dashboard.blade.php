@@ -1,15 +1,11 @@
 @php
     $user = Auth::user();
 
-    // 1. Ambil Job Profile dengan Aman (Pakai ?->)
-    // Jika user belum punya posisi, atau posisi belum punya job profile, ini akan jadi NULL (bukan error)
     $jobProfile = $user->position?->jobProfile;
 
-    // 2. Hitung Kompetensi (Gunakan collect([]) jika null agar tidak error saat di-count)
     $competencies = $jobProfile?->competencies ?? collect([]);
     $totalComp = $competencies->count();
 
-    // 3. Hitung Gap Terpenuhi
     $gapRecords = $user->gapRecords ?? collect([]);
     $metComp = $gapRecords->where('gap_value', '>=', 0)->count();
 @endphp
@@ -24,7 +20,6 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- ALERT JIKA DATA BELUM LENGKAP --}}
             @if(!$user->position)
                 <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm">
                     <div class="flex">

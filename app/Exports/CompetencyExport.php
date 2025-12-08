@@ -19,6 +19,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class CompetencyExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithEvents
 {
     protected $employees;
+    private $rowNumber = 1; 
 
     public function __construct()
     {
@@ -38,30 +39,33 @@ class CompetencyExport implements FromCollection, WithHeadings, WithMapping, Sho
     public function headings(): array
     {
         return [
-            'Nama Karyawan',
-            'Jabatan',
-            'Kompetensi',
-            'Kode',
-            'Target Level',
-            'Level Aktual',
-            'Gap',
-            'Status'
+            'NO',              
+            'Nama Karyawan',   
+            'Jabatan',         
+            'Kompetensi',      
+            'Kode',            
+            'Target Level',    
+            'Level Aktual',    
+            'Gap',             
+            'Status'           
         ];
     }
 
     public function map($user): array
     {
         $rows = [];
-        
+        $currentNo = $this->rowNumber++; 
+
         foreach ($user->gapRecords as $gap) {
             $rows[] = [
-                $user->name,               
-                $user->position->title ?? '-', 
-                $gap->competency_name,     
-                $gap->competency_code,     
-                $gap->ideal_level,         
-                $gap->current_level,       
-                $gap->gap_value,           
+                $currentNo,                      
+                $user->name,                     
+                $user->position->title ?? '-',   
+                $gap->competency_name,           
+                $gap->competency_code,           
+                $gap->ideal_level,               
+                $gap->current_level,             
+                $gap->gap_value,                 
                 $gap->gap_value < 0 ? 'Perlu Perbaikan' : 'Aman' 
             ];
         }
@@ -78,7 +82,7 @@ class CompetencyExport implements FromCollection, WithHeadings, WithMapping, Sho
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4F46E5'], 
                 ],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             ],
         ];
     }
@@ -90,15 +94,15 @@ class CompetencyExport implements FromCollection, WithHeadings, WithMapping, Sho
                 $sheet = $event->sheet->getDelegate();
                 $totalRows = $sheet->getHighestRow();
                 
-                
-                $sheet->getStyle('A1:H' . $totalRows)->applyFromArray([
+                $sheet->getStyle('A1:I' . $totalRows)->applyFromArray([
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN],
                     ],
                     'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                 ]);
 
-                $sheet->getStyle('E2:H' . $totalRows)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A2:A' . $totalRows)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('F2:I' . $totalRows)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 $currentRow = 2; 
 
@@ -109,8 +113,10 @@ class CompetencyExport implements FromCollection, WithHeadings, WithMapping, Sho
                         $endRow = $currentRow + $count - 1;
 
                         $sheet->mergeCells("A{$currentRow}:A{$endRow}");
-                        
+
                         $sheet->mergeCells("B{$currentRow}:B{$endRow}");
+                        
+                        $sheet->mergeCells("C{$currentRow}:C{$endRow}");
                     }
 
                     $currentRow += $count;

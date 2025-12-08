@@ -30,7 +30,7 @@
                         <span class="font-bold text-green-600">Semua Sudah Terverifikasi</span>
                     @elseif($globalStatus === 'pending')
                         <span class="font-bold text-yellow-600">Menunggu Verifikasi Supervisor</span>
-                    @elseif($globalStatus === 'not_started') {{-- KONDISI BARU --}}
+                    @elseif($globalStatus === 'not_started') 
                         <span class="font-bold text-red-600">Belum Mengisi (Wajib Diisi)</span>
                     @else
                         <span class="font-bold text-gray-600">Draf / Belum Diajukan</span>
