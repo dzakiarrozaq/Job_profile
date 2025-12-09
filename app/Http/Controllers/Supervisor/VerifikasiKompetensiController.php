@@ -10,6 +10,7 @@ use App\Models\GapRecord;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\JobProfileStatusNotification; 
+use App\Models\AuditLog;
 
 class VerifikasiKompetensiController extends Controller
 {
@@ -107,6 +108,12 @@ class VerifikasiKompetensiController extends Controller
             }
             
             DB::commit();
+
+            AuditLog::record(
+                'Verify Competency', 
+                "Memverifikasi penilaian kompetensi untuk karyawan: {$employee->name}", 
+                $employee
+            );
 
             $employee->notify(new JobProfileStatusNotification(
                 'Penilaian Diverifikasi', 

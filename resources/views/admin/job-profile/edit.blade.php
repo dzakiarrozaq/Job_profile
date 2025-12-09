@@ -133,7 +133,6 @@
             </div>
         @endif
 
-        {{-- FORM ACTION KE RUTE ADMIN --}}
         <form action="{{ route('admin.job-profile.update', $jobProfile->id) }}" method="POST">
             @csrf
             @method('PATCH')

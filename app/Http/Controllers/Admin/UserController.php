@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog; 
 
 class UserController extends Controller
 {
@@ -86,6 +87,8 @@ class UserController extends Controller
 
         $user->roles()->sync($request->role_id);
 
+        AuditLog::record('Create User', "Menambahkan pengguna baru: {$user->name} ({$user->email})", $user);
+
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan.');
     }
 
@@ -148,7 +151,10 @@ class UserController extends Controller
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
         
+        $userName = $user->name;
         $user->delete();
+
+        AuditLog::record('Delete User', "Menghapus pengguna: {$userName} (ID: {$user->id})", $user);
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus.');
     }
 }

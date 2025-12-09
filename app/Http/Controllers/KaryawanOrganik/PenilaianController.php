@@ -10,6 +10,7 @@ use App\Models\CompetenciesMaster;
 use App\Models\EmployeeProfile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Models\AuditLog;
 
 
 class PenilaianController extends Controller
@@ -104,8 +105,10 @@ class PenilaianController extends Controller
             DB::commit();
 
             if ($newStatus === 'pending_verification') {
+                AuditLog::record('Submit Assessment', 'Mengajukan penilaian kompetensi untuk diverifikasi.', Auth::user());
                 return redirect()->route('penilaian')->with('success', 'Penilaian berhasil diajukan ke Supervisor!');
             } else {
+                AuditLog::record('Save Draft Assessment', 'Menyimpan draf penilaian kompetensi.', Auth::user());
                 return redirect()->route('penilaian')->with('success', 'Draf berhasil disimpan.');
             }
 

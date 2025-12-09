@@ -227,6 +227,11 @@ class JobProfileController extends Controller
             } else {
                 if ($jobProfile->status !== 'verified') {
                     $jobProfile->update(['status' => 'draft']);
+                    AuditLog::record(
+                        'Approve Job Profile', 
+                        "Menyetujui Job Profile: {$jobProfile->position->title} (v{$jobProfile->version})", 
+                        $jobProfile
+                    );
                 }
                 $message = 'Draf Job Profile berhasil disimpan.';
             }
