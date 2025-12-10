@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AuditLog;
 use App\Models\User;
+use Maatwebsite\Excel\Facades\Excel; 
+use App\Exports\AuditLogExport;
 
 class ActivityLogController extends Controller
 {
@@ -33,5 +35,10 @@ class ActivityLogController extends Controller
             'actions' => $actions,
             'filters' => $request->all()
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        return Excel::download(new AuditLogExport($request), 'activity_logs_' . date('Y-m-d_His') . '.xlsx');
     }
 }

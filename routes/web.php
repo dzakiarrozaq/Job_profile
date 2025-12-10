@@ -113,6 +113,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
         Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
     });
 
     

@@ -23,6 +23,7 @@ class ProfileUpdateRequest extends FormRequest
             'place_of_birth' => ['nullable', 'string', 'max:100'],
             'date_of_birth' => ['nullable', 'date'],
             'domicile' => ['nullable', 'string', 'max:255'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'], // Max 2MB, format gambar
         ];
     }
 }
