@@ -56,8 +56,9 @@
                     
                     <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
                         <div class="flex items-center gap-3">
-                            <img class="h-10 w-10 rounded-full object-cover" src="https://i.pravatar.cc/150?u={{ $employee->email }}" alt="Foto">
-                            <div>
+                            <img class="h-16 w-16 rounded-full object-cover" 
+                                src="{{ $employee->profile_photo_path ? asset('storage/' . $employee->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($employee->name) }}" 
+                                alt="Foto">                            <div>
                                 <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ $employee->name }}</h4>
                                 <p class="text-sm text-gray-500 dark:text-gray-300">{{ $employee->position->title ?? 'Posisi tidak diketahui' }}</p>
                             </div>

@@ -5,116 +5,116 @@ namespace App\Http\Controllers\KaryawanOrganik;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\JobCompetency;
-use App\Models\CompetenciesMaster; 
+use Illuminate\Support\Facades\DB; // Gunakan Facade biar lebih aman
+use App\Models\GapRecord;
 use App\Models\EmployeeProfile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
-use App\Models\AuditLog;
-
+use App\Models\JobCompetency;
 
 class PenilaianController extends Controller
 {
-    /**
-     * Menampilkan halaman self-assessment.
-     */
-    public function index(): View
+    public function index()
     {
         $user = Auth::user();
-        $user->load('position.jobProfile.competencies.master', 'employeeProfiles');
-        $jobProfile = $user->position?->jobProfile;
-
-        if (!$jobProfile) {
-            return view('karyawan.penilaian', [
-                'assessments' => collect([]),
-                'globalStatus' => 'no_profile',
-                'hasDrafts' => false
-            ]);
-        }
-
-        $jobCompetencies = $jobProfile->competencies; 
         
-        $employeeProfiles = $user->employeeProfiles
-                            ->keyBy('competency_code');
+        $position = $user->position;
+        $jobProfile = $position?->jobProfile;
 
-        if ($employeeProfiles->isEmpty()) {
-            $globalStatus = 'not_started'; // Status Baru
-        } elseif ($employeeProfiles->contains('status', 'pending_verification')) {
-            $globalStatus = 'pending';
-        } elseif ($employeeProfiles->every(fn($p) => $p->status === 'verified')) {
-            $globalStatus = 'verified';
-        } else {
-            $globalStatus = 'draft';
+
+        // Cek jika tidak ada posisi atau profil
+        if (!$position || !$jobProfile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profil Kompetensi belum diatur untuk posisi Anda.');
         }
 
-        $assessments = $jobCompetencies->map(function ($comp) use ($employeeProfiles) {
-            $competencyCode = $comp->master->competency_code;
-            $competencyName = $comp->master->competency_name;
+        $competencies = $jobProfile->competencies;
 
-            $profile = $employeeProfiles->get($competencyCode); 
+        // Ambil gap record yang sudah ada
+        $existingGaps = GapRecord::where('user_id', $user->id)
+            ->where('job_profile_id', $jobProfile->id)
+            ->get();
+
+        // Mapping data untuk dikirim ke View
+        $dataPenilaian = $competencies->map(function ($comp) use ($existingGaps) {
+            $gap = $existingGaps->firstWhere('competency_name', $comp->competency_name);
 
             return (object) [
-                'competency_name' => $competencyName,
-                'competency_code' => $competencyCode,
-                'ideal_level' => $comp->ideal_level,
-                'current_level' => $profile->current_level ?? '-',
-                'submitted_level' => $profile->submitted_level ?? null,
-                'status' => $profile->status ?? 'draft',
-                'reviewer_notes' => $profile->reviewer_notes ?? null
+                'id'              => $comp->id,
+                'competency_name' => $comp->competency_name,
+                'competency_code' => $comp->competency_code ?? '-', 
+                
+                // PERBAIKAN 1: Gunakan 'ideal_level' (sesuai database baru)
+                'ideal_level'     => $comp->ideal_level, 
+                
+                'current_level'   => $gap ? $gap->current_level : 0,
             ];
         });
 
+        $employeeProfile = EmployeeProfile::where('user_id', $user->id)->latest()->first();
+        $statusSaatIni = $employeeProfile ? $employeeProfile->status : 'not_started';
+
         return view('karyawan.penilaian', [
-            'assessments' => $assessments,
-            'globalStatus' => $globalStatus, 
-            'hasDrafts' => $globalStatus === 'draft',
+            'user' => $user,
+            'jobProfile' => $jobProfile,
+            'assessments' => $dataPenilaian, // Variabel ini sudah BENAR
+            'globalStatus' => $statusSaatIni, // Variabel ini sudah BENAR
+            'status' => $statusSaatIni
         ]);
     }
 
-    /**
-     * Menyimpan atau mengajukan self-assessment.
-     */
     public function store(Request $request)
     {
         $user = Auth::user();
-        $action = $request->input('action');
-        $newStatus = ($action === 'submit') ? 'pending_verification' : 'draft';
+        $jobProfile = $user->position->jobProfile;
+
+        $request->validate([
+            'competencies' => 'required|array',
+            'competencies.*' => 'required|integer|min:1|max:5',
+        ]);
 
         DB::beginTransaction();
         try {
-            foreach ($request->input('competency', []) as $code => $level) {
+            foreach ($request->competencies as $competencyId => $currentLevel) {
+                // Cari data kompetensi asli dari database master/job competency
+                $masterComp = JobCompetency::find($competencyId);
                 
-                if (is_null($level)) continue; 
+                if($masterComp) {
+                    // PERBAIKAN 2: Gunakan 'ideal_level' (sesuai database baru)
+                    $idealLevel = $masterComp->ideal_level;
+                    
+                    $gapValue = $currentLevel - $idealLevel;
 
-                $master = CompetenciesMaster::where('competency_code', $code)->first();
-
-                EmployeeProfile::updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'competency_code' => $code
-                    ],
-                    [
-                        'competency_name' => $master?->competency_name ?? $code, 
-                        'submitted_level' => $level,
-                        'status' => $newStatus,
-                        'submitted_at' => ($newStatus === 'pending_verification') ? now() : null,
-                    ]
-                );
+                    GapRecord::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'job_profile_id' => $jobProfile->id,
+                            'competency_name' => $masterComp->competency_name
+                        ],
+                        [
+                            'competency_code' => $masterComp->competency_code,
+                            'ideal_level' => $idealLevel,
+                            'current_level' => $currentLevel,
+                            'gap_value' => $gapValue
+                        ]
+                    );
+                }
             }
-            
+
+            // Update status profil karyawan
+            EmployeeProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'status' => 'pending_verification',
+                    'submitted_at' => now()
+                ]
+            );
+
             DB::commit();
 
-            if ($newStatus === 'pending_verification') {
-                AuditLog::record('Submit Assessment', 'Mengajukan penilaian kompetensi untuk diverifikasi.', Auth::user());
-                return redirect()->route('penilaian')->with('success', 'Penilaian berhasil diajukan ke Supervisor!');
-            } else {
-                AuditLog::record('Save Draft Assessment', 'Menyimpan draf penilaian kompetensi.', Auth::user());
-                return redirect()->route('penilaian')->with('success', 'Draf berhasil disimpan.');
-            }
+            return redirect()->route('dashboard')->with('success', 'Penilaian berhasil dikirim! Menunggu verifikasi supervisor.');
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

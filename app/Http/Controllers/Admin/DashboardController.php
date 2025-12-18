@@ -18,14 +18,17 @@ class DashboardController extends Controller
      */
     public function index(): View
     {
-        $totalPengguna = User::where('status', 'active')->count();
+
+        $totalPengguna = User::count();
+
         $totalJobProfile = JobProfile::count();
+
         $totalPelatihan = Training::where('status', 'approved')->count();
         
         $persetujuanTertunda = Training::whereIn('status', ['pending_supervisor', 'pending_lp'])->count();
 
         $recentLogs = AuditLog::with('user') 
-                            ->orderBy('timestamp', 'desc')
+                            ->orderBy('created_at', 'desc') 
                             ->take(5)
                             ->get();
         

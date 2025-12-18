@@ -119,10 +119,9 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <div class="relative inline-block">
-                                <img class="h-20 w-20 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md mx-auto" 
+                                <img class="h-16 w-16 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md mr-4" 
                                     src="{{ $member->profile_photo_path ? asset('storage/' . $member->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($member->name) }}" 
                                     alt="Foto">
-                                <span class="absolute bottom-1 right-1 h-5 w-5 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></span>
                             </div>
                             <div>
                                 <p class="font-semibold text-gray-900 dark:text-white">{{ $member->name }}</p>

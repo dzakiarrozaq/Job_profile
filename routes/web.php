@@ -22,6 +22,7 @@ use App\Http\Controllers\Supervisor\TeamController;
 use App\Http\Controllers\Supervisor\LaporanController;
 use App\Http\Controllers\Admin\SystemReportController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\TrainingRecommendationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,7 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/katalog', function () { return view('karyawan.katalog'); })->name('katalog');
         Route::get('/riwayat', [DashboardController::class, 'riwayat'])->name('riwayat');
         Route::get('/rencana', function () { return view('karyawan.rencana'); })->name('rencana');
-        
+        Route::get('/rekomendasi', [TrainingRecommendationController::class, 'index'])->name('rekomendasi');
     });
 
     

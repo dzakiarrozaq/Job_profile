@@ -1,4 +1,15 @@
 <x-supervisor-layout>
+    @if ($errors->any())
+        <div class="bg-red-500 text-white p-4 mb-4 rounded-lg">
+            <h3 class="font-bold text-lg">⚠️ Gagal Menyimpan!</h3>
+            <ul class="list-disc list-inside mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <p class="mt-2 text-sm italic">Cek tab yang relevan untuk memperbaiki.</p>
+        </div>
+    @endif
     <x-slot name="header">
         <div class="flex items-center">
             <a href="{{ route('supervisor.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
@@ -8,6 +19,8 @@
             </h2>
         </div>
     </x-slot>
+
+    
 
     @php
         $responsibilitiesData = old('responsibilities', $jobProfile->responsibilities->map(fn($r) => ['key' => 'db_'.$r->id, 'id' => $r->id, 'description' => $r->description, 'expected_result' => $r->expected_result])->toArray());
@@ -30,8 +43,9 @@
     @endphp
 
     <div class="max-w-7xl mx-auto" 
-         x-data="{ 
-            currentTab: 'identifikasi',
+        x-data="{ 
+            {{-- LOGIKA: Jika ada error di kompetensi, otomatis buka tab kompetensi --}}
+            currentTab: '{{ $errors->has('competencies.*') ? 'kompetensi' : ($errors->has('responsibilities.*') ? 'tanggung_jawab' : ($errors->has('specifications.*') ? 'spesifikasi' : 'identifikasi')) }}',
             isLoadingAI: false,
             positionTitle: {{ Js::from($jobProfile->position->title ?? '') }},
             tujuan_jabatan: {{ Js::from(old('tujuan_jabatan', $jobProfile->tujuan_jabatan ?? '')) }},
@@ -341,7 +355,8 @@
                                 <template x-for="(row, index) in competencies" :key="row.key">
                                     <tr class="bg-white dark:bg-gray-800">
                                         <td class="p-2">
-                                            <input type="hidden" :name="'competencies['+index+'][competency_master_id]'" x-model="row.competency_master_id">
+                                            <input type="hidden" :name="'competencies['+index+'][competency_name]'" x-model="row.competency_name">
+                                            <input type="hidden" :name="'competencies['+index+'][competency_code]'" x-model="row.competency_code">
                                             <input type="text" x-model="row.type" :name="'competencies['+index+'][type]'" 
                                                    class="w-full rounded-md border-gray-300 text-sm dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-800" readonly>
                                         </td>
@@ -350,21 +365,35 @@
                                                    class="w-full rounded-md border-gray-300 text-sm  dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-800" readonly>
                                         </td>
                                         <td class="p-2 relative">
+                                            {{-- 1. INPUT HIDDEN (WAJIB ADA agar data terkirim ke Controller) --}}
+                                            <input type="hidden" :name="'competencies['+index+'][competency_master_id]'" x-model="row.competency_master_id">
+                                            <input type="hidden" :name="'competencies['+index+'][competency_code]'" x-model="row.competency_code">
+
+                                            {{-- 2. INPUT TEXT PENCARIAN --}}
                                             <input type="text" 
-                                                   x-model="row.competency_name"
-                                                   @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
-                                                   @focus="if(row.competency_name.length >= 2) searchCompetencies(row.competency_name, index)"
-                                                   :name="'competencies['+index+'][competency_name]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                   :class="{ 'border-red-500': row.competency_master_id === null && row.competency_name.length > 0 }"
-                                                   placeholder="Ketik min 2 huruf...">
-                                            
+                                                x-model="row.competency_name"
+                                                @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
+                                                @focus="if(row.competency_name.length >= 2) searchCompetencies(row.competency_name, index)"
+                                                :name="'competencies['+index+'][competency_name]'" 
+                                                class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                :class="{ 'border-red-500': row.competency_master_id === null && row.competency_name.length > 0 }"
+                                                placeholder="Ketik min 2 huruf..."
+                                                autocomplete="off">
+
+                                            {{-- 3. INDIKATOR ID TERPILIH (Agar Anda tahu ID sudah masuk) --}}
+                                            <span class="block mt-1 text-[10px] text-green-600 font-bold" 
+                                                x-show="row.competency_master_id" 
+                                                x-text="'✅ ID Terpilih: ' + row.competency_master_id">
+                                            </span>
+
+                                            {{-- 4. KOTAK SUGGESTION (DROPDOWN) --}}
                                             <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
-                                                 @click.away="searchResults = []; activeSuggestionIndex = -1;" 
-                                                 class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600">
+                                                @click.away="searchResults = []; activeSuggestionIndex = -1;" 
+                                                class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600">
+                                                
                                                 <template x-for="result in searchResults" :key="result.id">
                                                     <div @click="selectCompetency(result, index)" 
-                                                         class="p-3 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                                                        class="p-3 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0">
                                                         <div class="font-bold dark:text-white" x-text="result.competency_name"></div>
                                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                                             <span x-text="'Kode: ' + result.competency_code"></span>
@@ -374,9 +403,10 @@
                                                 </template>
                                             </div>
                                             
+                                            {{-- 5. PESAN ERROR JIKA LUPA KLIK --}}
                                             <p x-show="row.competency_master_id === null && row.competency_name.length > 0" 
-                                               class="text-xs text-red-500 mt-1">
-                                                ⚠️ Pilih kompetensi dari daftar suggestion
+                                            class="text-xs text-red-500 mt-1">
+                                                ⚠️ Klik pilihan di list agar ID tersimpan
                                             </p>
                                         </td>
                                         <td class="p-2">
@@ -477,4 +507,26 @@
             </div>
         </form>
     </div>
+    {{-- SCRIPT: Otomatis Buka Tab yang Error --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            @if ($errors->any())
+                // Logika sederhana: Cek field mana yang error, lalu buka tab-nya
+                const errors = @json($errors->keys());
+                let targetTab = 'identifikasi';
+
+                if (errors.some(e => e.includes('competencies'))) targetTab = 'kompetensi';
+                else if (errors.some(e => e.includes('responsibilities'))) targetTab = 'tanggung_jawab';
+                else if (errors.some(e => e.includes('specifications'))) targetTab = 'spesifikasi';
+                else if (errors.some(e => e.includes('workRelations'))) targetTab = 'dimensi'; // asumsi tab 2
+
+                // Manipulasi Alpine.js state dari luar (agak tricky tapi bisa via dispatch)
+                // Cara termudah: Cari elemen root x-data dan ubah __x.$data.currentTab
+                const root = document.querySelector('[x-data]');
+                if(root) {
+                    root.__x.$data.currentTab = targetTab;
+                }
+            @endif
+        });
+    </script>
 </x-supervisor-layout>

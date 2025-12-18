@@ -78,46 +78,35 @@
                     </a>
                     
                     <nav class="space-y-1">
-                        <h2 class="sidebar-heading">Manajemen Tim</h2>
-                        <a href="{{ route('supervisor.dashboard') }}" class="sidebar-link {{ request()->routeIs('supervisor.dashboard') ? 'active' : '' }}">
-                            <ion-icon name="home-outline"></ion-icon>
-                            Dashboard Tim
+                        <h2 class="sidebar-heading">Menu Utama</h2>
+                        
+                        <a href="{{ route('lp.dashboard') }}" class="sidebar-link {{ request()->routeIs('lp.dashboard') ? 'active' : '' }}">
+                            <ion-icon name="grid-outline"></ion-icon>
+                            Dashboard LP
                         </a>
-                        <a href="{{ route('supervisor.persetujuan') }}" class="sidebar-link {{ request()->routeIs('supervisor.persetujuan') ? 'active' : '' }} relative">
-                            <ion-icon name="checkbox-outline"></ion-icon>
-                            Persetujuan
-                        </a>
-                        <a href="{{ route('supervisor.tim.index') }}" class="sidebar-link {{ request()->routeIs('supervisor.tim*') ? 'active' : '' }}">
-                            <ion-icon name="people-outline"></ion-icon>
-                            Anggota Tim
-                        </a>
-                        <a href="{{ route('supervisor.laporan.index') }}" class="sidebar-link {{ request()->routeIs('supervisor.laporan*') ? 'active' : '' }}">
-                            <ion-icon name="bar-chart-outline"></ion-icon>
-                            Laporan Kompetensi
+                        
+                        {{-- Menu Katalog (Nanti kita buat) --}}
+                        <a href="#" class="sidebar-link">
+                            <ion-icon name="library-outline"></ion-icon>
+                            Kelola Katalog
                         </a>
 
-                        <a href="{{ route('supervisor.job-profile.index') }}" 
-                            class="sidebar-link {{ request()->routeIs('supervisor.job-profile.*') ? 'active' : '' }}">
-                            <ion-icon name="briefcase-outline"></ion-icon>
-                            Manajemen Job Profile
+                        {{-- Menu Persetujuan --}}
+                        <a href="#" class="sidebar-link flex justify-between">
+                            <div class="flex items-center">
+                                <ion-icon name="checkmark-done-circle-outline"></ion-icon>
+                                Verifikasi Rencana
+                            </div>
+                            {{-- Badge Notifikasi jika ada --}}
+                            {{-- <span class="bg-red-500 text-white text-[10px] px-2 rounded-full">3</span> --}}
                         </a>
-
+                        
                         <div class="my-6 border-t border-gray-700"></div>
 
-                        <h2 class="sidebar-heading">Area Pribadi</h2>
-                        
-                        <a href="{{ route('dashboard') }}" 
-                           class="sidebar-link hover:bg-indigo-900 text-indigo-200 group transition-colors">
-                            <div class="flex items-center w-full">
-                                <div class="bg-indigo-500/20 p-1.5 rounded-md mr-3 group-hover:bg-indigo-500 transition-colors">
-                                    <ion-icon name="person-outline" class="text-indigo-300 group-hover:text-white"></ion-icon>
-                                </div>
-                                <div class="flex-1">
-                                    <span class="block font-semibold text-gray-200">Pengembangan Diri</span>
-                                    <span class="block text-[10px] text-gray-400 group-hover:text-indigo-200">Masuk ke Mode Karyawan</span>
-                                </div>
-                                <ion-icon name="arrow-forward-outline" class="text-gray-500 group-hover:text-white"></ion-icon>
-                            </div>
+                        <h2 class="sidebar-heading">Laporan</h2>
+                        <a href="#" class="sidebar-link">
+                            <ion-icon name="pie-chart-outline"></ion-icon>
+                            Laporan Training
                         </a>
                     </nav>
 

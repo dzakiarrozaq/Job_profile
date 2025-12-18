@@ -15,30 +15,27 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        // 1. Eager Loading Relasi yang Dibutuhkan
         $user->load([
-            'position.jobProfile.competencies', // Load Posisi -> Job Profile -> Kompetensi
-            'position.unit',                   // Load Unit
-            'manager',                         // Load Supervisor
-            'gapRecords',                      // Load Gap Analysis
-            'employeeProfiles'                 // Load Status Penilaian
+            'position.jobProfile.competencies',
+            'position.unit',
+            'manager',
+            'gapRecords',
+            'employeeProfile' // Gunakan 'employeeProfile' (Singular) sesuai model User
         ]);
         
-        $user->load('position.jobProfile', 'manager');
-
-        $employeeProfiles = $user->employeeProfiles;
+        // 2. Tentukan Status Global Penilaian
+        // Gunakan nama $globalStatus agar konsisten
+        $employeeProfile = $user->employeeProfile; // Pastikan relasi di User.php singular
         
-        if ($employeeProfiles->isEmpty()) {
-            $globalStatus = 'not_started'; // Belum pernah mengisi
-        } elseif ($employeeProfiles->contains('status', 'pending_verification')) {
-            $globalStatus = 'pending'; // Menunggu verifikasi
-        } elseif ($employeeProfiles->every(fn($p) => $p->status === 'verified')) {
-            $globalStatus = 'verified'; // Selesai
+        if (!$employeeProfile) {
+            $globalStatus = 'not_started';
         } else {
-            $globalStatus = 'draft'; // Masih draft
+            $globalStatus = $employeeProfile->status;
         }
 
-        $jobProfile = $user->position?->jobProfile; 
-
+        // 3. Analisis Gap Kompetensi
+        $jobProfile = $user->position?->jobProfile;
         $gapAnalysisData = collect([]);
         $recommendations = collect([]);
         $totalCompetencies = 0;
@@ -47,38 +44,44 @@ class DashboardController extends Controller
         $assessmentStatus = false;
 
         if ($jobProfile) {
-            
             $gapAnalysisData = GapRecord::where('user_id', $user->id)
-                                ->where('job_profile_id', $jobProfile->id)
-                                ->orderBy('gap_value', 'asc')
-                                ->get();
+                ->where('job_profile_id', $jobProfile->id)
+                ->orderBy('gap_value', 'asc')
+                ->get();
             
             $totalCompetencies = $gapAnalysisData->count();
             $gapCompetencies = $gapAnalysisData->where('gap_value', '<', 0)->count();
             $metCompetencies = $totalCompetencies - $gapCompetencies;
 
-            $neededCompetencies = $gapAnalysisData->where('gap_value', '<', 0)->pluck('competency_code');
+            // ==========================================
+            // LOGIKA REKOMENDASI TRAINING
+            // ==========================================
+            $neededCompetencies = $gapAnalysisData->where('gap_value', '<', 0)->pluck('competency_name');
+            
             if ($neededCompetencies->isNotEmpty()) {
-                 $recommendations = Training::where(function ($query) use ($neededCompetencies) {
-                    foreach ($neededCompetencies as $code) {
-                        $query->orWhere('skill_tags', 'LIKE', "%{$code}%");
+                $recommendations = Training::where(function ($query) use ($neededCompetencies) {
+                    foreach ($neededCompetencies as $name) {
+                        $query->orWhere('title', 'LIKE', "%{$name}%")
+                              ->orWhere('description', 'LIKE', "%{$name}%");
                     }
                 })
-                ->where('status', 'approved')
                 ->take(3)
                 ->get();
+            } else {
+                // Jika tidak ada gap, tampilkan random terbaru
+                $recommendations = Training::latest()->take(3)->get();
             }
-            
-            $assessmentStatus = $user->employeeProfiles()
-                                     ->where('status', 'pending_verification')
-                                     ->exists();
+
+            // Cek apakah ada status pending
+            $assessmentStatus = ($globalStatus === 'pending_verification');
         }
 
+        // 4. Data Rencana Pelatihan (History)
         $recentTrainings = TrainingPlan::where('user_id', $user->id)
-                            ->with('items.training')
-                            ->orderBy('created_at', 'desc')
-                            ->take(5)
-                            ->get();
+            ->with('items.training')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
         return view('karyawan.dashboard', [
             'user' => $user, 
@@ -89,12 +92,12 @@ class DashboardController extends Controller
             'recommendations' => $recommendations,
             'recentTrainings' => $recentTrainings,
             'assessmentStatus' => $assessmentStatus,
+            
+            // [PENTING] Kirim variabel globalStatus
             'globalStatus' => $globalStatus,
         ]);
     }
-    /**
-     * Menampilkan halaman Riwayat Pelatihan Saya.
-     */
+
     public function riwayat(Request $request)
     {
         $user = Auth::user();

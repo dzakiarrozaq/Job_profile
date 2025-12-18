@@ -114,9 +114,15 @@
                                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">Analisis Kesenjangan Kompetensi</h2>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Berdasarkan penilaian terakhir yang terverifikasi.</p>
                             </div>
-                            @if($gapRecords->count() > 0)
+                            
+                            {{-- STATUS BADGE: Cek apakah Employee Profile statusnya 'verified' --}}
+                            @if($user->employeeProfile && $user->employeeProfile->status === 'verified')
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                     Terverifikasi
+                                </span>
+                            @elseif($user->employeeProfile && $user->employeeProfile->status === 'pending_verification')
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                    Menunggu Verifikasi
                                 </span>
                             @else
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
@@ -136,44 +142,66 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @forelse ($gapRecords as $gap)
-                                    <tr>
-                                        <td class="px-4 py-3">
-                                            <p class="font-medium text-gray-900 dark:text-white">{{ $gap->competency_name }}</p>
-                                            <p class="text-xs text-gray-400">{{ $gap->competency_code }}</p>
-                                        </td>
-                                        <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400 font-medium">{{ $gap->ideal_level }}</td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 font-bold text-gray-800 dark:text-gray-200">
-                                                {{ $gap->current_level }}
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            @if($gap->gap_value < 0)
-                                                <span class="text-red-600 dark:text-red-400 font-bold text-lg">{{ $gap->gap_value }}</span>
-                                            @elseif($gap->gap_value > 0)
-                                                <span class="text-blue-600 dark:text-blue-400 font-bold text-lg">+{{ $gap->gap_value }}</span>
-                                            @else
-                                                <span class="text-green-600 dark:text-green-400 font-bold text-lg">0</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                            <ion-icon name="document-text-outline" class="text-4xl mb-2 opacity-50"></ion-icon>
-                                            <p>Belum ada data penilaian yang diverifikasi.</p>
-                                            <a href="{{ route('penilaian') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm mt-2 inline-block">
-                                                Lakukan Penilaian Sekarang &rarr;
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @endforelse
+                                    
+                                    {{-- [PERBAIKAN UTAMA] --}}
+                                    {{-- HANYA TAMPILKAN JIKA STATUS SUDAH VERIFIED --}}
+                                    @if($user->employeeProfile && $user->employeeProfile->status === 'verified')
+
+                                        @forelse ($gapRecords as $gap)
+                                        <tr>
+                                            <td class="px-4 py-3">
+                                                <p class="font-medium text-gray-900 dark:text-white">{{ $gap->competency_name }}</p>
+                                                <p class="text-xs text-gray-400">{{ $gap->competency_code }}</p>
+                                            </td>
+                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400 font-medium">{{ $gap->ideal_level }}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 font-bold text-gray-800 dark:text-gray-200">
+                                                    {{ $gap->current_level }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                @if($gap->gap_value < 0)
+                                                    <span class="text-red-600 dark:text-red-400 font-bold text-lg">{{ $gap->gap_value }}</span>
+                                                @elseif($gap->gap_value > 0)
+                                                    <span class="text-blue-600 dark:text-blue-400 font-bold text-lg">+{{ $gap->gap_value }}</span>
+                                                @else
+                                                    <span class="text-green-600 dark:text-green-400 font-bold text-lg">0</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                                                Data kompetensi tidak ditemukan.
+                                            </td>
+                                        </tr>
+                                        @endforelse
+
+                                    @else
+                                        {{-- JIKA BELUM VERIFIED (PENDING / DRAFT / NULL) --}}
+                                        <tr>
+                                            <td colspan="4" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                                                @if($user->employeeProfile && $user->employeeProfile->status === 'pending_verification')
+                                                    <ion-icon name="hourglass-outline" class="text-4xl mb-2 text-yellow-500"></ion-icon>
+                                                    <p class="font-bold text-gray-700">Sedang Diverifikasi</p>
+                                                    <p class="text-xs mt-1">Hasil analisis akan muncul setelah disetujui Supervisor.</p>
+                                                @else
+                                                    <ion-icon name="document-text-outline" class="text-4xl mb-2 opacity-50"></ion-icon>
+                                                    <p>Belum ada data penilaian yang diverifikasi.</p>
+                                                    <a href="{{ route('penilaian') }}" class="text-indigo-600 hover:underline text-sm mt-2 inline-block">
+                                                        Lakukan Penilaian Sekarang &rarr;
+                                                    </a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endif
+
                                 </tbody>
                             </table>
                         </div>
 
-                        @if($gapRecords->where('gap_value', '<', 0)->count() > 0)
+                        {{-- KOTAK REKOMENDASI (JUGA HARUS DI-PROTECT) --}}
+                        @if($user->employeeProfile && $user->employeeProfile->status === 'verified' && $gapRecords->where('gap_value', '<', 0)->count() > 0)
                             <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-3">
                                 <ion-icon name="bulb-outline" class="text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></ion-icon>
                                 <div>
