@@ -24,7 +24,6 @@
                     <h3 class="text-lg font-bold text-gray-800">Pelatihan yang Disarankan:</h3>
                 </div>
 
-                {{-- Grid Rekomendasi --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                     @forelse($recommendations as $training)
                         <div class="group border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-indigo-300 transition duration-300 bg-white flex flex-col h-full">
@@ -72,7 +71,6 @@
                         </div>
 
                         <div class="flex-shrink-0">
-                            {{-- Ganti 'katalog.index' dengan nama route katalog anda yang sebenarnya --}}
                             <a href="{{ route('katalog') }}" class="group inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-bold rounded-lg hover:bg-indigo-50 transition-all duration-300 shadow-lg hover:shadow-indigo-500/30">
                                 Lihat Semua Katalog
                                 <svg class="w-5 h-5 text-indigo-600 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>

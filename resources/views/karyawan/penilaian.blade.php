@@ -9,7 +9,6 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- Flash Messages --}}
             @if (session('success'))
                 <div class="mb-6 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg">
                     {{ session('success') }}
@@ -54,7 +53,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 
                                 @forelse ($assessments as $item)
-                                <tr class="@if($globalStatus == 'verified') bg-green-50 @elseif($globalStatus == 'pending_verification') bg-yellow-50 @endif">
+                                <tr class="@if($globalStatus == 'verified')  @elseif($globalStatus == 'pending_verification') bg-yellow-50 @endif">
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <p class="font-medium text-gray-900">{{ $item->competency_name }}</p>
                                         <p class="text-xs text-gray-500">{{ $item->competency_code }}</p>
@@ -88,10 +87,8 @@
                                     </td>
                                     
                                     <td class="px-6 py-4 text-center">
-                                        {{-- LOGIKA BARU: Cek Status Global Dulu --}}
                                         
                                         @if($globalStatus === 'verified')
-                                            {{-- JIKA SUDAH DIVERIFIKASI: Tampilkan Gap Final --}}
                                             @php
                                                 $gap = $item->current_level - $item->ideal_level;
                                             @endphp
@@ -105,13 +102,11 @@
                                             @endif
 
                                         @elseif($item->current_level > 0)
-                                            {{-- JIKA SUDAH ISI TAPI BELUM DIVERIFIKASI --}}
                                             <span class="px-2 py-1 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg">
                                                 Menunggu Verifikasi
                                             </span>
                                             
                                         @else
-                                            {{-- JIKA BELUM ISI --}}
                                             <span class="text-gray-400">-</span>
                                         @endif
                                     </td>

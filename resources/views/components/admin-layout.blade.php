@@ -59,7 +59,7 @@
                             <ion-icon name="briefcase-outline"></ion-icon>
                             Manajemen Job Profile
                         </a>
-                        <a href="#" class="sidebar-link">
+                        <a href="{{ route('admin.trainings.index') }}" class="sidebar-link {{ request()->routeIs('admin.trainings.*') ? 'active' : '' }}">
                             <ion-icon name="library-outline"></ion-icon>
                             Katalog Pelatihan
                         </a>

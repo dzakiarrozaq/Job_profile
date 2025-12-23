@@ -23,6 +23,10 @@ use App\Http\Controllers\Supervisor\LaporanController;
 use App\Http\Controllers\Admin\SystemReportController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\TrainingRecommendationController;
+use App\Http\Controllers\KatalogController;
+use App\Http\Controllers\Admin\AdminTrainingController;
+use App\Http\Controllers\IdpController;
+use App\Http\Controllers\Supervisor\SupervisorIdpController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,10 +58,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
         Route::post('/penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
-        Route::get('/katalog', function () { return view('karyawan.katalog'); })->name('katalog');
         Route::get('/riwayat', [DashboardController::class, 'riwayat'])->name('riwayat');
         Route::get('/rencana', function () { return view('karyawan.rencana'); })->name('rencana');
         Route::get('/rekomendasi', [TrainingRecommendationController::class, 'index'])->name('rekomendasi');
+        Route::get('/katalog', [KatalogController::class, 'index'])->name('katalog');
+        Route::get('/katalog/{id}', [KatalogController::class, 'show'])->name('katalog.show');
+
+        Route::get('/my-idp', [IdpController::class, 'index'])->name('idp.index');
+        Route::post('/my-idp', [IdpController::class, 'store'])->name('idp.store');
     });
 
     
@@ -88,6 +96,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
+
+        Route::get('/idp-approval', [SupervisorIdpController::class, 'index'])->name('idp.index');
+        Route::get('/idp-approval/{id}', [SupervisorIdpController::class, 'show'])->name('idp.show');
+        Route::post('/idp-approval/{id}', [SupervisorIdpController::class, 'update'])->name('idp.update');
     });
 
     
@@ -117,6 +129,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
+
+        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
+
+        Route::get('/trainings/create', [AdminTrainingController::class, 'create'])->name('trainings.create');
+        Route::post('/trainings', [AdminTrainingController::class, 'store'])->name('trainings.store');
+        
+        Route::delete('/trainings/{id}', [AdminTrainingController::class, 'destroy'])->name('trainings.destroy');
+        Route::get('/trainings/{id}/edit', [AdminTrainingController::class, 'edit'])->name('trainings.edit');
+        Route::put('/trainings/{id}', [AdminTrainingController::class, 'update'])->name('trainings.update');
     });
 
     
