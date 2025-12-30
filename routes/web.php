@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
          ->name('profile.trigger-reset');
     
     // --- Rute Karyawan ---
-    Route::middleware(['role:Karyawan Organik,Supervisor'])->group(function () {
+    Route::middleware(['role:Karyawan Organik,Supervisor,Karyawan Outsourcing'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
         Route::post('/penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
@@ -158,5 +158,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
-// File auth bawaan Laravel
 require __DIR__.'/auth.php';

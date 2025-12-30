@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB; // Tambahkan DB Facade
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Position;
@@ -25,21 +26,36 @@ class TeamController extends Controller
     {
         $supervisor = Auth::user();
         
-        $query = User::where('manager_id', $supervisor->id)
-                     ->with(['position', 'department', 'roles']); 
+        $baseQuery = User::where('manager_id', $supervisor->id)
+                         ->with(['position', 'department', 'roles']); 
 
-        if ($request->has('search')) {
+        $allMembers = $baseQuery->get(); 
+        
+        $organicCount = $allMembers->filter(function($user) {
+            return $user->roles->contains('name', 'Karyawan Organik');
+        })->count();
+
+        $outsourcingCount = $allMembers->filter(function($user) {
+            return $user->roles->contains('name', 'Karyawan Outsourcing');
+        })->count();
+
+        $totalCount = $allMembers->count();
+
+        if ($request->has('search') && $request->search != '') {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
+            $baseQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
         if ($request->has('role') && $request->role != 'all') {
-            $query->whereHas('roles', function($q) use ($request) {
+            $baseQuery->whereHas('roles', function($q) use ($request) {
                 $q->where('name', $request->role);
             });
         }
 
-        $teamMembers = $query->paginate(10);
+        $teamMembers = $baseQuery->paginate(10);
 
         foreach ($teamMembers as $member) {
             $latestAssessment = EmployeeProfile::where('user_id', $member->id)
@@ -55,7 +71,10 @@ class TeamController extends Controller
 
         return view('supervisor.tim.index', [
             'teamMembers' => $teamMembers,
-            'filters' => $request->all()
+            'filters' => $request->all(),
+            'totalCount' => $totalCount,           // <--- Baru
+            'organicCount' => $organicCount,       // <--- Baru
+            'outsourcingCount' => $outsourcingCount // <--- Baru
         ]);
     }
 
@@ -101,6 +120,7 @@ class TeamController extends Controller
     {
         $positions = Position::orderBy('title', 'asc')->get();
         $departments = Department::orderBy('name', 'asc')->get();
+        
         $roles = Role::whereIn('name', ['Karyawan Organik', 'Karyawan Outsourcing'])->get();
 
         return view('supervisor.tim.create', [
@@ -122,35 +142,38 @@ class TeamController extends Controller
             'position_id' => ['required', 'exists:positions,id'],
             'department_id' => ['required', 'exists:departments,id'],
             'batch_number' => ['nullable', 'string', 'max:50'],
-
             'gender' => ['required', 'in:Laki-laki,Perempuan'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'], // Max 2MB, harus gambar
+            'profile_photo' => ['nullable', 'image', 'max:2048', 'mimes:jpg,jpeg,png'], 
             'phone_number' => ['nullable', 'string', 'max:20'],
             'hiring_date' => ['nullable', 'date'],
         ]);
 
-        $photoPath = null;
-        if ($request->hasFile('profile_photo')) {
-            $photoPath = $request->file('profile_photo')->store('profile-photos', 'public');
-        }
+        DB::transaction(function () use ($request) {
+            
+            $photoPath = null;
+            if ($request->hasFile('profile_photo')) {
+                $photoPath = $request->file('profile_photo')->store('profile-photos', 'public');
+            }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make('password'),
-            'department_id' => $request->department_id,
-            'position_id' => $request->position_id,
-            'batch_number' => $request->batch_number,
-            'manager_id' => Auth::id(), 
-            'status' => 'active',
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make('password123'), 
+                'department_id' => $request->department_id,
+                'position_id' => $request->position_id,
+                'batch_number' => $request->batch_number,
+                'manager_id' => Auth::id(), 
+                'status' => 'active',
+                'gender' => $request->gender,
+                'profile_photo_path' => $photoPath,
+                'phone_number' => $request->phone_number,
+                'hiring_date' => $request->hiring_date,
+            ]);
 
-            'gender' => $request->gender,
-            'profile_photo_path' => $photoPath,
-            'phone_number' => $request->phone_number,
-            'hiring_date' => $request->hiring_date,
-        ]);
-
-        $user->roles()->attach($request->role_id);
+            $user->roles()->attach($request->role_id);
+            
+            
+        });
 
         return redirect()->route('supervisor.tim.index')->with('success', 'Anggota tim baru berhasil ditambahkan.');
     }

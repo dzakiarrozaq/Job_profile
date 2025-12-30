@@ -60,19 +60,15 @@
                                     </td>
                                     <td class="px-4 py-4 text-center font-medium text-gray-700">{{ $item->ideal_level }}</td>
                                     
-                                    {{-- Level Aktual (Read Only) --}}
                                     <td class="px-4 py-4 text-center font-bold text-lg {{ $item->current_level > 0 ? 'text-green-600' : 'text-gray-400' }}">
                                         {{ $item->current_level > 0 ? $item->current_level : '-' }}
                                     </td>
 
                                     <td class="px-4 py-4 text-center">
                                         
-                                        {{-- PERBAIKAN 2: Cek Editability pakai $globalStatus --}}
                                         @if ($globalStatus == 'draft' || $globalStatus == 'not_started')
-                                            {{-- PERBAIKAN 3: Value ID ambil dari $item->id --}}
                                             <select name="competencies[{{ $item->id }}]" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 w-20 text-center">
                                                 <option value="">-</option>
-                                                {{-- PERBAIKAN 4: Cek selected pakai $item->current_level --}}
                                                 <option value="1" @selected($item->current_level == 1)>1</option>
                                                 <option value="2" @selected($item->current_level == 2)>2</option>
                                                 <option value="3" @selected($item->current_level == 3)>3</option>

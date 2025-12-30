@@ -1,7 +1,6 @@
 @php
     $user = Auth::user();
 
-    // Logika Data (Tetap sama, hanya dirapikan)
     $jobProfile = $user->position?->jobProfile;
     $competencies = $jobProfile?->competencies ?? collect([]);
     $totalComp = $competencies->count();
@@ -9,7 +8,6 @@
     $gapRecords = $user->gapRecords ?? collect([]);
     $metComp = $gapRecords->where('gap_value', '>=', 0)->count();
     
-    // Hitung Persentase untuk Progress Bar
     $percentMet = $totalComp > 0 ? round(($metComp / $totalComp) * 100) : 0;
 @endphp
 
@@ -23,7 +21,6 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- ALERT: JIKA DATA BELUM LENGKAP --}}
             @if(!$user->position)
                 <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
                     <ion-icon name="warning" class="text-yellow-500 text-xl mt-1"></ion-icon>

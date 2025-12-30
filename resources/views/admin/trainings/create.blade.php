@@ -10,7 +10,6 @@
             
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl">
                 
-                {{-- Header Form --}}
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Formulir Pelatihan Baru</h3>

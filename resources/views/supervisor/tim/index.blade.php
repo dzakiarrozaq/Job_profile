@@ -30,8 +30,7 @@
                 </div>
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Karyawan Organik</p>
-                    {{-- Anda bisa hitung ini di controller jika perlu angka pasti --}}
-                    <p class="text-2xl font-bold text-gray-800 dark:text-white">0</p> 
+                    <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ $organicCount}}</p>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex items-center border border-gray-100 dark:border-gray-700">
@@ -40,7 +39,7 @@
                 </div>
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Karyawan Outsourcing</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-white">0</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ $outsourcingCount}}</p>
                 </div>
             </div>
         </div>
@@ -59,6 +58,7 @@
                         <select name="role" class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="all">Semua Role</option>
                             <option value="Karyawan Organik" {{ request('role') == 'Karyawan Organik' ? 'selected' : '' }}>Karyawan Organik</option>
+                            <option value="Karyawan Outsourcing" {{ request('role') == 'Karyawan Outsourcing' ? 'selected' : '' }}>Karyawan Outsourcing</option>
                         </select>
                     </div>
                     <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 font-medium text-sm">

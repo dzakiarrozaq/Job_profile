@@ -10,7 +10,6 @@
             
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl">
                 
-                {{-- Header Form --}}
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Data Pelatihan</h3>
@@ -22,12 +21,10 @@
                 </div>
 
                 <div class="p-6">
-                    {{-- Form UPDATE --}}
                     <form action="{{ route('admin.trainings.update', $training->id) }}" method="POST" class="space-y-6">
                         @csrf
-                        @method('PUT') {{-- PENTING: Method PUT untuk Update --}}
+                        @method('PUT') 
 
-                        {{-- Judul Pelatihan --}}
                         <div>
                             <x-input-label for="title" :value="__('Judul Pelatihan')" />
                             <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" :value="old('title', $training->title)" required autofocus />
@@ -35,7 +32,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Provider --}}
                             <div>
                                 <x-input-label for="provider" :value="__('Penyedia (Provider)')" />
                                 <div class="relative mt-1">
@@ -47,7 +43,6 @@
                                 <x-input-error :messages="$errors->get('provider')" class="mt-2" />
                             </div>
 
-                            {{-- Durasi --}}
                             <div>
                                 <x-input-label for="duration" :value="__('Estimasi Durasi (Opsional)')" />
                                 <div class="relative mt-1">
@@ -60,7 +55,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Tipe Pelatihan --}}
                             <div>
                                 <x-input-label for="type" :value="__('Tipe Pelatihan')" />
                                 <select id="type" name="type" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
@@ -70,7 +64,6 @@
                                 <x-input-error :messages="$errors->get('type')" class="mt-2" />
                             </div>
 
-                            {{-- Tingkat Kesulitan --}}
                             <div>
                                 <x-input-label for="difficulty" :value="__('Tingkat Kesulitan')" />
                                 <select id="difficulty" name="difficulty" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">

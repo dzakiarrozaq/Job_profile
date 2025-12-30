@@ -8,7 +8,7 @@
 
     <div class="max-w-7xl mx-auto space-y-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex items-center">
                 <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full mr-4">
                     <ion-icon name="person-add-outline"
@@ -36,6 +36,15 @@
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Verifikasi Sertifikat</p>
                     <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $sertifikatCount }} Menunggu</p>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex items-center">
+                <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full mr-4">
+                    <ion-icon name="trending-up-outline" class="text-2xl text-purple-600 dark:text-purple-400"></ion-icon>
+                </div>
+                <div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">Persetujuan IDP</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $idpCount ?? 0 }} Menunggu</p>
                 </div>
             </div>
         </div>

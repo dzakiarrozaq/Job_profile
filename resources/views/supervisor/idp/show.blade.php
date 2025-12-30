@@ -109,7 +109,6 @@
                 <form action="{{ route('supervisor.idp.update', $idp->id) }}" method="POST">
                     @csrf
                     
-                    {{-- Field Catatan (Penting untuk revisi) --}}
                     <div class="mb-6">
                         <label class="block font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">
                             Catatan / Feedback (Opsional untuk Approve, Wajib untuk Tolak)
@@ -121,7 +120,6 @@
                     </div>
 
                     <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                        {{-- Tombol Approve --}}
                         <button type="submit" name="action" value="approve" 
                             class="flex-1 justify-center inline-flex items-center px-6 py-3 bg-green-600 border border-transparent rounded-lg font-bold text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-green-200"
                             onclick="return confirm('Apakah Anda yakin menyetujui IDP ini? Data akan tersimpan sebagai Final.')">
@@ -129,7 +127,6 @@
                             Setujui IDP
                         </button>
 
-                        {{-- Tombol Reject --}}
                         <button type="submit" name="action" value="reject" 
                             class="flex-1 justify-center inline-flex items-center px-6 py-3 bg-white border-2 border-red-500 rounded-lg font-bold text-red-600 uppercase tracking-widest hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
                             onclick="return confirm('Apakah Anda yakin ingin menolak/meminta revisi IDP ini?')">

@@ -1,4 +1,3 @@
-{{-- File: resources/views/supervisor/laporan/index.blade.php --}}
 <x-supervisor-layout>
     <x-slot name="header">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
@@ -50,7 +49,6 @@
 
         <div class="space-y-8">
             <h3 class="font-bold text-xl text-gray-800 dark:text-gray-100">Detail Kompetensi Anggota Tim</h3>
-
             @forelse($employees as $employee)
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
                     
@@ -132,6 +130,5 @@
                 {{ $employees->links() }}
             </div>
         </div>
-
     </div>
 </x-supervisor-layout>
