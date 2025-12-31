@@ -4,26 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; 
 
 class TrainingPlanItem extends Model
 {
     use HasFactory;
 
-    /**
-     * Mendapatkan data rencana (keranjang) induk.
-     */
-    public function trainingPlan(): BelongsTo
+    // --- PASTIKAN BARIS INI ADA ---
+    protected $guarded = ['id'];
+    // ------------------------------
+
+    public function plan()
     {
-        return $this->belongsTo(TrainingPlan::class);
+        return $this->belongsTo(TrainingPlan::class, 'training_plan_id');
     }
 
-    /**
-     * Mendapatkan data detail pelatihan (dari katalog).
-     * Ini adalah relasi yang hilang yang menyebabkan error.
-     */
-    public function training(): BelongsTo
+    public function training()
     {
-        return $this->belongsTo(Training::class);
+        return $this->belongsTo(Training::class, 'training_id');
     }
 }

@@ -27,6 +27,8 @@ use App\Http\Controllers\KatalogController;
 use App\Http\Controllers\Admin\AdminTrainingController;
 use App\Http\Controllers\IdpController;
 use App\Http\Controllers\Supervisor\SupervisorIdpController;
+use App\Http\Controllers\KaryawanOrganik\TrainingPlanController;
+use App\Http\Controllers\Supervisor\PersetujuanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,13 +61,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
         Route::post('/penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
         Route::get('/riwayat', [DashboardController::class, 'riwayat'])->name('riwayat');
-        Route::get('/rencana', function () { return view('karyawan.rencana'); })->name('rencana');
         Route::get('/rekomendasi', [TrainingRecommendationController::class, 'index'])->name('rekomendasi');
         Route::get('/katalog', [KatalogController::class, 'index'])->name('katalog');
         Route::get('/katalog/{id}', [KatalogController::class, 'show'])->name('katalog.show');
 
         Route::get('/my-idp', [IdpController::class, 'index'])->name('idp.index');
         Route::post('/my-idp', [IdpController::class, 'store'])->name('idp.store');
+
+        Route::get('/rencana', [TrainingPlanController::class, 'index'])->name('rencana.index');
+        Route::post('/rencana', [TrainingPlanController::class, 'store'])->name('rencana.store');
+
+        Route::get('/rencana/{id}', [TrainingPlanController::class, 'show'])->name('rencana.show');
+        Route::delete('/rencana/{id}', [TrainingPlanController::class, 'destroy'])->name('rencana.destroy');
+
+        Route::get('/training/{id}', [TrainingPlanController::class, 'showTraining'])->name('training.show');  
     });
 
     
@@ -100,6 +109,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/idp-approval', [SupervisorIdpController::class, 'index'])->name('idp.index');
         Route::get('/idp-approval/{id}', [SupervisorIdpController::class, 'show'])->name('idp.show');
         Route::post('/idp-approval/{id}', [SupervisorIdpController::class, 'update'])->name('idp.update');
+
+        Route::get('/rencana/{id}', [PersetujuanController::class, 'show'])->name('rencana.show');
+        
+        // 2. Route untuk Action Approve
+        Route::post('/rencana/{id}/approve', [PersetujuanController::class, 'approve'])->name('approve');
+        
+        // 3. Route untuk Action Reject
+        Route::post('/rencana/{id}/reject', [PersetujuanController::class, 'reject'])->name('reject');
     });
 
     

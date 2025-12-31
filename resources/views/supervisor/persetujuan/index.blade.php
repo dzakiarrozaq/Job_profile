@@ -109,36 +109,71 @@
              x-transition:enter-start="opacity-0 transform scale-95"
              x-transition:enter-end="opacity-100 transform scale-100">
              
-            @forelse($trainings as $training)
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-                    <div class="flex flex-col md:flex-row justify-between items-start gap-4">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-600 border border-blue-100">
-                                    {{ $training->type }}
-                                </span>
-                                <span class="text-xs text-gray-400 flex items-center">
-                                    <ion-icon name="person-circle-outline" class="mr-1"></ion-icon>
-                                    {{ $training->creator->name ?? 'Unknown' }}
-                                </span>
+            @forelse($trainings as $plan)
+    
+                {{-- LOGIC BARU: Ambil Item Pertama --}}
+                @php
+                    $item = $plan->items->first(); 
+                    // Jika item tidak ada (data lama/rusak), buat dummy agar tidak error
+                    if (!$item) {
+                        continue; // Skip data rusak
+                    }
+                @endphp
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow mb-4 border-l-4 border-indigo-500">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center">
+                            {{-- Foto User --}}
+                            <img class="h-10 w-10 rounded-full object-cover mr-3" 
+                                src="{{ $plan->user->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode($plan->user->name ?? 'Unknown') }}" 
+                                alt="Foto">
+                            
+                            <div>
+                                {{-- 1. Nama Karyawan (Ambil dari $plan->user) --}}
+                                <h4 class="font-bold text-gray-800 dark:text-gray-200">
+                                    {{ $plan->user->name ?? 'User Tidak Dikenal (ID: '.$plan->user_id.')' }}
+                                </h4>
+                                
+                                {{-- 2. Judul Pelatihan (Ambil dari $item) --}}
+                                <p class="text-sm text-indigo-600 font-semibold mt-1">
+                                    {{ $item->title ?? 'Judul Kosong' }}
+                                </p>
+
+                                <div class="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                                    {{-- Provider --}}
+                                    <span class="flex items-center">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                        {{ $item->provider ?? '-' }}
+                                    </span>
+
+                                    {{-- Metode --}}
+                                    <span class="bg-gray-100 px-2 py-0.5 rounded text-gray-600">
+                                        {{ $item->method ?? 'Offline' }}
+                                    </span>
+                                </div>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $training->title }}</h3>
-                            <p class="text-sm text-gray-600 mt-1 line-clamp-1">{{ $training->description }}</p>
-                            <p class="text-xs text-gray-400 mt-2 flex items-center gap-3">
-                                <span><ion-icon name="business-outline" class="align-middle"></ion-icon> {{ $training->provider ?? 'Internal' }}</span>
-                                <span><ion-icon name="time-outline" class="align-middle"></ion-icon> {{ $training->duration_hours ?? '-' }} Jam</span>
-                            </p>
                         </div>
-                        <div class="flex flex-col gap-2 w-full md:w-auto min-w-[140px]">
-                            <button class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 shadow-sm transition-transform active:scale-95">
+
+                        {{-- Tombol Aksi --}}
+                        <div class="flex flex-col gap-2">
+                            {{-- Tombol Review / Setujui --}}
+                            <a href="{{ route('supervisor.rencana.show', $plan->id) }}" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded text-center transition">
                                 Review & Setujui
-                            </button>
-                            <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                                Tolak
-                            </button>
+                            </a>
+
+                            {{-- Tombol Tolak (Form) --}}
+                            {{-- Pastikan route tolak sudah ada, kalau belum ganti '#' --}}
+                            <form action="{{ route('supervisor.reject', $plan->id) }}" method="POST" onsubmit="return confirm('Tolak rencana ini?');">
+                                @csrf
+                                <button type="submit" class="w-full bg-white border border-red-500 text-red-500 hover:bg-red-50 text-xs px-4 py-2 rounded transition">
+                                    Tolak
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
+
             @empty
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4">

@@ -10,21 +10,23 @@ use App\Models\EmployeeProfile;
 use App\Models\TrainingPlan;
 use App\Models\JobProfile;
 use App\Models\Position; 
-use App\Models\Idp; // Jangan lupa use Model IDP
+use App\Models\Idp; 
 
 class PersetujuanController extends Controller
 {
+    /**
+     * Halaman Utama Dashboard Persetujuan
+     */
     public function index(): View
     {
         $supervisor = Auth::user();
         
-        $teamMemberIds = $supervisor->subordinates()->pluck('id');
+        $teamMemberIds = \App\Models\User::where('manager_id', $supervisor->id)->pluck('id');
 
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user.position')
             ->select('user_id', 'submitted_at')
-            ->distinct()
             ->get()
             ->unique('user_id');
 
@@ -36,8 +38,7 @@ class PersetujuanController extends Controller
             ->get();
         
         $supervisorPositionId = $supervisor->position_id;
-        $childPositionIds = Position::where('atasan_id', $supervisorPositionId)
-                                    ->pluck('id');
+        $childPositionIds = Position::where('atasan_id', $supervisorPositionId)->pluck('id');
 
         $jobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
             ->where('status', 'pending_verification')
@@ -45,10 +46,8 @@ class PersetujuanController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        $pendingIdps = Idp::with('user') // Pastikan 'use App\Models\Idp' di atas
-            ->whereHas('user', function($q) {
-                $q->where('manager_id', auth()->id());
-            })
+        $pendingIdps = Idp::with('user')
+            ->whereIn('user_id', $teamMemberIds) // Konsisten pakai variable yang sama
             ->where('status', 'submitted')
             ->latest()
             ->get();
@@ -59,5 +58,61 @@ class PersetujuanController extends Controller
             'jobProfiles', 
             'pendingIdps' 
         ));
+    }
+
+    /**
+     * Menampilkan Detail Pengajuan (Method Baru)
+     */
+    public function show($id)
+    {
+        $plan = TrainingPlan::with(['user', 'items.training'])->findOrFail($id);
+
+        if ($plan->user->manager_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke data karyawan ini.');
+        }
+
+        return view('supervisor.persetujuan.show', compact('plan'));
+    }
+
+    /**
+     * Aksi Menyetujui Rencana (Method Baru)
+     */
+    public function approve($id)
+    {
+        $plan = TrainingPlan::findOrFail($id);
+        
+        // Cek akses (opsional tapi disarankan)
+        if ($plan->user->manager_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Update Status
+        $plan->update([
+            'status' => 'approved', 
+            'supervisor_approved_at' => now(),
+        ]);
+
+        return redirect()->route('supervisor.persetujuan')
+            ->with('success', 'Rencana pelatihan berhasil disetujui.');
+    }
+
+    /**
+     * Aksi Menolak Rencana (Method Baru)
+     */
+    public function reject(Request $request, $id)
+    {
+        $plan = TrainingPlan::findOrFail($id);
+        
+        if ($plan->user->manager_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Update Status
+        $plan->update([
+            'status' => 'rejected',
+        ]);
+
+        return redirect()->route('supervisor.persetujuan')
+            ->with('error', 'Rencana pelatihan telah ditolak.');
     }
 }

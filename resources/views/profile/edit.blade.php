@@ -142,9 +142,6 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    
-                                    {{-- [PERBAIKAN UTAMA] --}}
-                                    {{-- HANYA TAMPILKAN JIKA STATUS SUDAH VERIFIED --}}
                                     @if($user->employeeProfile && $user->employeeProfile->status === 'verified')
 
                                         @forelse ($gapRecords as $gap)
@@ -178,7 +175,6 @@
                                         @endforelse
 
                                     @else
-                                        {{-- JIKA BELUM VERIFIED (PENDING / DRAFT / NULL) --}}
                                         <tr>
                                             <td colspan="4" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                                                 @if($user->employeeProfile && $user->employeeProfile->status === 'pending_verification')
@@ -200,7 +196,6 @@
                             </table>
                         </div>
 
-                        {{-- KOTAK REKOMENDASI (JUGA HARUS DI-PROTECT) --}}
                         @if($user->employeeProfile && $user->employeeProfile->status === 'verified' && $gapRecords->where('gap_value', '<', 0)->count() > 0)
                             <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-3">
                                 <ion-icon name="bulb-outline" class="text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></ion-icon>
@@ -264,7 +259,6 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Riwayat Pelatihan (Selesai)</h2>
-                    {{-- Anda bisa meloop data training_evidences yang verified di sini --}}
                     <p class="text-sm text-gray-500 dark:text-gray-400 italic">Menampilkan pelatihan yang telah diselesaikan dan diverifikasi.</p>
                 </div>
             </div>

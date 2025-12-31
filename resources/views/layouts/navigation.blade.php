@@ -28,7 +28,7 @@
 
             <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                 
-                <a href="{{ route('rencana') }}" 
+                <a href="{{ route('rencana.index') }}" 
                    class="flex items-center text-sm font-medium transition px-3 py-2 rounded-md
                           {{ request()->routeIs('rencana') 
                              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
@@ -196,7 +196,7 @@
                 <ion-icon name="document-text-outline" class="text-lg mr-2 align-text-bottom"></ion-icon>
                 {{ __('IDP Saya') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('rencana')" :active="request()->routeIs('rencana*')">
+            <x-responsive-nav-link :href="route('rencana.index')" :active="request()->routeIs('rencana*')">
                 <ion-icon name="cart-outline" class="text-lg mr-2 align-text-bottom"></ion-icon>
                 {{ __('Rencana Saya (3)') }}
             </x-responsive-nav-link>

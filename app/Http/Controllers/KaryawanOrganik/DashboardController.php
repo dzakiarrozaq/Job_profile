@@ -15,18 +15,18 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Eager Loading Relasi yang Dibutuhkan
+        
         $user->load([
             'position.jobProfile.competencies',
             'position.unit',
             'manager',
             'gapRecords',
-            'employeeProfile' // Gunakan 'employeeProfile' (Singular) sesuai model User
+            'employeeProfile'
         ]);
         
-        // 2. Tentukan Status Global Penilaian
-        // Gunakan nama $globalStatus agar konsisten
-        $employeeProfile = $user->employeeProfile; // Pastikan relasi di User.php singular
+        
+        
+        $employeeProfile = $user->employeeProfile; 
         
         if (!$employeeProfile) {
             $globalStatus = 'not_started';
@@ -34,7 +34,7 @@ class DashboardController extends Controller
             $globalStatus = $employeeProfile->status;
         }
 
-        // 3. Analisis Gap Kompetensi
+    
         $jobProfile = $user->position?->jobProfile;
         $gapAnalysisData = collect([]);
         $recommendations = collect([]);
@@ -53,9 +53,9 @@ class DashboardController extends Controller
             $gapCompetencies = $gapAnalysisData->where('gap_value', '<', 0)->count();
             $metCompetencies = $totalCompetencies - $gapCompetencies;
 
-            // ==========================================
-            // LOGIKA REKOMENDASI TRAINING
-            // ==========================================
+           
+           
+           
             $neededCompetencies = $gapAnalysisData->where('gap_value', '<', 0)->pluck('competency_name');
             
             if ($neededCompetencies->isNotEmpty()) {
@@ -68,15 +68,12 @@ class DashboardController extends Controller
                 ->take(3)
                 ->get();
             } else {
-                // Jika tidak ada gap, tampilkan random terbaru
                 $recommendations = Training::latest()->take(3)->get();
             }
 
-            // Cek apakah ada status pending
             $assessmentStatus = ($globalStatus === 'pending_verification');
         }
 
-        // 4. Data Rencana Pelatihan (History)
         $recentTrainings = TrainingPlan::where('user_id', $user->id)
             ->with('items.training')
             ->orderBy('created_at', 'desc')
@@ -93,7 +90,6 @@ class DashboardController extends Controller
             'recentTrainings' => $recentTrainings,
             'assessmentStatus' => $assessmentStatus,
             
-            // [PENTING] Kirim variabel globalStatus
             'globalStatus' => $globalStatus,
         ]);
     }

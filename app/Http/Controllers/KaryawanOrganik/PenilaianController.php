@@ -20,7 +20,6 @@ class PenilaianController extends Controller
         $jobProfile = $position?->jobProfile;
 
 
-        // Cek jika tidak ada posisi atau profil
         if (!$position || !$jobProfile) {
             return redirect()->route('dashboard')
                 ->with('error', 'Profil Kompetensi belum diatur untuk posisi Anda.');
@@ -28,12 +27,10 @@ class PenilaianController extends Controller
 
         $competencies = $jobProfile->competencies;
 
-        // Ambil gap record yang sudah ada
         $existingGaps = GapRecord::where('user_id', $user->id)
             ->where('job_profile_id', $jobProfile->id)
             ->get();
 
-        // Mapping data untuk dikirim ke View
         $dataPenilaian = $competencies->map(function ($comp) use ($existingGaps) {
             $gap = $existingGaps->firstWhere('competency_name', $comp->competency_name);
 
@@ -42,7 +39,6 @@ class PenilaianController extends Controller
                 'competency_name' => $comp->competency_name,
                 'competency_code' => $comp->competency_code ?? '-', 
                 
-                // PERBAIKAN 1: Gunakan 'ideal_level' (sesuai database baru)
                 'ideal_level'     => $comp->ideal_level, 
                 
                 'current_level'   => $gap ? $gap->current_level : 0,
@@ -55,8 +51,8 @@ class PenilaianController extends Controller
         return view('karyawan.penilaian', [
             'user' => $user,
             'jobProfile' => $jobProfile,
-            'assessments' => $dataPenilaian, // Variabel ini sudah BENAR
-            'globalStatus' => $statusSaatIni, // Variabel ini sudah BENAR
+            'assessments' => $dataPenilaian, 
+            'globalStatus' => $statusSaatIni,
             'status' => $statusSaatIni
         ]);
     }
@@ -74,11 +70,9 @@ class PenilaianController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->competencies as $competencyId => $currentLevel) {
-                // Cari data kompetensi asli dari database master/job competency
                 $masterComp = JobCompetency::find($competencyId);
                 
                 if($masterComp) {
-                    // PERBAIKAN 2: Gunakan 'ideal_level' (sesuai database baru)
                     $idealLevel = $masterComp->ideal_level;
                     
                     $gapValue = $currentLevel - $idealLevel;
@@ -99,7 +93,6 @@ class PenilaianController extends Controller
                 }
             }
 
-            // Update status profil karyawan
             EmployeeProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
