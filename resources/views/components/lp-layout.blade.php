@@ -85,14 +85,12 @@
                             Dashboard LP
                         </a>
                         
-                        {{-- Menu Katalog (Nanti kita buat) --}}
-                        <a href="#" class="sidebar-link">
+                        <a href="{{ route('lp.katalog') }}" class="sidebar-link {{ request()->routeIs('lp.katalog') ? 'active' : '' }}">
                             <ion-icon name="library-outline"></ion-icon>
                             Kelola Katalog
                         </a>
 
-                        {{-- Menu Persetujuan --}}
-                        <a href="#" class="sidebar-link flex justify-between">
+                        <a href="{{ route('lp.persetujuan') }}" class="sidebar-link {{ request()->routeIs('lp.persetujuan') ? 'active' : '' }}">
                             <div class="flex items-center">
                                 <ion-icon name="checkmark-done-circle-outline"></ion-icon>
                                 Verifikasi Rencana
@@ -104,7 +102,7 @@
                         <div class="my-6 border-t border-gray-700"></div>
 
                         <h2 class="sidebar-heading">Laporan</h2>
-                        <a href="#" class="sidebar-link">
+                        <a href="{{ route('lp.laporan.index') }}" class="sidebar-link {{ request()->routeIs('lp.laporan.index') ? 'active' : '' }}">
                             <ion-icon name="pie-chart-outline"></ion-icon>
                             Laporan Training
                         </a>

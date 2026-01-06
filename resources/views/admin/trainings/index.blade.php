@@ -8,7 +8,6 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- Flash Message (Pesan Sukses) --}}
             @if(session('success'))
                 <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700">
                     <p class="font-bold">Berhasil!</p>
@@ -18,10 +17,8 @@
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 
-                {{-- Toolbar: Search & Add Button --}}
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
                     
-                    {{-- Form Pencarian --}}
                     <form method="GET" action="{{ route('admin.trainings.index') }}" class="w-full md:w-1/3">
                         <div class="relative">
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul pelatihan..." 
@@ -32,7 +29,6 @@
                         </div>
                     </form>
 
-                    {{-- Tombol Tambah Baru --}}
                     <a href="{{ route('admin.trainings.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         <ion-icon name="add-outline" class="text-lg mr-2"></ion-icon>
                         Tambah Pelatihan
@@ -101,7 +97,6 @@
                     </table>
                 </div>
 
-                {{-- Pagination --}}
                 <div class="p-6">
                     {{ $trainings->links() }}
                 </div>

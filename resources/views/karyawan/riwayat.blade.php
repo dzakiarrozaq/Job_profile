@@ -23,7 +23,7 @@
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai & Terverifikasi</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui Final</option>
                             <option value="pending_supervisor" {{ request('status') == 'pending_supervisor' ? 'selected' : '' }}>Menunggu Supervisor</option>
-                            <option value="pending_lp" {{ request('status') == 'pending_lp' ? 'selected' : '' }}>Menunggu Learning Partner</option>
+                            <option value="pendingg_lp" {{ request('status') == 'pending_lp' ? 'selected' : '' }}>Menunggu Learning Partner</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </div>

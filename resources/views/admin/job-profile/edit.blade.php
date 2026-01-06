@@ -2,7 +2,6 @@
 <x-admin-layout>
     <x-slot name="header">
         <div class="flex items-center">
-            {{-- Rute Admin --}}
             <a href="{{ route('admin.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">

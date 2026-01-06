@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-supervisor-layout>
     <x-slot name="header">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
             Detail Pengajuan Pelatihan
@@ -72,4 +72,4 @@
 
         </div>
     </div>
-</x-app-layout>
+</x-supervisor-layout>

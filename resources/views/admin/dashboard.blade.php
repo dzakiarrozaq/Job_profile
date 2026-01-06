@@ -81,7 +81,7 @@
                         <p class="font-semibold text-gray-800 dark:text-gray-100 text-sm">{{ $training->title }}</p>
                         @if ($training->status == 'pending_supervisor')
                             <span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">MENUNGGU VERIFIKASI SPV</span>
-                        @elseif ($training->status == 'pending_lp')
+                        @elseif ($training->status == 'lp')
                             <span class="text-xs font-medium text-blue-600 dark:text-blue-400">MENUNGGU PERSETUJUAN LP</span>
                         @endif
                     </div>

@@ -11,10 +11,7 @@ class TrainingPlan extends Model
 {
     use HasFactory;
 
-    // --- TAMBAHKAN BARIS INI ---
-    // Artinya: "Lindungi kolom 'id', sisanya boleh diisi (mass assignment)"
     protected $guarded = ['id']; 
-    // ---------------------------
 
     protected $casts = [
         'submitted_at' => 'datetime',

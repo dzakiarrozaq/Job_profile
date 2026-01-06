@@ -11,13 +11,12 @@ class JobCompetency extends Model
 
     protected $table = 'job_competencies';
 
-    // PASTIKAN SEMUA KOLOM INI ADA DI SINI:
     protected $fillable = [
         'job_profile_id',
-        'competency_master_id', // <--- INI WAJIB ADA
+        'competency_master_id', 
         'competency_name',
-        'competency_code',      // <--- Tambahkan ini juga
-        'ideal_level',          // <--- JANGAN LUPA INI
+        'competency_code',      
+        'ideal_level',          
         'weight'
     ];
 

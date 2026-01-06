@@ -81,19 +81,20 @@ class PersetujuanController extends Controller
     {
         $plan = TrainingPlan::findOrFail($id);
         
-        // Cek akses (opsional tapi disarankan)
+        // Cek akses keamanan
         if ($plan->user->manager_id !== Auth::id()) {
             abort(403);
         }
 
-        // Update Status
+        // UPDATE LOGIKA DI SINI:
+        // Jangan langsung 'approved', tapi lempar ke 'pending_lp'
         $plan->update([
-            'status' => 'approved', 
+            'status' => 'pending_lp', // <--- UBAH INI
             'supervisor_approved_at' => now(),
         ]);
 
         return redirect()->route('supervisor.persetujuan')
-            ->with('success', 'Rencana pelatihan berhasil disetujui.');
+            ->with('success', 'Disetujui. Sekarang menunggu verifikasi Learning Partner.');
     }
 
     /**

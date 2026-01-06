@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 
 // KONTROLER KARYAWAN
@@ -29,6 +30,8 @@ use App\Http\Controllers\IdpController;
 use App\Http\Controllers\Supervisor\SupervisorIdpController;
 use App\Http\Controllers\KaryawanOrganik\TrainingPlanController;
 use App\Http\Controllers\Supervisor\PersetujuanController;
+use App\Http\Controllers\Lp\LaporanController as LpLaporanController;
+use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,7 +60,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor,Karyawan Outsourcing'])->group(function () {
+        
+        // PERBAIKAN: Menghapus 'uri:' yang menyebabkan error
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
         Route::post('/penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
         Route::get('/riwayat', [DashboardController::class, 'riwayat'])->name('riwayat');
@@ -139,11 +145,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', AdminUserController::class);
 
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
-
-        Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
         Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
-        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
-
+        
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
 
@@ -162,6 +165,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:Learning Partner'])->prefix('lp')->name('lp.')->group(function () {
         Route::get('/dashboard', [LpDashboardController::class, 'index'])->name('dashboard');
         Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])->name('persetujuan');
+        Route::get('/laporan', [LpLaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/persetujuan/{id}', [LpPersetujuanController::class, 'show'])->name('persetujuan.show');
+        Route::post('/persetujuan/{id}/approve', [LpPersetujuanController::class, 'approve'])->name('persetujuan.approve');
+        Route::post('/persetujuan/{id}/reject', [LpPersetujuanController::class, 'reject'])->name('persetujuan.reject');
+        Route::resource('katalog', LpTrainingController::class);
     });
 
     Route::get('/notifications/mark-read', function () {
@@ -173,6 +181,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'store'])->name('role.set');
 
 });
-
 
 require __DIR__.'/auth.php';

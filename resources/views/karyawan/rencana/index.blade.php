@@ -29,14 +29,12 @@
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse ($plans as $plan)
-                            {{-- Ambil item pertama saja (Asumsi 1 Rencana = 1 Pelatihan) --}}
                             @php
                                 $item = $plan->items->first(); 
                             @endphp
 
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                 <td class="px-6 py-4">
-                                    {{-- Tampilkan data dari Item, bukan dari Plan langsung --}}
                                     <div class="text-sm font-bold text-gray-900 dark:text-white">
                                         {{ $item->title ?? 'Judul Tidak Tersedia' }}
                                     </div>
@@ -64,6 +62,7 @@
                                     @php
                                         $statusClasses = [
                                             'pending_supervisor' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                            ''         => 'bg-orange-100 text-orange-800 border-orange-200', // Warna Baru
                                             'approved'           => 'bg-green-100 text-green-800 border-green-200',
                                             'rejected'           => 'bg-red-100 text-red-800 border-red-200',
                                             'completed'          => 'bg-blue-100 text-blue-800 border-blue-200',
@@ -71,6 +70,7 @@
 
                                         $statusLabels = [
                                             'pending_supervisor' => 'Menunggu Supervisor',
+                                            'pending_lp'         => 'Menunggu Learning Partner',
                                             'approved'           => 'Disetujui',
                                             'rejected'           => 'Ditolak',
                                             'completed'          => 'Selesai',
@@ -90,7 +90,6 @@
                                             Detail
                                         </a>
 
-                                        {{-- Tampilkan tombol hapus JIKA status BUKAN 'approved' dan BUKAN 'completed' --}}
                                         @if(!in_array($plan->status, ['approved', 'completed']))
 
                                             <form action="{{ route('rencana.destroy', $plan->id) }}" method="POST" 

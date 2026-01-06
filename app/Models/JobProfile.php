@@ -53,7 +53,6 @@ class JobProfile extends Model
         return $this->hasMany(JobSpecification::class);
     }
     
-    // (Anda mungkin juga perlu 'workRelations' nanti)
     public function workRelations(): HasMany
     {
         return $this->hasMany(JobWorkRelation::class);

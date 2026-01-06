@@ -10,8 +10,6 @@ class Department extends Model
 {
     use HasFactory;
 
-    // (Sesuaikan $fillable Anda jika ada)
-    // protected $fillable = ['name', 'description'];
 
     /**
      * Mendapatkan semua user yang ada di departemen ini.

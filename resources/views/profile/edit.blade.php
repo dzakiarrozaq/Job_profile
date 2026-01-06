@@ -115,7 +115,6 @@
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Berdasarkan penilaian terakhir yang terverifikasi.</p>
                             </div>
                             
-                            {{-- STATUS BADGE: Cek apakah Employee Profile statusnya 'verified' --}}
                             @if($user->employeeProfile && $user->employeeProfile->status === 'verified')
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                     Terverifikasi

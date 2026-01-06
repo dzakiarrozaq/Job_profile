@@ -8,7 +8,6 @@
     <div class="py-12 max-w-4xl mx-auto">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
             
-            {{-- Status Banner --}}
             <div class="mb-6 flex justify-between items-center">
                 <span class="text-sm text-gray-500">Diajukan pada: {{ $plan->created_at->format('d M Y') }}</span>
                 
@@ -32,7 +31,6 @@
                 </span>
             </div>
 
-            {{-- Detail Item --}}
             @foreach($plan->items as $item)
                 <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 mb-6">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -71,7 +69,6 @@
                 </div>
             @endforeach
 
-            {{-- Tombol Kembali --}}
             <div class="flex justify-start mt-6">
                 <a href="{{ route('rencana.index') }}" 
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">

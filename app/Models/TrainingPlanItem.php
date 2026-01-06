@@ -9,9 +9,7 @@ class TrainingPlanItem extends Model
 {
     use HasFactory;
 
-    // --- PASTIKAN BARIS INI ADA ---
     protected $guarded = ['id'];
-    // ------------------------------
 
     public function plan()
     {
