@@ -13,13 +13,16 @@ class Training extends Model
     protected $fillable = [
         'title', 
         'provider', 
-        'type', 
+    
+        'type',   
+        'cost',     
+
+        'type',       
         'difficulty',  
         'description',
         'duration',    
         'link_url',    
         'status',
-
 
         'tags', 
         'skill_tags',
@@ -35,6 +38,7 @@ class Training extends Model
     protected $casts = [
         'supervisor_approved_at' => 'datetime',
         'lp_approved_at' => 'datetime',
+        'cost' => 'integer', 
     ];
 
     public function creator(): BelongsTo

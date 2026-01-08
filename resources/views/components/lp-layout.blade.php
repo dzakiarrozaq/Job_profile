@@ -84,8 +84,9 @@
                             <ion-icon name="grid-outline"></ion-icon>
                             Dashboard LP
                         </a>
-                        
-                        <a href="{{ route('lp.katalog') }}" class="sidebar-link {{ request()->routeIs('lp.katalog') ? 'active' : '' }}">
+
+                        <a href="{{ route('lp.katalog.index') }}" 
+                            class="sidebar-link {{ request()->routeIs('lp.katalog*') ? 'active' : '' }}">
                             <ion-icon name="library-outline"></ion-icon>
                             Kelola Katalog
                         </a>
@@ -93,10 +94,13 @@
                         <a href="{{ route('lp.persetujuan') }}" class="sidebar-link {{ request()->routeIs('lp.persetujuan') ? 'active' : '' }}">
                             <div class="flex items-center">
                                 <ion-icon name="checkmark-done-circle-outline"></ion-icon>
-                                Verifikasi Rencana
-                            </div>
-                            {{-- Badge Notifikasi jika ada --}}
-                            {{-- <span class="bg-red-500 text-white text-[10px] px-2 rounded-full">3</span> --}}
+                                <span>Verifikasi Rencana</span> </div>
+                            
+                            @if(isset($pendingLpCount) && $pendingLpCount > 0)
+                                <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">
+                                    {{ $pendingLpCount }}
+                                </span>
+                            @endif
                         </a>
                         
                         <div class="my-6 border-t border-gray-700"></div>

@@ -15,9 +15,8 @@ class PersetujuanController extends Controller
      */
     public function index()
     {
-        // UBAH QUERY: Cari yang statusnya 'pending_lp'
         $plans = TrainingPlan::with(['user.position', 'items.training'])
-            ->where('status', 'pending_lp') // <--- UBAH INI (Sebelumnya 'approved')
+            ->where('status', 'pending_lp') 
             ->orderBy('updated_at', 'desc')
             ->paginate(10);
 
@@ -43,7 +42,7 @@ class PersetujuanController extends Controller
         $plan = TrainingPlan::findOrFail($id);
         
         $plan->update([
-            'status' => 'approved', // <--- UBAH INI (Sebelumnya 'verified')
+            'status' => 'approved', 
         ]);
 
         return redirect()->route('lp.persetujuan')
@@ -59,7 +58,6 @@ class PersetujuanController extends Controller
 
         $plan->update([
             'status' => 'rejected',
-            // Opsional: Simpan alasan penolakan dari $request->input('reason')
         ]);
 
         return redirect()->route('lp.persetujuan')

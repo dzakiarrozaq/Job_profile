@@ -7,7 +7,6 @@
 
     <div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {{-- 1. Filter Section --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
             <form method="GET" action="{{ route('lp.laporan.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div>
@@ -33,15 +32,15 @@
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition w-full">
                         Filter
                     </button>
-                    {{-- Tombol Export (Simulasi) --}}
-                    <button type="button" onclick="alert('Fitur Export Excel/PDF bisa ditambahkan menggunakan Maatwebsite/Excel')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                        <ion-icon name="download-outline"></ion-icon>
+                    <button type="submit" 
+                            formaction="{{ route('lp.laporan.export') }}" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center">
+                        <ion-icon name="download-outline" class="text-xl"></ion-icon>
                     </button>
                 </div>
             </form>
         </div>
 
-        {{-- 2. Statistik Cards --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Total Pengajuan</p>
@@ -67,7 +66,6 @@
             </div>
         </div>
 
-        {{-- 3. Tabel Data --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -78,6 +76,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider & Biaya</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -98,6 +97,7 @@
                                         </div>
                                     </div>
                                 </td>
+                                
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 dark:text-white font-bold">
                                         {{ $item->title ?? '-' }}
@@ -106,6 +106,7 @@
                                         Metode: {{ $item->method ?? '-' }}
                                     </div>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
                                         {{ $item->provider ?? 'Internal' }}
@@ -114,21 +115,25 @@
                                         Rp {{ number_format($item->cost ?? 0) }}
                                     </div>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $plan->created_at->format('d M Y') }}
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                         $statusStyles = [
                                             'approved' => 'bg-green-100 text-green-800',
                                             'rejected' => 'bg-red-100 text-red-800',
                                             'pending_supervisor' => 'bg-yellow-100 text-yellow-800',
+                                            'pending_lp' => 'bg-orange-100 text-orange-800',
                                             'completed' => 'bg-blue-100 text-blue-800',
                                         ];
                                         $statusLabels = [
                                             'approved' => 'Disetujui',
                                             'rejected' => 'Ditolak',
                                             'pending_supervisor' => 'Menunggu SPV',
+                                            'pending_lp' => 'Verifikasi LP',
                                             'completed' => 'Selesai',
                                         ];
                                     @endphp
@@ -136,10 +141,16 @@
                                         {{ $statusLabels[$plan->status] ?? ucfirst($plan->status) }}
                                     </span>
                                 </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{{ route('lp.laporan.show', $plan->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition">
+                                        Detail
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-10 text-center text-gray-500">
                                     Tidak ada data laporan pada periode ini.
                                 </td>
                             </tr>

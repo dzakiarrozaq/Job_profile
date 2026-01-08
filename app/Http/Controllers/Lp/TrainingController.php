@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Lp;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Training; // Pastikan Model Training sudah ada
+use App\Models\Training; 
 
 class TrainingController extends Controller
 {
@@ -21,9 +21,9 @@ class TrainingController extends Controller
                       ->orWhere('provider', 'like', "%{$search}%");
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(9); // Tampilkan 9 item per halaman (Grid Layout)
+            ->paginate(9); 
 
-        return view('learning_partner.katalog.index', compact('trainings', 'search'));
+        return view('lp.katalog.index', compact('trainings', 'search'));
     }
 
     /**
@@ -31,7 +31,7 @@ class TrainingController extends Controller
      */
     public function create()
     {
-        return view('learning_partner.katalog.create');
+        return view('lp.katalog.create');
     }
 
     /**
@@ -42,10 +42,11 @@ class TrainingController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'provider' => 'required|string|max:255',
-            'method' => 'required|in:Online,Offline,Hybrid',
+            
+            'type' => 'required|in:Online,Offline,Hybrid', 
+            
             'cost' => 'required|numeric',
             'description' => 'nullable|string',
-            // Tambahkan validasi lain sesuai kolom database Anda
         ]);
 
         Training::create($validated);
@@ -59,7 +60,7 @@ class TrainingController extends Controller
     public function edit($id)
     {
         $training = Training::findOrFail($id);
-        return view('learning_partner.katalog.edit', compact('training'));
+        return view('lp.katalog.edit', compact('training'));
     }
 
     /**
@@ -72,7 +73,9 @@ class TrainingController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'provider' => 'required|string|max:255',
-            'method' => 'required|in:Online,Offline,Hybrid',
+            
+            'type' => 'required|in:Online,Offline,Hybrid', 
+            
             'cost' => 'required|numeric',
             'description' => 'nullable|string',
         ]);
@@ -80,6 +83,13 @@ class TrainingController extends Controller
         $training->update($validated);
 
         return redirect()->route('lp.katalog.index')->with('success', 'Data pelatihan berhasil diperbarui.');
+    }
+
+    public function show($id)
+    {
+        $training = Training::findOrFail($id);
+        
+        return view('lp.katalog.show', compact('training'));
     }
 
     /**

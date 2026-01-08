@@ -4,11 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 
-// KONTROLER KARYAWAN
 use App\Http\Controllers\KaryawanOrganik\DashboardController;
 use App\Http\Controllers\KaryawanOrganik\PenilaianController;
 
-// KONTROLER DARI SUB-FOLDER
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\JobProfileController; 
@@ -61,7 +59,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor,Karyawan Outsourcing'])->group(function () {
         
-        // PERBAIKAN: Menghapus 'uri:' yang menyebabkan error
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         
         Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian');
@@ -118,10 +115,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/rencana/{id}', [PersetujuanController::class, 'show'])->name('rencana.show');
         
-        // 2. Route untuk Action Approve
         Route::post('/rencana/{id}/approve', [PersetujuanController::class, 'approve'])->name('approve');
         
-        // 3. Route untuk Action Reject
         Route::post('/rencana/{id}/reject', [PersetujuanController::class, 'reject'])->name('reject');
     });
 
@@ -165,11 +160,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:Learning Partner'])->prefix('lp')->name('lp.')->group(function () {
         Route::get('/dashboard', [LpDashboardController::class, 'index'])->name('dashboard');
         Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])->name('persetujuan');
+        
         Route::get('/laporan', [LpLaporanController::class, 'index'])->name('laporan.index');
+        
+        Route::get('/laporan/export', [LpLaporanController::class, 'export'])->name('laporan.export'); 
+        
         Route::get('/persetujuan/{id}', [LpPersetujuanController::class, 'show'])->name('persetujuan.show');
         Route::post('/persetujuan/{id}/approve', [LpPersetujuanController::class, 'approve'])->name('persetujuan.approve');
         Route::post('/persetujuan/{id}/reject', [LpPersetujuanController::class, 'reject'])->name('persetujuan.reject');
         Route::resource('katalog', LpTrainingController::class);
+
+        Route::get('/laporan/{id}', [LpLaporanController::class, 'show'])->name('laporan.show');
     });
 
     Route::get('/notifications/mark-read', function () {

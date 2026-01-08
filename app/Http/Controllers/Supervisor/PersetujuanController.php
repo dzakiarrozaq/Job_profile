@@ -47,7 +47,7 @@ class PersetujuanController extends Controller
             ->get();
 
         $pendingIdps = Idp::with('user')
-            ->whereIn('user_id', $teamMemberIds) // Konsisten pakai variable yang sama
+            ->whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->latest()
             ->get();
@@ -81,15 +81,12 @@ class PersetujuanController extends Controller
     {
         $plan = TrainingPlan::findOrFail($id);
         
-        // Cek akses keamanan
         if ($plan->user->manager_id !== Auth::id()) {
             abort(403);
         }
 
-        // UPDATE LOGIKA DI SINI:
-        // Jangan langsung 'approved', tapi lempar ke 'pending_lp'
         $plan->update([
-            'status' => 'pending_lp', // <--- UBAH INI
+            'status' => 'pending_lp', 
             'supervisor_approved_at' => now(),
         ]);
 

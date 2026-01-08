@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View; 
+use App\Models\TrainingPlan;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        View::composer('*', function ($view) {
+            $count = TrainingPlan::where('status', 'pending_lp')->count();
+            
+            $view->with('pendingLpCount', $count);
+        });
     }
 }
