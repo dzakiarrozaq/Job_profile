@@ -30,6 +30,7 @@ use App\Http\Controllers\KaryawanOrganik\TrainingPlanController;
 use App\Http\Controllers\Supervisor\PersetujuanController;
 use App\Http\Controllers\Lp\LaporanController as LpLaporanController;
 use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
+use App\Http\Controllers\Lp\ProfileController as LpProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,8 +77,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/rencana/{id}', [TrainingPlanController::class, 'show'])->name('rencana.show');
         Route::delete('/rencana/{id}', [TrainingPlanController::class, 'destroy'])->name('rencana.destroy');
+        Route::post('/rencana/submit-all', [TrainingPlanController::class, 'submitAll'])->name('rencana.submitAll');
 
         Route::get('/training/{id}', [TrainingPlanController::class, 'showTraining'])->name('training.show');  
+
+        Route::get('/rencana/sertifikat/{itemId}', [TrainingPlanController::class, 'formSertifikat'])->name('rencana.sertifikat');
+        Route::put('/rencana/sertifikat/{itemId}', [TrainingPlanController::class, 'storeSertifikat'])->name('rencana.sertifikat.store');
     });
 
     
@@ -171,6 +176,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('katalog', LpTrainingController::class);
 
         Route::get('/laporan/{id}', [LpLaporanController::class, 'show'])->name('laporan.show');
+
+        Route::get('/profile', [LpProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [LpProfileController::class, 'update'])->name('profile.update');
+        Route::put('/password', [LpProfileController::class, 'updatePassword'])->name('password.update');
     });
 
     Route::get('/notifications/mark-read', function () {

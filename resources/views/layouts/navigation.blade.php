@@ -28,12 +28,18 @@
             <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                 
                 <a href="{{ route('rencana.index') }}" 
-                   class="flex items-center text-sm font-medium transition px-3 py-2 rounded-md
-                          {{ request()->routeIs('rencana') 
-                             ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-                             : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                    class="flex items-center text-sm font-medium transition px-3 py-2 rounded-md
+                        {{ request()->routeIs('rencana') 
+                            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                            : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                    
                     <ion-icon name="{{ request()->routeIs('rencana') ? 'cart' : 'cart-outline' }}" class="text-xl mr-1.5"></ion-icon>
-                    Rencana (3)
+                    
+                    Rencana
+                    
+                    @if(isset($rencanaCount) && $rencanaCount > 0)
+                        <span class="ml-1">({{ $rencanaCount }})</span>
+                    @endif
                 </a>
 
                 <div class="relative" x-data="{ open: false }">

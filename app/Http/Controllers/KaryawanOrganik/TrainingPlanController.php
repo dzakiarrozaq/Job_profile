@@ -8,23 +8,27 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanItem;
 use App\Models\Training;
+use Illuminate\Support\Facades\Storage;
 
 class TrainingPlanController extends Controller
 {
     public function index()
-    {
+    {        
         $userId = Auth::id();
         $plans = TrainingPlan::with(['items.training']) 
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('karyawan.rencana.index', compact('plans'));
+        // Hitung apakah ada item di keranjang (status draft)
+        // Ini untuk memunculkan tombol "Ajukan Semua" di view
+        $hasDrafts = TrainingPlan::where('user_id', $userId)
+                        ->where('status', 'draft')
+                        ->exists();
+
+        return view('karyawan.rencana.index', compact('plans', 'hasDrafts'));
     }
 
-    /**
-     * Langsung simpan ke keranjang tanpa form perantara
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -33,26 +37,88 @@ class TrainingPlanController extends Controller
 
         $training = Training::find($request->training_id);
 
+        // 1. UBAH DI SINI: Status jadi 'draft'
         $plan = TrainingPlan::create([
             'user_id' => Auth::id(),
-            'status' => 'pending_supervisor', 
-            'submitted_at' => now(),
+            'status' => 'draft', // <--- Masuk keranjang dulu
+            'submitted_at' => null, // Belum disubmit
         ]);
 
-        
         TrainingPlanItem::create([
             'training_plan_id' => $plan->id,
             'training_id' => $training->id,
-            
             'title' => $training->title,
             'provider' => $training->provider,
             'method' => $training->method ?? 'Offline',
             'cost' => $training->cost ?? 0,
-            
         ]);
 
         return redirect()->back() 
-            ->with('success', 'Pelatihan "' . $training->title . '" berhasil dimasukkan ke Rencana.');
+            ->with('success', 'Pelatihan dimasukkan ke keranjang (Draft). Jangan lupa ajukan nanti!');
+    }
+
+    /**
+     * BARU: Method untuk Mengajukan Semua Draft ke Supervisor
+     */
+    public function submitAll()
+    {
+        // Update semua rencana milik user yg statusnya 'draft' menjadi 'pending_supervisor'
+        $affected = TrainingPlan::where('user_id', Auth::id())
+            ->where('status', 'draft')
+            ->update([
+                'status' => 'pending_supervisor',
+                'submitted_at' => now(), // Catat waktu pengajuan
+            ]);
+
+        if ($affected > 0) {
+            return redirect()->route('rencana.index')
+                ->with('success', 'Berhasil mengajukan ' . $affected . ' rencana pelatihan ke Supervisor.');
+        }
+
+        return redirect()->back()->with('error', 'Tidak ada item di keranjang untuk diajukan.');
+    }
+
+    public function formSertifikat($itemId)
+    {
+        // Cari item berdasarkan ID, pastikan user yang punya
+        $item = TrainingPlanItem::whereHas('plan', function($q) {
+            $q->where('user_id', Auth::id());
+        })->findOrFail($itemId);
+
+        return view('karyawan.rencana.upload-sertifikat', compact('item'));
+    }
+
+    /**
+     * Proses Simpan Sertifikat
+     */
+    public function storeSertifikat(Request $request, $itemId)
+    {
+        $request->validate([
+            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:2048', // Maks 2MB
+        ]);
+
+        $item = TrainingPlanItem::whereHas('plan', function($q) {
+            $q->where('user_id', Auth::id());
+        })->findOrFail($itemId);
+
+        if ($request->hasFile('file')) {
+            if ($item->certificate_path && Storage::disk('public')->exists($item->certificate_path)) {
+                Storage::disk('public')->delete($item->certificate_path);
+            }
+
+            $path = $request->file('file')->store('certificates', 'public');
+            
+            $item->update([
+                'certificate_path' => $path,
+                'certificate_status' => 'uploaded'
+            ]);
+
+           
+           $item->plan->update(['status' => 'completed']);
+        }
+
+        return redirect()->route('rencana.index')
+            ->with('success', 'Sertifikat berhasil diupload!');
     }
 
     public function show($id)

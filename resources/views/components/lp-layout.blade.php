@@ -67,10 +67,10 @@
                         <h1 class="text-xl font-bold tracking-tight text-white">DevHub</h1>
                     </div>
                     
-                    <a href="{{ route('profile.edit') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
-                        <img class="h-12 w-12 rounded-full object-cover border-2 border-indigo-500" 
-                            src="{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}" 
-                            alt="Foto Profil">
+                    <a href="{{ route('lp.profile.edit') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
+                        <img class="h-8 w-8 rounded-full object-cover" 
+                            src="{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name) }}" 
+                            alt="{{ Auth::user()->name }}">
                         <div>
                             <p class="font-semibold text-sm text-white">{{ Auth::user()->name }}</p>
                             <p class="text-xs text-gray-400">{{ Auth::user()->role->name ?? 'Supervisor' }}</p>
