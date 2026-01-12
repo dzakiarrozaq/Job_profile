@@ -35,8 +35,6 @@ class VerifikasiKompetensiController extends Controller
                         ->where('competency_code', $comp->master->competency_code)
                         ->first();
 
-            // Ambil status verifikasi global (Opsional, jika ada tabel khusus)
-            // $globalStatus = $employee->employeeProfile->status ?? 'draft';
 
             return (object) [
                 'competency_code' => $comp->master->competency_code,
@@ -44,12 +42,10 @@ class VerifikasiKompetensiController extends Controller
                 'type'            => $comp->master->type,
                 'ideal_level'     => $comp->ideal_level,
                 
-                // PENTING: Ambil nilai dari GapRecord, bukan EmployeeProfile
                 'submitted_level' => $userGap ? $userGap->current_level : 0, 
                 'current_level'   => $userGap ? $userGap->current_level : 0,
                 
-                // Status bisa diambil dari EmployeeProfile (Global) atau per item
-                'status'          => 'pending_verification', // Atau ambil dari DB
+                'status'          => 'pending_verification',
                 'reviewer_notes'  => '',
             ];
         });
@@ -72,23 +68,19 @@ class VerifikasiKompetensiController extends Controller
         ]);
 
         $employee = User::findOrFail($userId);
-        $jobProfile = $employee->position->jobProfile; // Pastikan relasi ini aman
+        $jobProfile = $employee->position->jobProfile;
 
         DB::beginTransaction();
         try {
-            // 2. Loop setiap nilai yang dikirim Supervisor
             foreach ($request->input('verified_level') as $code => $level) {
                 
-                // Cari data master kompetensi untuk ambil bobot & target
                 $compMaster = $jobProfile->competencies
                     ->first(fn($c) => $c->master->competency_code == $code);
                 
                 if ($compMaster) {
                     $idealLevel = $compMaster->ideal_level;
-                    // Hitung Gap Baru berdasarkan Verifikasi Supervisor
                     $gapValue = $level - $idealLevel;
                     
-                    // Simpan ke GAP RECORD (Bukan EmployeeProfile)
                     GapRecord::updateOrCreate(
                         [
                             'user_id' => $userId,
@@ -96,19 +88,16 @@ class VerifikasiKompetensiController extends Controller
                             'competency_code' => $code
                         ],
                         [
-                            'competency_name' => $compMaster->master->competency_name, // Pastikan nama tersimpan
+                            'competency_name' => $compMaster->master->competency_name, 
                             'ideal_level'     => $idealLevel,
-                            'current_level'   => $level, // Nilai dari Supervisor
+                            'current_level'   => $level, 
                             'gap_value'       => $gapValue,
-                            // Hitung bobot jika ada kolom weight, jika tidak anggap 1
-                            // 'weighted_gap'    => $gapValue * ($compMaster->weight ?? 1), 
                             'calculated_at'   => now(),
                         ]
                     );
                 }
             }
 
-            // 3. Update Status Global Karyawan jadi 'VERIFIED'
             EmployeeProfile::updateOrCreate(
                 ['user_id' => $userId],
                 [

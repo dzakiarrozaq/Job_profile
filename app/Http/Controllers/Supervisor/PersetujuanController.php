@@ -11,6 +11,7 @@ use App\Models\TrainingPlan;
 use App\Models\JobProfile;
 use App\Models\Position; 
 use App\Models\Idp; 
+use App\Models\AuditLog;
 
 class PersetujuanController extends Controller
 {
@@ -90,6 +91,8 @@ class PersetujuanController extends Controller
             'supervisor_approved_at' => now(),
         ]);
 
+        AuditLog::record('APPROVE PLAN', 'Menyetujui rencana pelatihan bawahan', $plan);
+
         return redirect()->route('supervisor.persetujuan')
             ->with('success', 'Disetujui. Sekarang menunggu verifikasi Learning Partner.');
     }
@@ -109,6 +112,8 @@ class PersetujuanController extends Controller
         $plan->update([
             'status' => 'rejected',
         ]);
+
+        AuditLog::record('REJECT PLAN', 'Menolak rencana pelatihan. Alasan: ' . $request->reason, $plan);
 
         return redirect()->route('supervisor.persetujuan')
             ->with('error', 'Rencana pelatihan telah ditolak.');

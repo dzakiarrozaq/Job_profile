@@ -9,6 +9,7 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanItem;
 use App\Models\Training;
 use Illuminate\Support\Facades\Storage;
+use App\Models\AuditLog;
 
 class TrainingPlanController extends Controller
 {
@@ -40,9 +41,11 @@ class TrainingPlanController extends Controller
         // 1. UBAH DI SINI: Status jadi 'draft'
         $plan = TrainingPlan::create([
             'user_id' => Auth::id(),
-            'status' => 'draft', // <--- Masuk keranjang dulu
-            'submitted_at' => null, // Belum disubmit
+            'status' => 'draft',
+            'submitted_at' => null, 
         ]);
+        
+        AuditLog::record('CREATE DRAFT', 'Membuat draft rencana: ' . $training->title, $plan);
 
         TrainingPlanItem::create([
             'training_plan_id' => $plan->id,
@@ -67,10 +70,11 @@ class TrainingPlanController extends Controller
             ->where('status', 'draft')
             ->update([
                 'status' => 'pending_supervisor',
-                'submitted_at' => now(), // Catat waktu pengajuan
+                'submitted_at' => now(), 
             ]);
 
         if ($affected > 0) {
+            AuditLog::record('SUBMIT PLAN', 'Mengajukan ' . $affected . ' rencana ke Supervisor');
             return redirect()->route('rencana.index')
                 ->with('success', 'Berhasil mengajukan ' . $affected . ' rencana pelatihan ke Supervisor.');
         }
@@ -117,8 +121,11 @@ class TrainingPlanController extends Controller
            $item->plan->update(['status' => 'completed']);
         }
 
+        AuditLog::record('UPLOAD CERTIFICATE', 'Mengunggah sertifikat untuk Item ID: ' . $itemId, $item);
+
         return redirect()->route('rencana.index')
             ->with('success', 'Sertifikat berhasil diupload!');
+            
     }
 
     public function show($id)
@@ -136,6 +143,7 @@ class TrainingPlanController extends Controller
     public function destroy($id)
     {
         $plan = TrainingPlan::where('user_id', Auth::id())->findOrFail($id);
+        AuditLog::record('DELETE PLAN', 'Menghapus rencana pelatihan ID: ' . $id);
 
         if (in_array($plan->status, ['approved', 'completed'])) {
             return back()->with('error', 'Rencana yang sudah Disetujui tidak dapat dihapus.');

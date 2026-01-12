@@ -88,7 +88,7 @@
                         <a href="{{ route('lp.katalog.index') }}" 
                             class="sidebar-link {{ request()->routeIs('lp.katalog*') ? 'active' : '' }}">
                             <ion-icon name="library-outline"></ion-icon>
-                            Kelola Katalog
+                            Katalog Pelatihan
                         </a>
 
                         <a href="{{ route('lp.persetujuan') }}" class="sidebar-link {{ request()->routeIs('lp.persetujuan') ? 'active' : '' }}">

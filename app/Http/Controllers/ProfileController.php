@@ -51,23 +51,18 @@ class ProfileController extends Controller
         $data = $request->validated();
         $user = $request->user();
 
-        // 1. Cek apakah ada file foto yang diupload
         if ($request->hasFile('profile_photo')) {
             
-            // Hapus foto lama jika ada (agar tidak menumpuk sampah file)
             if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
 
-            // Simpan foto baru
             $path = $request->file('profile_photo')->store('profile-photos', 'public');
-            $data['profile_photo_path'] = $path; // Masukkan path ke data yang akan diupdate
+            $data['profile_photo_path'] = $path; 
         }
 
-        // 2. Update data user
         $user->fill($data);
 
-        // Jika email berubah, reset verifikasi
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
@@ -186,7 +181,6 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Kirim link reset password menggunakan broker default Laravel
         $status = Password::broker()->sendResetLink(['email' => $user->email]);
 
         return $status == Password::RESET_LINK_SENT

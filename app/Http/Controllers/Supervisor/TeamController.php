@@ -8,7 +8,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB; // Tambahkan DB Facade
+use Illuminate\Support\Facades\DB; 
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Position;
@@ -72,9 +72,9 @@ class TeamController extends Controller
         return view('supervisor.tim.index', [
             'teamMembers' => $teamMembers,
             'filters' => $request->all(),
-            'totalCount' => $totalCount,           // <--- Baru
-            'organicCount' => $organicCount,       // <--- Baru
-            'outsourcingCount' => $outsourcingCount // <--- Baru
+            'totalCount' => $totalCount,           
+            'organicCount' => $organicCount,       
+            'outsourcingCount' => $outsourcingCount 
         ]);
     }
 

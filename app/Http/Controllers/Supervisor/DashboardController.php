@@ -19,13 +19,9 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        // 1. Ambil ID bawahan langsung (Berdasarkan manager_id)
         $teamMemberIds = \App\Models\User::where('manager_id', $user->id)->pluck('id');
 
-        // -------------------------------------------------------------
-        // A. MENGHITUNG JUMLAH (COUNTING) UNTUK KARTU ATAS
-        // -------------------------------------------------------------
-
+       
         $penilaianCount = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->distinct('user_id')
@@ -39,16 +35,11 @@ class DashboardController extends Controller
             ->where('status', 'pending')
             ->count();
             
-        // Hitung IDP Pending (BARU)
         $idpCount = Idp::whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->count();
 
-        // -------------------------------------------------------------
-        // B. MENGAMBIL DATA TUGAS MENDESAK (TABEL)
-        // -------------------------------------------------------------
 
-        // 1. Job Profile Pending
         $childPositionIds = Position::where('atasan_id', $user->position_id)->pluck('id');
         
         $pendingJobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
@@ -59,13 +50,12 @@ class DashboardController extends Controller
                 return (object) [
                     'karyawan' => 'Posisi: ' . ($profile->position->title ?? 'Unknown'), 
                     'tipe' => 'USULAN JOB PROFILE',
-                    'status_sort' => '0_jobprofile', // Prioritas 0
+                    'status_sort' => '0_jobprofile', 
                     'tanggal' => $profile->updated_at,
                     'url' => route('supervisor.job-profile.edit', $profile->id),
                 ];
             });
 
-        // 2. Penilaian Kompetensi Pending
         $tugasPenilaian = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user')
@@ -75,7 +65,7 @@ class DashboardController extends Controller
                 return (object) [
                     'karyawan' => $item->user->name,
                     'tipe' => 'PENILAIAN KOMPETENSI',
-                    'status_sort' => '1_penilaian', // Prioritas 1
+                    'status_sort' => '1_penilaian',
                     'tanggal' => $item->submitted_at,
                     'url' => route('supervisor.penilaian.show', $item->user_id)
                 ];
@@ -90,14 +80,12 @@ class DashboardController extends Controller
                 return (object) [
                     'karyawan' => $item->user->name,
                     'tipe' => 'RENCANA PELATIHAN',
-                    'status_sort' => '2_rencana', // Prioritas 2
+                    'status_sort' => '2_rencana', 
                     'tanggal' => $item->submitted_at,
-                    // Arahkan ke tab 'catalog' di halaman persetujuan
                     'url' => route('supervisor.persetujuan') 
                 ];
             });
 
-        // 4. IDP Pending (BARU)
         $tugasIdp = Idp::whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->with('user')
@@ -105,14 +93,13 @@ class DashboardController extends Controller
             ->map(function ($item) {
                 return (object) [
                     'karyawan' => $item->user->name,
-                    'tipe' => 'IDP APPROVAL', // Label di tabel
-                    'status_sort' => '3_idp', // Prioritas 3 (Untuk styling warna ungu di view)
+                    'tipe' => 'IDP APPROVAL', 
+                    'status_sort' => '3_idp', 
                     'tanggal' => $item->updated_at,
-                    'url' => route('supervisor.idp.show', $item->id) // Link langsung ke detail review
+                    'url' => route('supervisor.idp.show', $item->id) 
                 ];
             });
 
-        // 5. Sertifikat Pending
         $tugasSertifikat = TrainingEvidences::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending')
             ->with('user')
@@ -121,26 +108,21 @@ class DashboardController extends Controller
                 return (object) [
                     'karyawan' => $item->user->name,
                     'tipe' => 'BUKTI SERTIFIKAT',
-                    'status_sort' => '4_sertifikat', // Prioritas 4
+                    'status_sort' => '4_sertifikat', 
                     'tanggal' => $item->created_at,
                     'url' => route('supervisor.persetujuan') 
                 ];
             });
 
-        // -------------------------------------------------------------
-        // C. MERGE & SORTING SEMUA TUGAS
-        // -------------------------------------------------------------
+        
         $tugasMendesak = $pendingJobProfiles
             ->concat($tugasPenilaian)
             ->concat($tugasRencana)
-            ->concat($tugasIdp)        // <--- Masukkan IDP ke sini
+            ->concat($tugasIdp)        
             ->concat($tugasSertifikat)
-            ->sortByDesc('tanggal');   // Sort terbaru di atas
+            ->sortByDesc('tanggal');  
 
-        // -------------------------------------------------------------
-        // D. DATA ANGGOTA TIM
-        // -------------------------------------------------------------
-        // Gunakan relasi manual jika 'subordinates' belum didefinisikan di User model
+        
         $teamMembers = \App\Models\User::where('manager_id', $user->id)->with('position')->get();
 
         return view('supervisor.dashboard', [
@@ -148,7 +130,7 @@ class DashboardController extends Controller
             'rencanaCount'   => $rencanaCount,
             'sertifikatCount'=> $sertifikatCount,
             'jobProfileCount'=> $pendingJobProfiles->count(),
-            'idpCount'       => $idpCount,       // <--- Kirim variable ini ke View
+            'idpCount'       => $idpCount,      
             'tugasMendesak'  => $tugasMendesak,
             'teamMembers'    => $teamMembers
         ]);
