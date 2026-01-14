@@ -98,34 +98,38 @@ class TrainingPlanController extends Controller
     public function storeSertifikat(Request $request, $itemId)
     {
         $request->validate([
-            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:2048', // Maks 2MB
+            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
+        // Cari item pelatihan
         $item = TrainingPlanItem::whereHas('plan', function($q) {
             $q->where('user_id', Auth::id());
         })->findOrFail($itemId);
 
         if ($request->hasFile('file')) {
+            
+            // Hapus file lama jika ada (untuk hemat storage)
             if ($item->certificate_path && Storage::disk('public')->exists($item->certificate_path)) {
                 Storage::disk('public')->delete($item->certificate_path);
             }
 
+            // Simpan file baru
             $path = $request->file('file')->store('certificates', 'public');
             
+            // UPDATE DATABASE
             $item->update([
                 'certificate_path' => $path,
-                'certificate_status' => 'uploaded'
+                
+                // PENTING: Jangan 'uploaded' atau 'verified'.
+                // Harus 'pending_approval' agar masuk ke dashboard Supervisor.
+                'certificate_status' => 'pending_approval' 
             ]);
 
-           
-           $item->plan->update(['status' => 'completed']);
+            // LOGGING (Opsional tapi bagus)
+            // AuditLog::record('UPLOAD CERTIFICATE', 'Mengunggah sertifikat untuk verifikasi', $item->plan);
         }
 
-        AuditLog::record('UPLOAD CERTIFICATE', 'Mengunggah sertifikat untuk Item ID: ' . $itemId, $item);
-
-        return redirect()->route('rencana.index')
-            ->with('success', 'Sertifikat berhasil diupload!');
-            
+        return back()->with('success', 'Sertifikat berhasil diunggah. Mohon tunggu verifikasi Supervisor.');
     }
 
     public function show($id)

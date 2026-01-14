@@ -9,7 +9,6 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 
-                {{-- Header Section --}}
                 <div class="mb-8 border-b border-gray-100 pb-6">
                     <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -34,14 +33,26 @@
                                 <p class="text-sm text-gray-500 line-clamp-2 mb-4">{{ $training->description }}</p>
                             </div>
                             
-                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                                <span class="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 text-xs font-semibold rounded-full uppercase tracking-wide">
-                                    {{ ucfirst($training->type) }}
-                                </span>
-                                <button class="text-indigo-600 text-sm font-semibold hover:text-indigo-800 flex items-center gap-1 group/btn">
-                                    Ajukan
-                                    <svg class="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                </button>
+                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center gap-3">
+            
+                                {{-- TOMBOL DETAIL (BARU) --}}
+                                <a href="{{ route('katalog.show', $training->id) }}" 
+                                class="flex-1 inline-flex justify-center items-center py-2 px-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    Detail
+                                </a>
+
+                                {{-- TOMBOL AJUKAN (FORM) --}}
+                                <form action="{{ route('rencana.store') }}" method="POST" class="flex-1">
+                                    @csrf
+                                    <input type="hidden" name="training_id" value="{{ $training->id }}">
+                                    
+                                    <button type="submit" class="w-full inline-flex justify-center items-center py-2 px-3 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                        Ajukan
+                                    </button>
+                                </form>
+                                
                             </div>
                         </div>
                     @empty

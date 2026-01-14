@@ -42,15 +42,18 @@
                     @endif
                 </a>
 
-                <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition">
+                <div class="relative ml-3" x-data="{ open: false }">
+                    <button @click="open = ! open" class="relative p-1 rounded-full text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <span class="sr-only">View notifications</span>
-                        <ion-icon name="notifications-outline" class="h-6 w-6 text-xl"></ion-icon>
+                        <ion-icon name="notifications-outline" class="text-2xl"></ion-icon>
+                        
+                        {{-- Badge Merah (Hanya muncul jika ada notif belum dibaca) --}}
                         @if(Auth::user()->unreadNotifications->count() > 0)
-                            <span class="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"></span>
+                            <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-gray-800 bg-red-500 animate-pulse"></span>
                         @endif
                     </button>
 
+                    {{-- Dropdown Body --}}
                     <div x-show="open" 
                         @click.away="open = false"
                         x-transition:enter="transition ease-out duration-200"
@@ -59,63 +62,50 @@
                         x-transition:leave="transition ease-in duration-75"
                         x-transition:leave-start="transform opacity-100 scale-100"
                         x-transition:leave-end="transform opacity-0 scale-95"
-                        class="absolute right-0 mt-2 w-80 rounded-xl shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50 overflow-hidden"
+                        class="absolute right-0 mt-2 w-80 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50" 
                         style="display: none;">
                         
-                        <div class="py-1">
-                            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
-                                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Notifikasi</span>
-                                @if(Auth::user()->unreadNotifications->count() > 0)
-                                    <a href="{{ route('notifications.markRead') }}" class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                                        Tandai dibaca
-                                    </a>
-                                @endif
-                            </div>
-
-                            <div class="max-h-64 overflow-y-auto">
-                                @forelse(Auth::user()->unreadNotifications as $notification)
-                                    <a href="#" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                        <div class="flex items-start">
-                                            <div class="flex-shrink-0 pt-0.5">
-                                                @if($notification->data['type'] == 'success')
-                                                    <div class="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                                        <ion-icon name="checkmark-outline" class="text-green-600 dark:text-green-400"></ion-icon>
-                                                    </div>
-                                                @elseif($notification->data['type'] == 'warning')
-                                                    <div class="h-8 w-8 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                                                        <ion-icon name="alert-outline" class="text-yellow-600 dark:text-yellow-400"></ion-icon>
-                                                    </div>
-                                                @else
-                                                    <div class="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                                        <ion-icon name="information-outline" class="text-blue-600 dark:text-blue-400"></ion-icon>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="ml-3 w-0 flex-1">
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-                                                    {{ $notification->data['title'] }}
-                                                </p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                                                    {{ $notification->data['message'] }}
-                                                </p>
-                                                <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                                                    {{ $notification->created_at->diffForHumans() }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                @empty
-                                    <div class="px-4 py-8 text-center">
-                                        <ion-icon name="notifications-off-outline" class="text-3xl text-gray-300 dark:text-gray-600 mb-2"></ion-icon>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada notifikasi baru.</p>
-                                    </div>
-                                @endforelse
-                            </div>
-                            
-                            <a href="#" class="block px-4 py-2.5 text-xs font-medium text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                                Lihat Semua Riwayat
-                            </a>
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Notifikasi</span>
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <form action="{{ route('notifikasi.bacaSemua') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Tandai semua dibaca</button>
+                                </form>
+                            @endif
                         </div>
+
+                        <div class="max-h-64 overflow-y-auto">
+                            @forelse(Auth::user()->unreadNotifications as $notification)
+                                <a href="{{ route('notifikasi.baca', $notification->id) }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            {{-- Ikon berdasarkan tipe notifikasi (Opsional) --}}
+                                            <ion-icon name="information-circle" class="text-indigo-500 text-lg"></ion-icon>
+                                        </div>
+                                        <div class="ml-3 w-0 flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                {{ $notification->data['title'] ?? 'Pemberitahuan' }}
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-0.5">
+                                                {{ $notification->data['message'] ?? '' }}
+                                            </p>
+                                            <p class="text-[10px] text-gray-400 mt-1">
+                                                {{ $notification->created_at->diffForHumans() }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <ion-icon name="notifications-off-outline" class="text-2xl mb-1"></ion-icon>
+                                    <p>Tidak ada notifikasi baru</p>
+                                </div>
+                            @endforelse
+                        </div>
+                        
+                        {{-- Link Lihat Semua (Opsional) --}}
+                        {{-- <a href="#" class="block px-4 py-2 text-xs text-center text-gray-500 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 rounded-b-md">Lihat Semua Riwayat</a> --}}
                     </div>
                 </div>
 

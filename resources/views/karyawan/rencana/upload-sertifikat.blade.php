@@ -45,11 +45,43 @@
                 </div>
 
                 @if($item->certificate_path)
-                    <div class="mb-6 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg flex items-center gap-3">
-                        <ion-icon name="document-text" class="text-green-600 text-xl"></ion-icon>
+                    <div class="mb-6 p-4 rounded-lg flex items-start gap-3 
+                        {{ $item->certificate_status == 'verified' ? 'bg-green-50 border border-green-200' : 
+                        ($item->certificate_status == 'rejected' ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200') }}">
+                        
+                        {{-- Ikon Status --}}
+                        @if($item->certificate_status == 'verified')
+                            <ion-icon name="checkmark-circle" class="text-green-600 text-2xl mt-0.5"></ion-icon>
+                        @elseif($item->certificate_status == 'rejected')
+                            <ion-icon name="alert-circle" class="text-red-600 text-2xl mt-0.5"></ion-icon>
+                        @else
+                            <ion-icon name="hourglass" class="text-yellow-600 text-2xl mt-0.5"></ion-icon>
+                        @endif
+
                         <div>
-                            <p class="text-sm font-bold text-green-700 dark:text-green-300">Sertifikat sudah diupload</p>
-                            <a href="{{ asset('storage/' . $item->certificate_path) }}" target="_blank" class="text-xs underline text-green-600">Lihat File Saat Ini</a>
+                            <p class="text-sm font-bold 
+                                {{ $item->certificate_status == 'verified' ? 'text-green-800' : 
+                                ($item->certificate_status == 'rejected' ? 'text-red-800' : 'text-yellow-800') }}">
+                                
+                                @if($item->certificate_status == 'verified')
+                                    Sertifikat Terverifikasi
+                                @elseif($item->certificate_status == 'rejected')
+                                    Sertifikat Ditolak - Silakan Upload Ulang
+                                @else
+                                    Sedang Menunggu Verifikasi Supervisor
+                                @endif
+                            </p>
+                            
+                            <p class="text-xs mt-1 mb-2 {{ $item->certificate_status == 'verified' ? 'text-green-700' : ($item->certificate_status == 'rejected' ? 'text-red-700' : 'text-yellow-700') }}">
+                                File saat ini: <a href="{{ asset('storage/' . $item->certificate_path) }}" target="_blank" class="underline font-semibold">Lihat File</a>
+                            </p>
+
+                            {{-- Pesan Tambahan --}}
+                            @if($item->certificate_status == 'pending_approval')
+                                <p class="text-xs text-yellow-600 italic">
+                                    *Mengupload file baru akan menimpa file lama dan mereset status verifikasi.
+                                </p>
+                            @endif
                         </div>
                     </div>
                 @endif

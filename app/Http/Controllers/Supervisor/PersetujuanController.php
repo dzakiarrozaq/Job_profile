@@ -22,8 +22,10 @@ class PersetujuanController extends Controller
     {
         $supervisor = Auth::user();
         
+        // 1. Ambil ID bawahan
         $teamMemberIds = \App\Models\User::where('manager_id', $supervisor->id)->pluck('id');
 
+        // 2. Data Assessment
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user.position')
@@ -31,13 +33,14 @@ class PersetujuanController extends Controller
             ->get()
             ->unique('user_id');
 
-        
+        // 3. Data Training Plan (Rencana Pelatihan)
         $trainings = TrainingPlan::where('status', 'pending_supervisor')
             ->whereIn('user_id', $teamMemberIds) 
             ->with(['user', 'items.training']) 
             ->orderBy('created_at', 'desc')
             ->get();
         
+        // 4. Data Job Profile
         $supervisorPositionId = $supervisor->position_id;
         $childPositionIds = Position::where('atasan_id', $supervisorPositionId)->pluck('id');
 
@@ -47,9 +50,20 @@ class PersetujuanController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
+        // 5. Data IDP
         $pendingIdps = Idp::with('user')
             ->whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
+            ->latest()
+            ->get();
+
+        // 6. Data Sertifikat (TAMBAHAN BARU DISINI)
+        // Mengambil item pelatihan yang status sertifikatnya 'pending_approval' milik bawahan
+        $pendingCertificates = \App\Models\TrainingPlanItem::whereHas('plan', function($q) use ($teamMemberIds) {
+                $q->whereIn('user_id', $teamMemberIds);
+            })
+            ->where('certificate_status', 'pending_approval')
+            ->with(['plan.user']) // Load data user pemilik rencana
             ->latest()
             ->get();
 
@@ -57,7 +71,8 @@ class PersetujuanController extends Controller
             'assessments', 
             'trainings', 
             'jobProfiles', 
-            'pendingIdps' 
+            'pendingIdps',
+            'pendingCertificates' // <--- Jangan lupa masukkan ke compact
         ));
     }
 

@@ -56,6 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/profile/trigger-reset-password', [ProfileController::class, 'triggerResetPassword'])
          ->name('profile.trigger-reset');
+
+    Route::get('/notifikasi/{id}/baca', [App\Http\Controllers\NotificationController::class, 'markAsReadAndRedirect'])->name('notifikasi.baca');
+    Route::post('/notifikasi/baca-semua', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifikasi.bacaSemua');
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor,Karyawan Outsourcing'])->group(function () {
@@ -71,6 +74,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/my-idp', [IdpController::class, 'index'])->name('idp.index');
         Route::post('/my-idp', [IdpController::class, 'store'])->name('idp.store');
+        Route::get('/idp', [IdpController::class, 'index'])->name('idp.index');
+        Route::get('/idp/create', [IdpController::class, 'create'])->name('idp.create');
+        Route::post('/idp', [IdpController::class, 'store'])->name('idp.store');
+
+        Route::get('/idp/{id}/edit', [IdpController::class, 'edit'])->name('idp.edit');
+        Route::put('/idp/{id}', [IdpController::class, 'update'])->name('idp.update');
+    
+    Route::get('/idp/{id}', [IdpController::class, 'show'])->name('idp.show');
 
         Route::get('/rencana', [TrainingPlanController::class, 'index'])->name('rencana.index');
         Route::post('/rencana', [TrainingPlanController::class, 'store'])->name('rencana.store');
@@ -92,6 +103,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/persetujuan', [SupervisorPersetujuanController::class, 'index'])->name('persetujuan');
         Route::get('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'show'])->name('penilaian.show');
         Route::post('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'store'])->name('penilaian.store');
+        Route::get('/verifikasi-sertifikat', [App\Http\Controllers\Supervisor\CertificateController::class, 'index'])->name('sertifikat.index');
+        Route::post('/verifikasi-sertifikat/{id}/approve', [App\Http\Controllers\Supervisor\CertificateController::class, 'approve'])->name('sertifikat.approve');
+        Route::post('/verifikasi-sertifikat/{id}/reject', [App\Http\Controllers\Supervisor\CertificateController::class, 'reject'])->name('sertifikat.reject');
         
         Route::get('/profile', function () { return view('supervisor.profile', ['user' => Auth::user()]); })->name('profile');
         Route::patch('/profile', [ProfileController::class, 'updateSupervisorProfile'])->name('profile.update');

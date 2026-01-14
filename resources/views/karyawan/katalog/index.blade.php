@@ -1,119 +1,149 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center gap-2">
-                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                {{ __('Katalog Pelatihan') }}
-            </h2>
-        </div>
+        <h2 class="font-bold text-2xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ __('Katalog Pelatihan') }}
+        </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <form method="GET" action="{{ route('katalog') }}" class="flex flex-col md:flex-row gap-4">
                     
-                    <div class="relative flex-grow">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                    <div class="relative flex-grow group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <ion-icon name="search-outline" class="text-xl text-gray-400 group-focus-within:text-indigo-500 transition-colors"></ion-icon>
                         </div>
                         <input type="text" name="search" value="{{ request('search') }}" 
-                            class="pl-10 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                            class="pl-11 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 transition-all" 
                             placeholder="Cari judul pelatihan, topik, atau provider...">
                     </div>
 
-                    <div class="w-full md:w-48">
+                    <div class="w-full md:w-56 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <ion-icon name="filter-outline" class="text-lg text-gray-400"></ion-icon>
+                        </div>
                         <select name="type" onchange="this.form.submit()" 
-                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-pointer">
+                            class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 cursor-pointer appearance-none">
                             <option value="all">Semua Tipe</option>
                             <option value="internal" {{ request('type') == 'internal' ? 'selected' : '' }}>Internal</option>
                             <option value="external" {{ request('type') == 'external' ? 'selected' : '' }}>External</option>
                         </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <ion-icon name="chevron-down-outline" class="text-gray-400"></ion-icon>
+                        </div>
                     </div>
 
                     @if(request('search') || (request('type') && request('type') !== 'all'))
-                        <a href="{{ route('katalog') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                        <a href="{{ route('katalog') }}" class="inline-flex justify-center items-center px-6 py-3 border border-gray-200 dark:border-gray-600 rounded-xl shadow-sm text-sm font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-all">
+                            <ion-icon name="refresh-outline" class="mr-2 text-lg"></ion-icon>
                             Reset
                         </a>
                     @endif
                 </form>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {{-- Grid Katalog --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @forelse($trainings as $training)
-                    <div class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden">
+                    <div class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden relative">
                         
-                        <div class="h-32 bg-gradient-to-r {{ $training->type == 'internal' ? 'from-blue-500 to-indigo-600' : 'from-purple-500 to-pink-600' }} relative">
-                            <span class="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
-                                {{ $training->type }}
-                            </span>
+                        {{-- Card Header / Cover --}}
+                        <div class="h-40 bg-gradient-to-br {{ $training->type == 'internal' ? 'from-blue-600 to-indigo-600' : 'from-purple-600 to-fuchsia-600' }} relative p-6 flex flex-col justify-between">
                             
-                            <div class="absolute -bottom-6 -left-6 text-white/10 transform rotate-12">
-                                <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
+                            <div class="flex justify-between items-start">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
+                                    {{ $training->type }}
+                                </span>
+                                
+                                {{-- Badge Difficulty (Contoh: Beginner/Advanced) --}}
+                                @if(isset($training->difficulty))
+                                    <span class="px-2 py-1 rounded-md text-[10px] font-bold text-white bg-black/20 backdrop-blur-sm">
+                                        {{ $training->difficulty }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            {{-- Abstract Decoration --}}
+                            <div class="absolute bottom-0 right-0 opacity-10 transform translate-x-4 translate-y-4">
+                                <ion-icon name="shapes" class="text-9xl text-white"></ion-icon>
                             </div>
                         </div>
 
+                        {{-- Card Body --}}
                         <div class="p-6 flex-1 flex flex-col">
                             <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                                    {{ $training->title }}
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $training->method == 'Online' ? 'bg-green-500' : 'bg-orange-500' }}"></span>
+                                    <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {{ $training->method ?? 'Online' }}
+                                    </span>
+                                </div>
+
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                                    <a href="{{ route('katalog.show', $training->id) }}">
+                                        {{ $training->title }}
+                                    </a>
                                 </h3>
                                 
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                    {{ $training->provider ?? 'Internal Company' }}
-                                </p>
+                                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                    <ion-icon name="business-outline" class="text-lg"></ion-icon>
+                                    <span class="truncate">{{ $training->provider ?? 'Internal Company' }}</span>
+                                </div>
 
-                                <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-4">
+                                <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-6 leading-relaxed">
                                     {{ $training->description }}
                                 </p>
                             </div>
 
-                            <div class="pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-3">
-                                {{-- Tombol Detail --}}
-                                {{-- <a href="{{ route('katalog.show', $training->id) }}" class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                    Lihat Detail
-                                </a> --}}
-                                
-                                <button type="button" class="text-sm font-medium text-gray-500 cursor-not-allowed" disabled>Detail</button>
+                            <div class="pt-5 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-400 uppercase font-semibold">Biaya</p>
+                                    <p class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                        {{ $training->cost > 0 ? 'Rp ' . number_format($training->cost / 1000) . 'k' : 'Gratis' }}
+                                    </p>
+                                </div>
 
-                                <form action="{{ route('rencana.store') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="training_id" value="{{ $training->id }}">
+                                <div class="flex gap-2">
+                                    <a href="{{ route('katalog.show', $training->id) }}" class="p-2.5 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors" title="Lihat Detail">
+                                        <ion-icon name="eye-outline" class="text-xl"></ion-icon>
+                                    </a>
                                     
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
-                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                        </svg>
-                                        Ajukan
-                                    </button>
-                                </form>
+                                    <form action="{{ route('rencana.store') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="training_id" value="{{ $training->id }}">
+                                        
+                                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 rounded-xl font-bold text-xs text-white uppercase tracking-wide hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                                            <ion-icon name="add-outline" class="text-lg mr-1"></ion-icon>
+                                            Ajukan
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                 @empty
                     <div class="col-span-1 md:col-span-2 lg:col-span-3">
-                        <div class="flex flex-col items-center justify-center py-16 px-4 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-                            <div class="p-4 rounded-full bg-gray-50 dark:bg-gray-700 mb-4">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                            <div class="p-6 rounded-full bg-gray-50 dark:bg-gray-700 mb-6 animate-pulse">
+                                <ion-icon name="search" class="text-5xl text-gray-300"></ion-icon>
                             </div>
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Pelatihan Tidak Ditemukan</h3>
-                            <p class="text-gray-500 dark:text-gray-400 mt-1 max-w-sm">
-                                Maaf, kami tidak menemukan pelatihan dengan kata kunci <strong>"{{ request('search') }}"</strong> atau filter yang Anda pilih.
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Pelatihan Tidak Ditemukan</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto leading-relaxed">
+                                Kami tidak dapat menemukan pelatihan dengan kata kunci <strong>"{{ request('search') }}"</strong>. Coba kata kunci lain atau reset filter.
                             </p>
-                            <a href="{{ route('katalog') }}" class="mt-6 text-indigo-600 font-semibold hover:underline">
-                                Bersihkan Pencarian
+                            <a href="{{ route('katalog') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                Lihat Semua Pelatihan
                             </a>
                         </div>
                     </div>
                 @endforelse
             </div>
 
-            <div class="mt-6">
+            {{-- Pagination --}}
+            <div class="mt-8">
                 {{ $trainings->links() }}
             </div>
 

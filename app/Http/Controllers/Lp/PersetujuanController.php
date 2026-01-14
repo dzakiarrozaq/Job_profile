@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\TrainingPlan;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\StatusDiperbarui; 
+use App\Models\AuditLog; 
 
 class PersetujuanController extends Controller
 {
@@ -39,11 +41,20 @@ class PersetujuanController extends Controller
      */
     public function approve($id)
     {
-        $plan = TrainingPlan::findOrFail($id);
+        $plan = TrainingPlan::with('user')->findOrFail($id);
         
         $plan->update([
             'status' => 'approved', 
         ]);
+
+        $plan->user->notify(new StatusDiperbarui(
+            'Disetujui Final (LP)', 
+            'Selamat! Rencana pelatihan Anda telah disetujui Learning Partner. Anda dapat memulai pelatihan/mengupload sertifikat.', // Pesan
+            route('riwayat'), 
+            'success' 
+        ));
+
+        AuditLog::record('APPROVE PLAN (LP)', 'Memverifikasi final rencana pelatihan milik: ' . $plan->user->name, $plan);
 
         return redirect()->route('lp.persetujuan')
             ->with('success', 'Rencana training berhasil diverifikasi Final.');
@@ -54,11 +65,22 @@ class PersetujuanController extends Controller
      */
     public function reject(Request $request, $id)
     {
-        $plan = TrainingPlan::findOrFail($id);
+        $plan = TrainingPlan::with('user')->findOrFail($id);
+
+        $alasan = $request->input('reason', 'Tidak ada alasan spesifik.');
 
         $plan->update([
-            'status' => 'rejected',
+            'status' => 'rejected',            
         ]);
+
+        $plan->user->notify(new StatusDiperbarui(
+            'Ditolak Learning Partner', 
+            'Maaf, rencana pelatihan Anda ditolak oleh Learning Partner. Alasan: ' . $alasan, // Pesan
+            route('riwayat'), 
+            'error' 
+        ));
+
+        AuditLog::record('REJECT PLAN (LP)', 'Menolak rencana pelatihan milik: ' . $plan->user->name . '. Alasan: ' . $alasan, $plan);
 
         return redirect()->route('lp.persetujuan')
             ->with('error', 'Rencana training ditolak.');

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\JobProfileStatusNotification; 
 use App\Models\AuditLog;
+use App\Notifications\StatusDiperbarui;
 
 
 class VerifikasiKompetensiController extends Controller
@@ -108,7 +109,13 @@ class VerifikasiKompetensiController extends Controller
             );
 
             DB::commit();
-
+            
+            $employee->notify(new StatusDiperbarui(
+                'Penilaian Disetujui',
+                'Supervisor telah memverifikasi penilaian kompetensi Anda. Silakan cek analisis gap terbaru.',
+                route('dashboard'), // Arahkan ke dashboard karyawan
+                'success'
+            ));
 
             AuditLog::create([
                 'user_id' => Auth::id(),
