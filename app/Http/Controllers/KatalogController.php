@@ -20,7 +20,23 @@ class KatalogController extends Controller
             });
         }
 
-        if ($request->filled('type') && $request->type !== 'all') {
+        if ($request->filled('categories') && is_array($request->categories)) {
+            $query->whereIn('category', $request->categories);
+        }
+
+        if ($request->filled('levels') && is_array($request->levels)) {
+            $query->whereIn('difficulty', $request->levels);
+        }
+
+        if ($request->filled('methods') && is_array($request->methods)) {
+            $query->whereIn('method', $request->methods);
+        }
+
+        if ($request->filled('types') && is_array($request->types)) {
+            $query->whereIn('type', $request->types);
+        } 
+
+        elseif ($request->filled('type') && $request->type !== 'all') {
             $query->where('type', $request->type);
         }
 

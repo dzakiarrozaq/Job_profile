@@ -15,9 +15,16 @@ class PenilaianController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+        //dd($user->id, $user->name, $user->position_id, $user->position);
         
         $position = $user->position;
         $jobProfile = $position?->jobProfile;
+
+        // dd([
+        //     'Cek Posisi' => $position->toArray(),
+        //     'Cek Job Profile' => $jobProfile
+        // ]);
 
 
         if (!$position || !$jobProfile) {
