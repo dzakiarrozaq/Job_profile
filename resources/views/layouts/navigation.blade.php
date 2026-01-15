@@ -5,11 +5,10 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <div class="flex items-center">
-                    <a href="{{ route('dashboard') }}" class="flex items-center group">
-                        <ion-icon name="analytics-outline" class="text-3xl text-blue-600 group-hover:text-blue-500 transition"></ion-icon>
-                        <span class="text-2xl font-bold text-gray-900 dark:text-white ml-2 tracking-tight">DevHub</span>
-                    </a>
+                <div class="flex items-center gap-2">
+                    <img src="{{ asset('img/semen_gresik.svg') }}" alt="Semen Gresik" class="h-10 w-auto">
+                    
+                    <span class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">DevHub</span>
                 </div>
 
                 <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
@@ -47,13 +46,11 @@
                         <span class="sr-only">View notifications</span>
                         <ion-icon name="notifications-outline" class="text-2xl"></ion-icon>
                         
-                        {{-- Badge Merah (Hanya muncul jika ada notif belum dibaca) --}}
                         @if(Auth::user()->unreadNotifications->count() > 0)
                             <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-gray-800 bg-red-500 animate-pulse"></span>
                         @endif
                     </button>
 
-                    {{-- Dropdown Body --}}
                     <div x-show="open" 
                         @click.away="open = false"
                         x-transition:enter="transition ease-out duration-200"
@@ -104,8 +101,6 @@
                             @endforelse
                         </div>
                         
-                        {{-- Link Lihat Semua (Opsional) --}}
-                        {{-- <a href="#" class="block px-4 py-2 text-xs text-center text-gray-500 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 rounded-b-md">Lihat Semua Riwayat</a> --}}
                     </div>
                 </div>
 

@@ -1,4 +1,10 @@
 <x-guest-layout>
+    <x-slot name="logo">
+        <div class="flex items-center gap-2">
+            <img src="{{ asset('img/semen_gresik.svg') }}" alt="Semen Gresik" class="h-16 w-auto">
+            <span class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">DevHub</span>
+        </div>
+    </x-slot>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <form method="POST" action="{{ route('login') }}">

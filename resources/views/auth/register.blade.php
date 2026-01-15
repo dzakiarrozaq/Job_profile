@@ -1,10 +1,4 @@
 <x-guest-layout>
-    <x-slot name="logo">
-        <a href="/" class="flex items-center justify-center">
-            <ion-icon name="analytics-outline" class="text-4xl text-blue-600"></ion-icon>
-            <span class="text-4xl font-bold text-gray-800 dark:text-gray-200 ml-2">DevHub</span>
-        </a>
-    </x-slot>
 
     <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mt-4">
         Buat Akun Baru

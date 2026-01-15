@@ -1,5 +1,3 @@
-{{-- File: resources/views/components/supervisor-layout.blade.php --}}
-
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-gray-100 dark:bg-gray-900">
     <head>
@@ -18,41 +16,13 @@
         <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
         <style>
-            /* Style kustom untuk sidebar Supervisor (Sesuai Mockup) */
-            body { 
-                font-family: 'Instrument Sans', sans-serif;
-            }
-            .sidebar-link { 
-                display: flex; 
-                align-items: center; 
-                padding: 0.75rem 1rem; 
-                border-radius: 0.5rem; 
-                color: #d1d5db; /* text-gray-300 */
-                transition: all 0.2s; 
-                font-size: 0.875rem; /* text-sm */
-                font-weight: 500;
-            }
-            .sidebar-link:hover { 
-                background-color: #374151; /* hover:bg-gray-700 */
-                color: white; 
-            }
-            .sidebar-link.active { 
-                background-color: #4338CA; /* bg-indigo-700 (SesuAI Mockup) */
-                color: white; 
-                font-weight: 600; 
-            }
-            .sidebar-link ion-icon { 
-                font-size: 1.25rem; /* text-xl */
-                margin-right: 0.75rem; /* mr-3 */
-            }
-            .sidebar-heading { 
-                font-size: 0.75rem; /* text-xs */
-                color: #9CA3AF; /* text-gray-400 */
-                font-weight: 600; 
-                text-transform: uppercase; 
-                padding: 0.5rem 1rem; 
-                margin-top: 0.75rem; /* 12px - Lebih rapat */
-            }
+            /* Style kustom untuk sidebar Supervisor */
+            body { font-family: 'Instrument Sans', sans-serif; }
+            .sidebar-link { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #d1d5db; transition: all 0.2s; font-size: 0.875rem; font-weight: 500; }
+            .sidebar-link:hover { background-color: #374151; color: white; }
+            .sidebar-link.active { background-color: #4338CA; color: white; font-weight: 600; }
+            .sidebar-link ion-icon { font-size: 1.25rem; margin-right: 0.75rem; }
+            .sidebar-heading { font-size: 0.75rem; color: #9CA3AF; font-weight: 600; text-transform: uppercase; padding: 0.5rem 1rem; margin-top: 0.75rem; }
         </style>
     </head>
     <body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -62,9 +32,12 @@
             <aside class="w-64 h-screen sticky top-0 flex-shrink-0 bg-[#1F2937] text-white flex flex-col overflow-y-auto">
                 <div class="p-4 flex-1 flex flex-col">
                     
-                    <div class="flex items-center mb-6 px-2 pt-2">
-                        <ion-icon name="analytics-outline" class="text-3xl text-indigo-400 mr-2"></ion-icon>
-                        <h1 class="text-xl font-bold tracking-tight text-white">DevHub</h1>
+                    <div class="flex items-center mb-6 px-2 pt-2 gap-3">
+                        <img src="{{ asset('img/semen_gresik.svg') }}" alt="Logo" class="h-10 w-auto bg-white rounded p-1">
+                        <div>
+                            <h1 class="text-lg font-bold tracking-tight text-white leading-tight">DevHub</h1>
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Supervisor Panel</span>
+                        </div>
                     </div>
                     
                     <a href="{{ route('profile.edit') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
@@ -95,7 +68,6 @@
                             <ion-icon name="bar-chart-outline"></ion-icon>
                             Laporan Kompetensi
                         </a>
-
                         <a href="{{ route('supervisor.job-profile.index') }}" 
                             class="sidebar-link {{ request()->routeIs('supervisor.job-profile.*') ? 'active' : '' }}">
                             <ion-icon name="briefcase-outline"></ion-icon>
@@ -105,7 +77,6 @@
                         <div class="my-6 border-t border-gray-700"></div>
 
                         <h2 class="sidebar-heading">Area Pribadi</h2>
-                        
                         <a href="{{ route('dashboard') }}" 
                            class="sidebar-link hover:bg-indigo-900 text-indigo-200 group transition-colors">
                             <div class="flex items-center w-full">

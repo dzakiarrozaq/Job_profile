@@ -32,10 +32,16 @@
             
             <aside class="w-64 h-screen sticky top-0 flex-shrink-0 bg-[#1F2937] text-white flex flex-col overflow-y-auto">
                 <div class="p-4 flex-1 flex flex-col">
-                    <div class="flex items-center mb-6 px-2 pt-2">
-                        <ion-icon name="shield-half-outline" class="text-3xl text-indigo-400 mr-2"></ion-icon>
-                        <h1 class="text-xl font-bold tracking-tight text-white">Admin DevHub</h1>
+                    
+                    {{-- BAGIAN LOGO (DIPERBARUI) --}}
+                    <div class="flex items-center mb-6 px-2 pt-2 gap-3">
+                        <img src="{{ asset('img/semen_gresik.svg') }}" alt="Logo" class="h-10 w-auto bg-white rounded p-1">
+                        <div>
+                            <h1 class="text-lg font-bold tracking-tight text-white leading-tight">DevHub</h1>
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin Panel</span>
+                        </div>
                     </div>
+                    {{-- END BAGIAN LOGO --}}
                     
                     <a href="{{ route('supervisor.profile') }}" class="flex items-center space-x-3 p-2.5 bg-gray-900 bg-opacity-50 rounded-lg mb-2 hover:bg-gray-700 transition-colors">
                         <img class="h-10 w-10 rounded-full object-cover" src="https://i.pravatar.cc/150?u={{ Auth::id() }}" alt="Foto Profil">

@@ -66,7 +66,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {{-- Looping Baris menggunakan Alpine x-for --}}
                                     <template x-for="(row, index) in rows" :key="index">
                                         <tr>
                                             <td class="p-2 border border-gray-300 text-center" x-text="index + 1"></td>
@@ -104,7 +103,6 @@
                                 </tbody>
                             </table>
                             
-                            {{-- Tombol Tambah Baris --}}
                             <button type="button" 
                                 @click="rows.push({ goal: '', category: 'Improve Current Capabilities', activity: '', date: '', progress: '' })"
                                 class="mt-3 flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline">
@@ -115,7 +113,6 @@
                     </div>
                 </div>
 
-                {{-- BAGIAN 2: CAREER ASPIRATION --}}
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-gray-50 border-b border-gray-200">
                         <h3 class="font-bold text-gray-800 uppercase">2. Career Aspiration</h3>
@@ -146,7 +143,6 @@
                     </div>
                 </div>
 
-                {{-- BAGIAN 3: APPROVAL --}}
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
                         <div>

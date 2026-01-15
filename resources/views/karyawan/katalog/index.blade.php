@@ -44,12 +44,10 @@
                 </form>
             </div>
 
-            {{-- Grid Katalog --}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @forelse($trainings as $training)
                     <div class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden relative">
                         
-                        {{-- Card Header / Cover --}}
                         <div class="h-40 bg-gradient-to-br {{ $training->type == 'internal' ? 'from-blue-600 to-indigo-600' : 'from-purple-600 to-fuchsia-600' }} relative p-6 flex flex-col justify-between">
                             
                             <div class="flex justify-between items-start">
@@ -57,7 +55,6 @@
                                     {{ $training->type }}
                                 </span>
                                 
-                                {{-- Badge Difficulty (Contoh: Beginner/Advanced) --}}
                                 @if(isset($training->difficulty))
                                     <span class="px-2 py-1 rounded-md text-[10px] font-bold text-white bg-black/20 backdrop-blur-sm">
                                         {{ $training->difficulty }}
@@ -65,13 +62,11 @@
                                 @endif
                             </div>
 
-                            {{-- Abstract Decoration --}}
                             <div class="absolute bottom-0 right-0 opacity-10 transform translate-x-4 translate-y-4">
                                 <ion-icon name="shapes" class="text-9xl text-white"></ion-icon>
                             </div>
                         </div>
 
-                        {{-- Card Body --}}
                         <div class="p-6 flex-1 flex flex-col">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-3">
@@ -142,7 +137,6 @@
                 @endforelse
             </div>
 
-            {{-- Pagination --}}
             <div class="mt-8">
                 {{ $trainings->links() }}
             </div>
