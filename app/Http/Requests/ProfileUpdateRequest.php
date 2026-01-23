@@ -19,11 +19,13 @@ class ProfileUpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
             
-            // Tambahkan validasi untuk field baru
-            'place_of_birth' => ['nullable', 'string', 'max:100'],
+            'hiring_date' => ['nullable', 'date'],
+            'nik' => ['nullable', 'string', 'max:50'],
+            'position_id' => ['nullable', 'exists:positions,id'],
+            'place_of_birth' => ['nullable', 'string', 'max:255'],
             'date_of_birth' => ['nullable', 'date'],
-            'domicile' => ['nullable', 'string', 'max:255'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'], // Max 2MB, format gambar
+            'domicile' => ['nullable', 'string'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'], // Validasi foto
         ];
     }
 }

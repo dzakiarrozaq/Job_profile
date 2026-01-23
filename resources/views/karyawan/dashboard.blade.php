@@ -67,7 +67,7 @@
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ $user->name }}</h3>
                                 <div class="flex items-center justify-center gap-2 mt-2">
                                     <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                                        {{ $user->batch_number ?? 'NIK: -' }}
+                                        NIK: {{ $user->nik ?? '-' }}
                                     </span>
                                 </div>
                             </div>
@@ -93,7 +93,7 @@
                                         <span class="text-gray-500 dark:text-gray-400 font-medium">Unit</span>
                                     </div>
                                     <span class="font-semibold text-gray-900 dark:text-white text-right truncate max-w-[120px]">
-                                        {{ $user->position->unit->name ?? '-' }}
+                                        {{ $user->position->organization->name ?? '-' }}
                                     </span>
                                 </div>
 
@@ -105,7 +105,7 @@
                                         <span class="text-gray-500 dark:text-gray-400 font-medium">Atasan</span>
                                     </div>
                                     <span class="font-semibold text-gray-900 dark:text-white text-right truncate max-w-[120px]">
-                                        {{ $user->manager->name ?? '-' }}
+                                        {{ Auth::user()->atasan_name }}
                                     </span>
                                 </div>
                             </div>                  

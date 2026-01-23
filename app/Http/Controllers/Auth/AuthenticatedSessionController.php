@@ -27,24 +27,18 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
         $request->session()->regenerate();
-
-        AuditLog::record('Login', 'Pengguna berhasil login ke dalam sistem.');
+        AuditLog::record('Login', 'Pengguna berhasil login.');
 
         $user = Auth::user();
-        $user->load('roles'); 
 
-        if ($user->roles->count() === 0) {
-            Auth::logout();
-            return redirect('login')->with('error', 'Akun Anda tidak memiliki akses peran.');
-        }
-
+        // JIKA PUNYA BANYAK ROLE -> ARAHKAN KE HALAMAN PILIH PERAN
         if ($user->roles->count() > 1) {
             return redirect()->route('role.selection');
         }
 
-        $roleName = $user->roles->first()->name;
-        $request->session()->put('active_role_name', $roleName);
-
+        // JIKA CUMA 1 ROLE -> LANGSUNG MASUK
+        $roleName = $user->roles->first()?->name ?? 'User';
+        
         $redirectUrl = match ($roleName) {
             'Admin'            => route('admin.dashboard'),
             'Supervisor'       => route('supervisor.dashboard'),

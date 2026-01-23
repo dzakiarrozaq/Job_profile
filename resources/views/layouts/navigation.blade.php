@@ -27,13 +27,11 @@
             <div class="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
                 
                 <a href="{{ route('rencana.index') }}" 
-                    class="flex items-center text-sm font-medium transition px-3 py-2 rounded-md
-                        {{ request()->routeIs('rencana') 
-                            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-                            : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
-                    
-                    <ion-icon name="{{ request()->routeIs('rencana') ? 'cart' : 'cart-outline' }}" class="text-xl mr-1.5"></ion-icon>
-                    
+                   class="flex items-center text-sm font-medium transition px-3 py-2 rounded-md
+                    {{ request()->routeIs('rencana') 
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                        : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                                        
                     Rencana
                     
                     @if(isset($rencanaCount) && $rencanaCount > 0)
@@ -124,12 +122,8 @@
                             {{ __('Profil Saya') }}
                         </x-dropdown-link>
 
-                        <x-dropdown-link :href="route('riwayat')">
-                            <ion-icon name="time-outline" class="text-lg mr-2 align-middle"></ion-icon>
-                            {{ __('Riwayat Pelatihan') }}
-                        </x-dropdown-link>
-
-                        @if(Auth::user()->roles->contains('name', 'Supervisor'))
+                        {{-- PERBAIKAN: Ganti pengecekan role -> Multi Role --}}
+                        @if($user->roles->contains('name', 'Supervisor'))
                             <div class="border-t border-gray-100 dark:border-gray-700"></div>
                             <div class="block px-4 py-2 text-xs text-indigo-500 dark:text-indigo-400 font-bold uppercase">
                                 Area Supervisor
@@ -181,7 +175,6 @@
                 {{ __('IDP Saya') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('rencana.index')" :active="request()->routeIs('rencana*')">
-                <ion-icon name="cart-outline" class="text-lg mr-2 align-text-bottom"></ion-icon>
                 {{ __('Rencana Saya (3)') }}
             </x-responsive-nav-link>
         </div>
@@ -202,7 +195,8 @@
                     {{ __('Profil Saya') }}
                 </x-responsive-nav-link>
                 
-                @if(Auth::user()->roles->contains('name', 'Supervisor'))
+                {{-- PERBAIKAN: Ganti pengecekan role -> Multi Role --}}
+                @if($user->roles->contains('name', 'Supervisor'))
                     <x-responsive-nav-link :href="route('supervisor.dashboard')" class="text-indigo-600 dark:text-indigo-400">
                         {{ __('Dashboard Supervisor') }}
                     </x-responsive-nav-link>

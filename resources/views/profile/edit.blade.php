@@ -56,7 +56,7 @@
                             </div>
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $user->name }}</h2>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $user->batch_number ?? 'No Batch' }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $user->nik ?? 'NIK' }}</p>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 mt-2">
                                     {{ session('active_role_name') ?? 'Pengguna' }}
                                 </span>
@@ -70,11 +70,12 @@
                             </div>
                             <div>
                                 <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Unit Kerja</p>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ $user->department->name ?? '-' }}</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ $user->position->organization->name ?? '-' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">Atasan Langsung</p>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ $user->manager->name ?? '-' }}</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ Auth::user()->atasan_name }}</p>
+                                <small class="text-gray-500">{{ Auth::user()->atasan_jabatan }}</small>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-4">
@@ -212,55 +213,159 @@
             </div>
 
             <div x-show="currentTab === 'riwayat'" class="space-y-6">
-                
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Riwayat Jabatan</h2>
-                        {{-- (Opsional: Tombol Tambah jika perlu) --}}
-                    </div>
-                    <ul class="space-y-4 border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-4">
-                        @forelse ($user->jobHistories as $job)
-                        <li class="relative">
-                            <div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-800"></div>
-                            <p class="font-semibold text-gray-900 dark:text-white text-base">{{ $job->title }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $job->unit }}</p>
-                            <p class="text-xs text-gray-500 mt-1">
-                                {{ \Carbon\Carbon::parse($job->start_date)->format('M Y') }} - 
-                                {{ $job->end_date ? \Carbon\Carbon::parse($job->end_date)->format('M Y') : 'Sekarang' }}
-                            </p>
-                        </li>
-                        @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400 italic">Belum ada data riwayat jabatan.</p>
-                        @endforelse
-                    </ul>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6" x-data="{ showJobModal: false }">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Riwayat Jabatan</h2>
+                    <button @click="showJobModal = true" class="text-sm px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md font-medium transition">
+                        + Tambah Jabatan
+                    </button>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Riwayat Pendidikan</h2>
-                    <div class="grid gap-4">
-                        @forelse ($user->educationHistories as $edu)
-                        <div class="border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0">
+                <ul class="space-y-4 border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-4">
+                    @forelse ($user->jobHistories as $job)
+                        <li class="relative group">
+                            <div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-indigo-500 border-2 border-white dark:border-gray-800"></div>
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-900 dark:text-white text-base">{{ $job->title }}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $job->unit }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ \Carbon\Carbon::parse($job->start_date)->format('M Y') }} - 
+                                        {{ $job->end_date ? \Carbon\Carbon::parse($job->end_date)->format('M Y') : 'Sekarang' }}
+                                    </p>
+                                </div>
+                                
+                                <form action="{{ route('profile.job-history.destroy', $job->id) }}" method="POST" 
+                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus riwayat jabatan ini?');">
+                                    @csrf 
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition p-2" title="Hapus">
+                                        <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400 italic">Belum ada data riwayat jabatan.</p>
+                    @endforelse
+                </ul>
+
+                <div x-show="showJobModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50" style="display: none;">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6" @click.away="showJobModal = false">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Riwayat Jabatan</h3>
+                        <form action="{{ route('profile.job-history.store') }}" method="POST">
+                            @csrf
+                            <div class="space-y-4">
+                                <div>
+                                    <x-input-label for="title" value="Nama Jabatan" />
+                                    <x-text-input id="title" name="title" type="text" class="w-full mt-1" required placeholder="Contoh: Staff Gudang" />
+                                </div>
+                                <div>
+                                    <x-input-label for="unit" value="Unit Kerja / Departemen" />
+                                    <x-text-input id="unit" name="unit" type="text" class="w-full mt-1" required placeholder="Contoh: Logistik" />
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <x-input-label for="start_date" value="Tanggal Mulai" />
+                                        <x-text-input id="start_date" name="start_date" type="date" class="w-full mt-1" required />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="end_date" value="Tanggal Selesai" />
+                                        <x-text-input id="end_date" name="end_date" type="date" class="w-full mt-1" />
+                                        <p class="text-xs text-gray-500 mt-1">*Kosongkan jika masih menjabat</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button type="button" @click="showJobModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Batal</button>
+                                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6" x-data="{ showEduModal: false }">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Riwayat Pendidikan</h2>
+                    <button @click="showEduModal = true" class="text-sm px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md font-medium transition">
+                        + Tambah Pendidikan
+                    </button>
+                </div>
+
+                <div class="grid gap-4">
+                    @forelse ($user->educationHistories as $edu)
+                        <div class="border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 relative group">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="font-semibold text-gray-900 dark:text-white">{{ $edu->degree }} - {{ $edu->field_of_study }}</p>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ $edu->institution }}</p>
                                 </div>
-                                <span class="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">
-                                    {{ $edu->year_start }} - {{ $edu->year_end }}
-                                </span>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">
+                                        {{ $edu->year_start }} - {{ $edu->year_end ?? 'Skrg' }}
+                                    </span>
+
+                                    <form action="{{ route('profile.education.destroy', $edu->id) }}" method="POST" 
+                                        onsubmit="return confirm('Hapus riwayat pendidikan ini?');">
+                                        @csrf 
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition p-1" title="Hapus">
+                                            <ion-icon name="close-circle-outline" class="text-xl"></ion-icon>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                        @empty
+                    @empty
                         <p class="text-sm text-gray-500 dark:text-gray-400 italic">Belum ada data pendidikan.</p>
-                        @endforelse
-                    </div>
+                    @endforelse
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Riwayat Pelatihan (Selesai)</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 italic">Menampilkan pelatihan yang telah diselesaikan dan diverifikasi.</p>
+                <div x-show="showEduModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50" style="display: none;">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6" @click.away="showEduModal = false">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Tambah Riwayat Pendidikan</h3>
+                        <form action="{{ route('profile.education.store') }}" method="POST">
+                            @csrf
+                            <div class="space-y-4">
+                                <div>
+                                    <x-input-label for="degree" value="Jenjang Pendidikan" />
+                                    <select id="degree" name="degree" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="SMA/SMK">SMA / SMK</option>
+                                        <option value="D3">Diploma (D3)</option>
+                                        <option value="S1">Sarjana (S1)</option>
+                                        <option value="S2">Magister (S2)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="institution" value="Nama Sekolah / Kampus" />
+                                    <x-text-input id="institution" name="institution" type="text" class="w-full mt-1" required placeholder="Contoh: Universitas Indonesia" />
+                                </div>
+                                <div>
+                                    <x-input-label for="field_of_study" value="Jurusan" />
+                                    <x-text-input id="field_of_study" name="field_of_study" type="text" class="w-full mt-1" required placeholder="Contoh: Teknik Mesin" />
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <x-input-label for="year_start" value="Tahun Masuk" />
+                                        <x-text-input id="year_start" name="year_start" type="number" min="1950" max="2099" class="w-full mt-1" required />
+                                    </div>
+                                    <div>
+                                        <x-input-label for="year_end" value="Tahun Lulus" />
+                                        <x-text-input id="year_end" name="year_end" type="number" min="1950" max="2099" class="w-full mt-1" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button type="button" @click="showEduModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Batal</button>
+                                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
+
+        </div>
 
             <div x-show="currentTab === 'keahlian'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
@@ -325,57 +430,70 @@
                             @method('patch')
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                
                                 <div class="md:col-span-2" x-data="{ photoName: null, photoPreview: null }">
-                                    <input type="file" id="photo" class="hidden" name="profile_photo"
-                                                x-ref="photo"
-                                                x-on:change="
-                                                        photoName = $refs.photo.files[0].name;
-                                                        const reader = new FileReader();
-                                                        reader.onload = (e) => {
-                                                            photoPreview = e.target.result;
-                                                        };
-                                                        reader.readAsDataURL($refs.photo.files[0]);
-                                                " />
-
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="photo">
-                                        Foto Profil
-                                    </label>
-
+                                    <input type="file" id="photo" class="hidden" name="profile_photo" x-ref="photo"
+                                            x-on:change="photoName = $refs.photo.files[0].name; const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL($refs.photo.files[0]);" />
+                                    
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="photo">Foto Profil</label>
+                                    
                                     <div class="flex items-center gap-4">
                                         <div class="mt-2" x-show="! photoPreview">
-                                            <img src="{{ $user->profile_photo_path ? asset('storage/'.$user->profile_photo_path) : 'https://ui-avatars.com/api/?name='.urlencode($user->name) }}" 
-                                                alt="{{ $user->name }}" 
-                                                class="rounded-full h-20 w-20 object-cover border-2 border-gray-200">
+                                            <img src="{{ $user->profile_photo_path ? asset('storage/'.$user->profile_photo_path) : 'https://ui-avatars.com/api/?name='.urlencode($user->name) }}" alt="{{ $user->name }}" class="rounded-full h-20 w-20 object-cover border-2 border-gray-200">
                                         </div>
-
                                         <div class="mt-2" x-show="photoPreview" style="display: none;">
-                                            <span class="block rounded-full w-20 h-20 bg-cover bg-no-repeat bg-center border-2 border-indigo-500"
-                                                x-bind:style="'background-image: url(\'' + photoPreview + '\');'">
-                                            </span>
+                                            <span class="block rounded-full w-20 h-20 bg-cover bg-no-repeat bg-center border-2 border-indigo-500" x-bind:style="'background-image: url(\'' + photoPreview + '\');'"></span>
                                         </div>
-
-                                        <button type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-                                                x-on:click.prevent="$refs.photo.click()">
+                                        <button type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600" x-on:click.prevent="$refs.photo.click()">
                                             {{ __('Pilih Foto Baru') }}
                                         </button>
                                     </div>
-                                    <x-input-error class="mt-2" :messages="$errors->get('profile_photo')" />
                                 </div>
+
                                 <div>
                                     <x-input-label for="name" :value="__('Nama Lengkap')" />
-                                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('name')" />
+                                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required />
                                 </div>
 
                                 <div>
                                     <x-input-label for="email" :value="__('Email')" />
-                                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('email')" />
+                                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="nik" :value="__('NIK')" />
+                                    <x-text-input id="nik" name="nik" type="text" 
+                                                class="mt-1 block w-full bg-gray-50" 
+                                                :value="old('nik', $user->nik)" 
+                                                placeholder="Contoh: NIK-2024-01" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="hiring_date" :value="__('Tanggal Masuk')" />
+                                    <x-text-input id="hiring_date" name="hiring_date" type="date" class="mt-1 block w-full" :value="old('hiring_date', $user->hiring_date)" />
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <x-input-label for="position_id" :value="__('Posisi Saat Ini')" />
+                                    <div class="relative">
+                                        <select id="position_id" name="position_id" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
+                                            <option value="">-- Pilih Posisi --</option>
+                                            @foreach($positions as $pos)
+                                                <option value="{{ $pos->id }}" {{ old('position_id', $user->position_id) == $pos->id ? 'selected' : '' }}>
+                                                    {{ $pos->title }} ({{ $pos->department->name ?? 'No Dept' }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-yellow-600 mt-1 flex items-center">
+                                            <ion-icon name="alert-circle-outline" class="mr-1"></ion-icon>
+                                            Perhatian: Mengubah posisi ini akan otomatis memindahkan posisi lama ke "Riwayat Jabatan".
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div>
                                     <x-input-label for="place_of_birth" :value="__('Tempat Lahir')" />
-                                    <x-text-input id="place_of_birth" name="place_of_birth" type="text" class="mt-1 block w-full" :value="old('place_of_birth', $user->place_of_birth)" placeholder="Kota Kelahiran" />
+                                    <x-text-input id="place_of_birth" name="place_of_birth" type="text" class="mt-1 block w-full" :value="old('place_of_birth', $user->place_of_birth)" />
                                 </div>
 
                                 <div>
@@ -385,12 +503,16 @@
 
                                 <div class="md:col-span-2">
                                     <x-input-label for="domicile" :value="__('Alamat Domisili')" />
-                                    <x-text-input id="domicile" name="domicile" type="text" class="mt-1 block w-full" :value="old('domicile', $user->domicile)" placeholder="Alamat tempat tinggal saat ini" />
+                                    <x-text-input id="domicile" name="domicile" type="text" class="mt-1 block w-full" :value="old('domicile', $user->domicile)" />
                                 </div>
                             </div>
 
                             <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                                 <x-primary-button>{{ __('Simpan Perubahan') }}</x-primary-button>
+                                
+                                @if (session('status') === 'profile-updated')
+                                    <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2000)" class="text-sm text-gray-600 dark:text-gray-400">{{ __('Tersimpan.') }}</p>
+                                @endif
                             </div>
                         </form>
                     </div>

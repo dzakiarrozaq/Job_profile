@@ -10,8 +10,9 @@
             
             <div class="bg-gray-100 dark:bg-gray-700 px-6 py-4 flex justify-between items-center">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $plan->user->name }}</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $plan->user->position->name ?? 'N/A' }}</p>
+                    {{-- PERBAIKAN: Gunakan Null Safe Operator --}}
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $plan->user->name ?? 'User Terhapus' }}</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $plan->user?->position?->name ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider 
@@ -40,20 +41,29 @@
 
                 @foreach($plan->items as $item)
                     <div class="mb-6 pb-6 border-b last:border-0 dark:border-gray-700">
-                        <h4 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">{{ $item->title }}</h4>
+                        {{-- PERBAIKAN: Cek title dari item atau relasi training --}}
+                        <h4 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">
+                            {{ $item->title ?? ($item->training->title ?? 'Pelatihan Tanpa Judul') }}
+                        </h4>
                         
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                                 <span class="text-gray-500 block">Provider</span>
-                                <span class="font-medium dark:text-gray-200">{{ $item->provider ?? 'Internal' }}</span>
+                                <span class="font-medium dark:text-gray-200">
+                                    {{ $item->provider ?? ($item->training->provider ?? 'Internal') }}
+                                </span>
                             </div>
                             <div>
                                 <span class="text-gray-500 block">Metode</span>
-                                <span class="font-medium dark:text-gray-200">{{ $item->method }}</span>
+                                <span class="font-medium dark:text-gray-200">
+                                    {{ $item->method ?? ($item->training->method ?? '-') }}
+                                </span>
                             </div>
                             <div>
                                 <span class="text-gray-500 block">Biaya</span>
-                                <span class="font-bold text-gray-800 dark:text-white">Rp {{ number_format($item->cost ?? 0) }}</span>
+                                <span class="font-bold text-gray-800 dark:text-white">
+                                    Rp {{ number_format($item->cost ?? ($item->training->cost ?? 0)) }}
+                                </span>
                             </div>
                             <div>
                                 <span class="text-gray-500 block">Jenis</span>
@@ -64,7 +74,7 @@
                         <div class="mt-4">
                             <span class="text-gray-500 block text-xs uppercase font-bold mb-1">Tujuan / Justifikasi:</span>
                             <p class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded text-gray-700 dark:text-gray-300 text-sm italic">
-                                "{{ $item->justification ?? $item->objective ?? 'Tidak ada keterangan detail.' }}"
+                                "{{ $item->justification ?? ($item->objective ?? 'Tidak ada keterangan detail.') }}"
                             </p>
                         </div>
                     </div>

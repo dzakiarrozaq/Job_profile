@@ -19,9 +19,6 @@
                     <div class="relative z-10">
                         <div class="flex flex-wrap gap-3 mb-4">
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
-                                {{ $training->type }}
-                            </span>
-                            <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
                                 {{ $training->difficulty }}
                             </span>
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
@@ -38,12 +35,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                 <span>{{ $training->provider }}</span>
                             </div>
-                            @if($training->duration)
-                            <div class="flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span>{{ $training->duration }}</span>
-                            </div>
-                            @endif
+                            {{-- Durasi di header dihapus karena dipindah ke sidebar --}}
                         </div>
                     </div>
 
@@ -74,10 +66,15 @@
 
                     <div class="w-full md:w-80 bg-gray-50 dark:bg-gray-700/30 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700 p-8">
                         <div class="sticky top-8">
+                            
+                            {{-- BAGIAN INI DIUBAH DARI BIAYA KE DURASI --}}
                             <div class="mb-6">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Biaya</p>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Durasi</p>
+                                </div>
                                 <p class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                                    Rp {{ number_format($training->cost ?? 0) }}
+                                    {{ $training->duration ?? '-' }}
                                 </p>
                             </div>
 

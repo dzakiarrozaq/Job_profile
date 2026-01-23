@@ -53,7 +53,7 @@
                                 <td class="px-6 py-4">
                                     @if($plan->status == 'draft')
                                         <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-700 border border-gray-300">
-                                            <ion-icon name="cart-outline" class="align-middle mr-1"></ion-icon> Draft
+                                            Draft
                                         </span>
                                     @elseif($plan->status == 'pending_supervisor')
                                         <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">

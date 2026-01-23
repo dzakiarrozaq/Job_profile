@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Training;
+use Illuminate\Http\Request;
+use App\Imports\TrainingsImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminTrainingController extends Controller
 {
@@ -84,5 +86,21 @@ class AdminTrainingController extends Controller
         // 3. Redirect kembali ke Index
         return redirect()->route('admin.trainings.index')
                          ->with('success', 'Pelatihan berhasil diperbarui!');
+    }
+    public function import(Request $request) 
+    {
+        // 1. Validasi File
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls'
+        ]);
+
+        // 2. Proses Import
+        try {
+            Excel::import(new TrainingsImport, $request->file('file'));
+            
+            return back()->with('success', 'Data pelatihan berhasil diimpor!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal impor data: ' . $e->getMessage());
+        }
     }
 }

@@ -12,6 +12,7 @@ use App\Models\JobProfile;
 use App\Models\Position; 
 use App\Models\Idp; 
 use App\Models\AuditLog;
+use App\Models\User; // Tambahkan ini
 
 class PersetujuanController extends Controller
 {
@@ -21,9 +22,12 @@ class PersetujuanController extends Controller
     public function index(): View
     {
         $supervisor = Auth::user();
+        $supervisorPositionId = $supervisor->position_id;
         
-        // 1. Ambil ID bawahan
-        $teamMemberIds = \App\Models\User::where('manager_id', $supervisor->id)->pluck('id');
+        // --- 1. PERBAIKAN: Ambil ID bawahan (Pakai Relasi Position) ---
+        $teamMemberIds = User::whereHas('position', function($query) use ($supervisorPositionId) {
+            $query->where('atasan_id', $supervisorPositionId);
+        })->pluck('id');
 
         // 2. Data Assessment
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
@@ -41,7 +45,6 @@ class PersetujuanController extends Controller
             ->get();
         
         // 4. Data Job Profile
-        $supervisorPositionId = $supervisor->position_id;
         $childPositionIds = Position::where('atasan_id', $supervisorPositionId)->pluck('id');
 
         $jobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
@@ -57,13 +60,12 @@ class PersetujuanController extends Controller
             ->latest()
             ->get();
 
-        // 6. Data Sertifikat (TAMBAHAN BARU DISINI)
-        // Mengambil item pelatihan yang status sertifikatnya 'pending_approval' milik bawahan
+        // 6. Data Sertifikat
         $pendingCertificates = \App\Models\TrainingPlanItem::whereHas('plan', function($q) use ($teamMemberIds) {
                 $q->whereIn('user_id', $teamMemberIds);
             })
             ->where('certificate_status', 'pending_approval')
-            ->with(['plan.user']) // Load data user pemilik rencana
+            ->with(['plan.user']) 
             ->latest()
             ->get();
 
@@ -72,18 +74,22 @@ class PersetujuanController extends Controller
             'trainings', 
             'jobProfiles', 
             'pendingIdps',
-            'pendingCertificates' // <--- Jangan lupa masukkan ke compact
+            'pendingCertificates'
         ));
     }
 
     /**
-     * Menampilkan Detail Pengajuan (Method Baru)
+     * Menampilkan Detail Pengajuan
      */
     public function show($id)
     {
         $plan = TrainingPlan::with(['user', 'items.training'])->findOrFail($id);
+        
+        // --- PERBAIKAN VALIDASI AKSES ---
+        // Cek apakah user pemilik rencana adalah bawahan supervisor ini
+        $isSubordinate = $this->checkIfSubordinate($plan->user);
 
-        if ($plan->user->manager_id !== Auth::id()) {
+        if (!$isSubordinate) {
             abort(403, 'Anda tidak memiliki akses ke data karyawan ini.');
         }
 
@@ -91,13 +97,14 @@ class PersetujuanController extends Controller
     }
 
     /**
-     * Aksi Menyetujui Rencana (Method Baru)
+     * Aksi Menyetujui Rencana
      */
     public function approve($id)
     {
         $plan = TrainingPlan::findOrFail($id);
         
-        if ($plan->user->manager_id !== Auth::id()) {
+        // --- PERBAIKAN VALIDASI AKSES ---
+        if (!$this->checkIfSubordinate($plan->user)) {
             abort(403);
         }
 
@@ -113,13 +120,14 @@ class PersetujuanController extends Controller
     }
 
     /**
-     * Aksi Menolak Rencana (Method Baru)
+     * Aksi Menolak Rencana
      */
     public function reject(Request $request, $id)
     {
         $plan = TrainingPlan::findOrFail($id);
         
-        if ($plan->user->manager_id !== Auth::id()) {
+        // --- PERBAIKAN VALIDASI AKSES ---
+        if (!$this->checkIfSubordinate($plan->user)) {
             abort(403);
         }
 
@@ -132,5 +140,22 @@ class PersetujuanController extends Controller
 
         return redirect()->route('supervisor.persetujuan')
             ->with('error', 'Rencana pelatihan telah ditolak.');
+    }
+
+    /**
+     * Helper Function: Cek apakah user adalah bawahan supervisor yang login
+     */
+    private function checkIfSubordinate($targetUser)
+    {
+        $supervisor = Auth::user();
+
+        // Jika user tidak punya posisi, otomatis bukan bawahan
+        if (!$targetUser->position_id) return false;
+
+        // Ambil data posisi bawahan
+        $subordinatePosition = Position::find($targetUser->position_id);
+
+        // Cek apakah atasan dari posisi tersebut adalah posisi supervisor kita
+        return $subordinatePosition && $subordinatePosition->atasan_id == $supervisor->position_id;
     }
 }

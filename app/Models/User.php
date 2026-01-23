@@ -6,26 +6,21 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-use App\Models\Role; 
-use App\Models\Position;
-use App\Models\Department;
-use App\Models\GapRecord;
-use App\Models\TrainingPlan;
-use App\Models\EmployeeProfile;
-use App\Models\JobProfile;
-
 use Illuminate\Database\Eloquent\Relations\HasMany; 
 use Illuminate\Database\Eloquent\Relations\HasOne; 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
+
+// PENTING: Import Model yang dibutuhkan
+use App\Models\Position;
+use App\Models\Role;
+// use Spatie\Permission\Traits\HasRoles; // <-- MATIKAN INI jika pakai role_id manual
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable; 
+    // use HasRoles; // <-- Matikan trait Spatie karena kita pakai simple role_id
 
     /**
      * The attributes that are mass assignable.
@@ -34,28 +29,32 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'department_id', 
-        'position_id',
-        'manager_id',
+        
+        // --- STRUKTUR BARU ---
+        'role_id',      // Pengganti Spatie/String Role
+        'position_id',  // Kunci utama struktur organisasi
+        // 'department_id', // HAPUS (Sudah tidak pakai)
+        // 'manager_id',    // HAPUS (Sudah tidak pakai)
+
+        'nik',
+        'company_name',
         'status',
         'gender',
         'profile_photo_path',
         'phone_number',
         'hiring_date',
-        'batch_number',
+        
+        // --- DATA PRIBADI ---
+        'place_of_birth',
+        'date_of_birth',
+        'domicile',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     */
     protected function casts(): array
     {
         return [
@@ -64,53 +63,61 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    // ==========================================
+    // 1. RELASI UTAMA (CORE RELATIONSHIPS)
+    // ==========================================
 
-    /**
-     * Relasi Many-to-Many ke tabel Roles.
-     */
     public function roles()
     {
-        return $this->belongsToMany(
-            Role::class, 
-            'model_has_roles',       
-            'model_id',              
-            'role_id'                
-        )->wherePivot('model_type', 'App\Models\User'); 
+        // Parameter: Model Tujuan, Nama Tabel Pivot, FK User, FK Role
+        return $this->belongsToMany(\App\Models\Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     /**
-     * Cek apakah user punya role tertentu.
-     * Dipakai di Middleware & Controller: $user->hasRole('Admin')
-     * [PENTING] Fungsi ini wajib ada untuk menggantikan Spatie
+     * Relasi ke Tabel Positions (Jabatan)
+     * Ini adalah pusat informasi struktur (Unit & Atasan ada di sini)
      */
-    public function hasRole($roleName)
-    {
-        if (is_array($roleName)) {
-            return $this->roles()->whereIn('name', $roleName)->exists();
-        }
-
-        return $this->roles()->where('name', $roleName)->exists();
-    }
-
     public function position(): BelongsTo 
     {
         return $this->belongsTo(Position::class);
     }
 
-    public function department(): BelongsTo
+    // ==========================================
+    // 2. JALAN PINTAS (ACCESSORS) - PENTING UNTUK VIEW
+    // ==========================================
+
+    /**
+     * Ambil Nama Unit Kerja secara otomatis via Position
+     * Panggil di Blade: {{ $user->unit_name }}
+     */
+    public function getUnitNameAttribute()
     {
-        return $this->belongsTo(Department::class);
+        // User -> Position -> Organization -> Name
+        return $this->position?->organization?->name ?? '-';
     }
 
-    public function manager(): BelongsTo 
+    /**
+     * Ambil Nama Atasan Langsung secara otomatis via Position
+     * Panggil di Blade: {{ $user->atasan_name }}
+     */
+    public function getAtasanNameAttribute()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        // User -> Position Saya -> Position Boss -> Orang yg menjabat -> Name
+        return $this->position?->atasan?->user?->name ?? '-';
     }
 
-    public function subordinates(): HasMany
+    /**
+     * Ambil Jabatan Atasan
+     * Panggil di Blade: {{ $user->atasan_jabatan }}
+     */
+    public function getAtasanJabatanAttribute()
     {
-        return $this->hasMany(User::class, 'manager_id');
+        return $this->position?->atasan?->title ?? '-';
     }
+
+    // ==========================================
+    // 3. RELASI LAINNYA (PROFILE & HISTORY)
+    // ==========================================
 
     public function jobProfile()
     {
@@ -127,12 +134,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function employeeProfile(): HasOne
     {
         return $this->hasOne(EmployeeProfile::class);
-    }
-
-    
-    public function employeeProfiles(): HasOne
-    {
-        return $this->employeeProfile();
     }
 
     public function gapRecords(): HasMany
@@ -160,5 +161,4 @@ class User extends Authenticatable implements MustVerifyEmail
     public function interests() {
         return $this->hasMany(UserInterest::class);
     }
-    
 }

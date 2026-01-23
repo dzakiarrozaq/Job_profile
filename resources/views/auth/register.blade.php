@@ -23,8 +23,8 @@
                   } else {
                       this.positions = [];
                   }
-                  // Reset pilihan posisi jika departemen berubah
-                  document.getElementById('position_id').value = '';
+                  // Reset pilihan posisi jika departemen berubah (kecuali saat load awal old input)
+                  // document.getElementById('position_id').value = ''; 
               }
           }"
           x-init="init()">
@@ -41,15 +41,21 @@
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" placeholder="Masukkan email..." />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
+
+        <div>
+            <x-input-label for="company_name" :value="__('Nama Perusahaan (Asal)')" />
+            <x-text-input id="company_name" class="block mt-1 w-full" type="text" name="company_name" :value="old('company_name')" required placeholder="Contoh: PT. Sumber Daya Utama" />
+            <x-input-error :messages="$errors->get('company_name')" class="mt-2" />
+        </div>
         
         <div>
-            <x-input-label for="batch_number" :value="__('Nomor Batch')" />
-            <x-text-input id="batch_number" class="block mt-1 w-full" type="text" name="batch_number" :value="old('batch_number')" required placeholder="Contoh: BATCH-2025-II"/>
-            <x-input-error :messages="$errors->get('batch_number')" class="mt-2" />
+            <x-input-label for="nik" :value="__('NIK')" />
+            <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik" :value="old('nik')" required placeholder="Contoh: Bagde-2025-II"/>
+            <x-input-error :messages="$errors->get('nik')" class="mt-2" />
         </div>
 
         <div>
-            <x-input-label for="department_id" :value="__('Departemen')" />
+            <x-input-label for="department_id" :value="__('Departemen (Penempatan)')" />
             <select id="department_id" name="department_id" 
                     x-model="selectedDepartment"
                     @change="updatePositionList()"
@@ -69,7 +75,7 @@
             <x-input-label for="position_id" :value="__('Posisi / Jabatan')" />
             <select id="position_id" name="position_id" 
                     class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                    :disabled="!selectedDepartment"> {{-- Nonaktif jika belum pilih departemen --}}
+                    :disabled="!selectedDepartment"> 
                 
                 <option value="">Pilih Posisi</option>
                 

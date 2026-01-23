@@ -25,7 +25,7 @@ class JobProfileController extends Controller
     {
         $activeRoleName = $request->session()->get('active_role_name');
 
-        $query = JobProfile::with('position.department', 'creator')
+        $query = JobProfile::with('position.organization', 'creator')
                             ->orderBy('created_at', 'desc');
         
         if ($activeRoleName === 'Supervisor') {
@@ -113,10 +113,8 @@ class JobProfileController extends Controller
     public function edit(Request $request, JobProfile $jobProfile): View 
     {
         $jobProfile->load(
-            'position.department', 
+            'position.organization', 
             'position.jobGrade',
-            'position.directorate',
-            'position.unit',
             'position.atasan',
             'competencies.master', 
             'responsibilities',
@@ -239,61 +237,103 @@ class JobProfileController extends Controller
         $positionTitle = $validated['position_title'];
         $fieldType = $validated['field_type'];
 
+        $technicalKeywords = ['Operator', 'Mekanik', 'Technician', 'Engineer', 'Foreman', 'Superintendent', 'Maintenance', 'Production', 'Kiln', 'Packer', 'Safety', 'Quality', 'Lab'];
+        $isTechnical = false;
+        foreach ($technicalKeywords as $keyword) {
+            if (stripos($positionTitle, $keyword) !== false) {
+                $isTechnical = true;
+                break;
+            }
+        }
+
+        if ($isTechnical) {
+            $context = "Heavy Industry (Cement Plant), Safety First (K3/Zero Accident), Machine Reliability (OEE), Technical & Operational Excellence.";
+        } else {
+            $context = "State-Owned Enterprise (BUMN) Corporate Env, Good Corporate Governance (GCG), Compliance, Data Accuracy, & Internal Service SLA.";
+        }
+
         $prompt = "";
+
         if ($fieldType === 'tujuan_jabatan') {
-            $prompt = "Anda adalah konsultan HR senior. Tuliskan 'Tujuan Jabatan' (Job Purpose) yang ringkas dan profesional untuk posisi '$positionTitle'.
-            Balas HANYA dengan format JSON.
-            Objek JSON harus memiliki satu key: 'text' (string)."; 
+            $prompt = "
+            Role: Senior HR Specialist at Semen Gresik (SIG).
+            Task: Write a concise, professional 'Job Purpose' for the position: '$positionTitle'.
+            Context: $context
             
+            Constraint:
+            - Output MUST be in INDONESIAN (Bahasa Indonesia Formal).
+            - Return ONLY a valid JSON Object.
+            - JSON Format: { \"text\": \"...the job purpose string...\" }";
+
         } elseif ($fieldType === 'wewenang') {
-            $prompt = "Anda adalah konsultan HR senior. Tuliskan 3-5 poin 'Wewenang' (Authority) utama untuk posisi '$positionTitle'.
-            Balas HANYA dengan format JSON.
-            Objek JSON harus memiliki satu key: 'text' (string, gunakan bullet point \n- )."; 
+            $prompt = "
+            Role: Senior HR Specialist at Semen Gresik (SIG).
+            Task: List 3-5 key 'Authorities' (Wewenang) for the position: '$positionTitle'.
+            Context: $context
             
+            Constraint:
+            - Output MUST be in INDONESIAN (Bahasa Indonesia Formal).
+            - Return ONLY a valid JSON Object.
+            - JSON Format: { \"text\": \"- Authority point 1\\n- Authority point 2...\" } (Use bullet points).";
+
         } elseif ($fieldType === 'tanggung_jawab') {
-            $prompt = "Anda adalah konsultan HR senior. Buat daftar 5 'Tanggung Jawab' (Responsibilities) utama untuk posisi '$positionTitle'.
-            Balas HANYA dengan format JSON array.
-            Setiap objek di array HARUS memiliki dua key:
-            1. 'description' (string, tanggung jawabnya)
-            2. 'expected_result' (string, hasil yang diharapkan)"; 
+            $prompt = "
+            Role: Senior Expert at Semen Gresik (SIG).
+            Task: Create 5 key 'Responsibilities' for the position: '$positionTitle'.
+            Context: $context
+            
+            Constraint:
+            - Output MUST be in INDONESIAN (Bahasa Indonesia Formal).
+            - Return ONLY a valid JSON Array.
+            - JSON Object Keys: 'description' (the activity) and 'expected_result' (measurable KPI/Outcome).
+            
+            Example Output Format:
+            [
+                { \"description\": \"Melakukan perawatan rutin...\", \"expected_result\": \"Availability mesin 98%\" }
+            ]";
+
         } else {
             return response()->json(['error' => 'Tipe field tidak valid'], 400);
         }
 
         try {
             $apiKey = config('services.gemini.key');
-            $certificatePath = storage_path('app/cacert.pem');
+            $certificatePath = storage_path('app/cacert.pem'); 
 
-            if (!file_exists($certificatePath)) {
-                return response()->json(['error' => 'File sertifikat (cacert.pem) tidak ditemukan di storage/app/'], 500);
+            $http = Http::asJson();
+            
+            if (file_exists($certificatePath)) {
+                $http = $http->withOptions(['verify' => $certificatePath]);
             }
 
-            $response = Http::withOptions([
-                'verify' => $certificatePath
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
-                'contents' => [ ['parts' => [ ['text' => $prompt] ]] ]
+            $response = $http->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.4, // Rendah agar hasil konsisten & formal
+                    'maxOutputTokens' => 1000,
+                ]
             ]);
             
             if (!$response->successful()) {
-                return response()->json(['error' => 'Gagal terhubung ke AI Service.', 'details' => $response->body()], 500);
+                return response()->json(['error' => 'AI Service Error', 'details' => $response->body()], 500);
             }
 
             $jsonText = $response->json('candidates.0.content.parts.0.text');
-            $jsonText = str_replace(['```json', '```'], '', $jsonText);
             
-            if ($fieldType === 'tanggung_jawab') {
-                $suggestions = json_decode($jsonText);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                     return response()->json(['error' => 'AI memberikan format data JSON (array) yang tidak valid.', 'raw' => $jsonText], 500);
-                }
-                return response()->json($suggestions);
-            } else {
-                $data = json_decode($jsonText);
-                if (json_last_error() !== JSON_ERROR_NONE || !isset($data->text)) {
-                     return response()->json(['error' => 'AI memberikan format data JSON (text) yang tidak valid.', 'raw' => $jsonText], 500);
-                }
-                return response()->json($data); 
+            $jsonText = preg_replace('/^```json\s*|\s*```$/', '', $jsonText);
+            
+            $resultData = json_decode($jsonText);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'error' => 'Format JSON dari AI tidak valid.', 
+                    'raw' => $jsonText
+                ], 500);
             }
+
+            return response()->json($resultData);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

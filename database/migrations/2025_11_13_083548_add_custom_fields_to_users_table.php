@@ -7,9 +7,9 @@ return new class extends Migration {
     public function up(): void {
         Schema::table('users', function (Blueprint $table) {
             // Tambahkan kolom-kolom baru setelah kolom 'password'
-            $table->string('batch_number')->nullable()->after('password');
-            $table->string('status', 50)->default('active')->after('batch_number');
-            
+            $table->string('nik')->nullable()->after('password');
+            $table->string('status', 50)->default('active')->after('nik');
+
             // Tambahkan foreign keys
             $table->unsignedBigInteger('role_id')->nullable()->after('status');
             $table->unsignedBigInteger('department_id')->nullable()->after('role_id');
@@ -27,7 +27,7 @@ return new class extends Migration {
             $table->dropForeign(['manager_id']);
 
             // Hapus kolom-kolom
-            $table->dropColumn(['batch_number', 'status', 'role_id', 'department_id', 'position_id', 'manager_id']);
+            $table->dropColumn(['nik', 'status', 'role_id', 'department_id', 'position_id', 'manager_id']);
         });
     }
 };

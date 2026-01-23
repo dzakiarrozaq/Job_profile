@@ -73,8 +73,8 @@
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
                     <div>
-                        <label for="batch_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">NIK / Batch</label>
-                        <input type="text" name="batch_number" id="batch_number" value="{{ old('batch_number') }}"
+                        <label for="nik" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">NIK</label>
+                        <input type="text" name="nik" id="nik" value="{{ old('nik') }}"
                             class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>

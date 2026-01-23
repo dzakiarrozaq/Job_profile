@@ -7,40 +7,60 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Organization; 
 
 class Position extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'title',
-        'department_id',
+        'code',
+        'tipe',
+        'organization_id', 
         'job_grade_id',
-        'directorate_id',
-        'unit_id',
-        'section_id',
         'atasan_id',
         'description',
     ];
 
     /**
-     * Mendapatkan departemen tempat posisi ini berada.
+     * RELASI UTAMA: Mengetahui Posisi ini ada di Unit/Dept/Section mana.
+     * Menggantikan function department(), unit(), section() yang lama.
      */
-    public function department(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 
     /**
-     * Mendapatkan Job Profile yang terkait dengan posisi ini.
+     * Mendapatkan Jabatan Atasan (Parent Position).
+     * Contoh: "Staff IT" punya atasan "IT Manager".
      */
-    public function jobProfile(): HasOne
+    public function atasan(): BelongsTo
     {
-        return $this->hasOne(JobProfile::class)->latestOfMany();
+        return $this->belongsTo(Position::class, 'atasan_id');
     }
 
     /**
-     * Mendapatkan semua user yang memiliki posisi ini.
+     * Kebalikannya: Mendapatkan daftar bawahan dari posisi ini.
+     * Berguna untuk melihat struktur ke bawah.
+     */
+    public function bawahan(): HasMany
+    {
+        return $this->hasMany(Position::class, 'atasan_id');
+    }
+
+    /**
+     * Mendapatkan SATU user yang aktif menjabat posisi ini.
+     * Dipakai untuk logika: $user->position->atasan->user->name (Mencari Nama Boss)
+     */
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class)->latest(); // Ambil user terbaru/aktif
+    }
+
+    /**
+     * Mendapatkan SEMUA user (History) yang pernah/sedang di posisi ini.
      */
     public function users(): HasMany
     {
@@ -48,7 +68,7 @@ class Position extends Model
     }
 
     /**
-     * Mendapatkan Job Grade dari posisi ini.
+     * Mendapatkan Job Grade (Band 1, Band 2, dll).
      */
     public function jobGrade(): BelongsTo
     {
@@ -56,34 +76,10 @@ class Position extends Model
     }
 
     /**
-     * Mendapatkan Direktorat dari posisi ini.
+     * Mendapatkan Job Profile (Opsional/Legacy).
      */
-    public function directorate(): BelongsTo
+    public function jobProfile(): HasOne
     {
-        return $this->belongsTo(Directorate::class);
-    }
-
-    /**
-     * Mendapatkan Unit dari posisi ini.
-     */
-    public function unit(): BelongsTo
-    {
-        return $this->belongsTo(Unit::class);
-    }
-
-    /**
-     * Mendapatkan Seksi dari posisi ini.
-     */
-    public function section(): BelongsTo
-    {
-        return $this->belongsTo(Section::class);
-    }
-
-    /**
-     * Mendapatkan atasan (posisi) dari posisi ini.
-     */
-    public function atasan(): BelongsTo
-    {
-        return $this->belongsTo(Position::class, 'atasan_id');
+        return $this->hasOne(JobProfile::class)->latestOfMany();
     }
 }

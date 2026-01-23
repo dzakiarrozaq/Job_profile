@@ -89,10 +89,12 @@
                                     <div class="flex items-center">
                                         <div class="ml-0">
                                             <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                {{ $plan->user->name }}
+                                                {{-- PERBAIKAN: Gunakan ?? untuk mencegah error null --}}
+                                                {{ $plan->user->name ?? 'User Terhapus' }}
                                             </div>
                                             <div class="text-xs text-gray-500">
-                                                {{ $plan->user->position->name ?? 'N/A' }}
+                                                {{-- PERBAIKAN: Cek user dan position --}}
+                                                {{ $plan->user?->position?->name ?? 'N/A' }}
                                             </div>
                                         </div>
                                     </div>
@@ -100,19 +102,21 @@
                                 
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 dark:text-white font-bold">
-                                        {{ $item->title ?? '-' }}
+                                        {{-- PERBAIKAN: Cek item dan title --}}
+                                        {{ $item->title ?? ($item->training->title ?? '-') }}
                                     </div>
                                     <div class="text-xs text-gray-500">
-                                        Metode: {{ $item->method ?? '-' }}
+                                        {{-- PERBAIKAN: Cek method --}}
+                                        Metode: {{ $item->method ?? ($item->training->method ?? '-') }}
                                     </div>
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
-                                        {{ $item->provider ?? 'Internal' }}
+                                        {{ $item->provider ?? ($item->training->provider ?? 'Internal') }}
                                     </div>
                                     <div class="text-xs text-green-600 font-bold">
-                                        Rp {{ number_format($item->cost ?? 0) }}
+                                        Rp {{ number_format($item->cost ?? ($item->training->cost ?? 0)) }}
                                     </div>
                                 </td>
 

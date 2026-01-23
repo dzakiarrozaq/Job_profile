@@ -12,45 +12,52 @@ class RoleMiddleware
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, ...$allowedRoles): Response
     {
+        // 1. Cek apakah user login
         if (!Auth::check()) {
             return redirect('login');
         }
 
         $user = Auth::user();
-        $activeRoleName = $request->session()->get('active_role_name');
 
-        if (empty($activeRoleName)) {
-            $user->load('roles');
-            
-            if ($user->roles->count() > 1) {
-                return redirect()->route('role.selection');
-            
-            } elseif ($user->roles->count() === 1) {
-                $roleName = $user->roles->first()->name;
-                $request->session()->put('active_role_name', $roleName);
-                $activeRoleName = $roleName; 
-            } else {
-                Auth::logout();
-                return redirect('login');
+        // 2. AMBIL SEMUA ROLE USER (MULTI ROLE)
+        // Mengambil array nama role, contoh: ['Admin', 'Supervisor']
+        $userRoles = $user->roles->pluck('name')->toArray(); 
+
+        // 3. JIKA USER TIDAK PUNYA ROLE SAMA SEKALI
+        if (empty($userRoles)) {
+            Auth::logout();
+            return redirect('login')->with('error', 'Akun Anda tidak memiliki Role yang valid.');
+        }
+
+        // 4. CEK APAKAH SALAH SATU ROLE USER BOLEH MASUK?
+        // Loop setiap role yang diizinkan oleh Route (misal: 'Admin', 'Supervisor')
+        // Jika user punya salah satunya, izinkan masuk.
+        foreach ($allowedRoles as $role) {
+            if (in_array($role, $userRoles)) {
+                return $next($request);
             }
         }
-        if (in_array($activeRoleName, $roles)) {
-            return $next($request);
+
+        // 5. JIKA DITOLAK, LEMPAR KE DASHBOARD SESUAI PRIORITAS
+        // Kita cek role tertinggi yang dimiliki user untuk menentukan redirect
+        
+        $redirectUrl = route('dashboard'); // Default karyawan
+
+        if (in_array('Admin', $userRoles)) {
+            $redirectUrl = route('admin.dashboard');
+        } elseif (in_array('Supervisor', $userRoles)) {
+            $redirectUrl = route('supervisor.dashboard');
+        } elseif (in_array('Learning Partner', $userRoles)) {
+            $redirectUrl = route('lp.dashboard');
         }
 
-        $redirectUrl = match ($activeRoleName) {
-            'Admin'            => route('admin.dashboard'),
-            'Supervisor'       => route('supervisor.dashboard'),
-            'Learning Partner' => route('lp.dashboard'),
-            default            => route('dashboard'),
-        };
-
+        // Cegah Redirect Loop (Jika url tujuan sama dengan url saat ini)
         if ($request->url() === $redirectUrl) {
              return $next($request); 
         }
 
-        return redirect($redirectUrl);
+        return redirect($redirectUrl)->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
     }
 }

@@ -15,8 +15,12 @@ class LaporanController extends Controller
     public function index()
     {
         $supervisor = Auth::user();
+        $supervisorPositionId = $supervisor->position_id;
         
-        $teamIds = $supervisor->subordinates()->pluck('id');
+        // --- PERBAIKAN: Ambil ID Tim lewat relasi Position (atasan_id) ---
+        $teamIds = User::whereHas('position', function($query) use ($supervisorPositionId) {
+            $query->where('atasan_id', $supervisorPositionId);
+        })->pluck('id');
 
         $teamGaps = GapRecord::whereIn('user_id', $teamIds)
                         ->whereHas('user.employeeProfile', function($q) {

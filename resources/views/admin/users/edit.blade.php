@@ -73,28 +73,29 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach($roles as $role)
                                     <label class="inline-flex items-center p-3 rounded border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 {{ $user->roles->contains($role->id) ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200' : '' }}">
-                                        <input type="checkbox" name="role_id[]" value="{{ $role->id }}" 
+                                        <input type="checkbox" name="role_ids[]" value="{{ $role->id }}" 
                                                {{ $user->roles->contains($role->id) ? 'checked' : '' }}
                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                         <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">{{ $role->name }}</span>
                                     </label>
                                 @endforeach
                             </div>
-                            <x-input-error :messages="$errors->get('role_id')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('role_ids')" class="mt-2" />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Departemen</label>
-                                <select name="department_id" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organisasi</label>
+                                <select name="organization_id" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">-- Pilih --</option>
-                                    @foreach($departments as $dept)
-                                        <option value="{{ $dept->id }}" {{ old('department_id', $user->department_id) == $dept->id ? 'selected' : '' }}>
-                                            {{ $dept->name }}
+                                    @foreach($organizations as $org)
+                                        <option value="{{ $org->id }}" {{ (optional($user->position)->organization_id == $org->id) ? 'selected' : '' }}>
+                                            {{ $org->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Jabatan (Posisi)</label>
                                 <select name="position_id" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -108,18 +109,7 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Atasan Langsung (Supervisor)</label>
-                            <select name="manager_id" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">-- Tidak Ada / Saya Sendiri --</option>
-                                @foreach($supervisors as $spv)
-                                    <option value="{{ $spv->id }}" {{ old('manager_id', $user->manager_id) == $spv->id ? 'selected' : '' }}>
-                                        {{ $spv->name }} - {{ $spv->position->title ?? '' }}
-                                    </option>
-                                @endforeach
-                            </select>
                         </div>
-                    </div>
                 </div>
 
                 <div class="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">

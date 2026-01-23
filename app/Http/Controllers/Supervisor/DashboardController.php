@@ -8,38 +8,48 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\EmployeeProfile;
 use App\Models\TrainingPlan;
-use App\Models\TrainingEvidences; // Pastikan nama Model benar (plural/singular)
-use App\Models\JobProfile; 
+use App\Models\TrainingEvidences;
+use App\Models\JobProfile;
 use App\Models\Position;
-use App\Models\Idp; // <--- Tambahkan Model IDP
+use App\Models\Idp;
+use App\Models\User; // Pastikan User di-import
 
 class DashboardController extends Controller
 {
     public function index(): View
     {
         $user = Auth::user();
-        
-        $teamMemberIds = \App\Models\User::where('manager_id', $user->id)->pluck('id');
+        $supervisorPositionId = $user->position_id;
 
-       
+        // --- PERBAIKAN UTAMA DI SINI ---
+        // Kita cari ID bawahan berdasarkan struktur Position (atasan_id)
+        // Bukan lagi pakai 'manager_id' di tabel users
+        $teamMemberIds = User::whereHas('position', function($query) use ($supervisorPositionId) {
+            $query->where('atasan_id', $supervisorPositionId);
+        })->pluck('id');
+
+        // 1. Hitung Penilaian Kompetensi Pending
         $penilaianCount = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->distinct('user_id')
             ->count('user_id');
 
+        // 2. Hitung Rencana Pelatihan Pending
         $rencanaCount = TrainingPlan::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_supervisor')
             ->count();
 
+        // 3. Hitung Sertifikat Pending
         $sertifikatCount = TrainingEvidences::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending')
             ->count();
             
+        // 4. Hitung IDP Pending
         $idpCount = Idp::whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->count();
 
-
+        // 5. Hitung Job Profile Pending (Khusus ini logic-nya beda, via Position)
         $childPositionIds = Position::where('atasan_id', $user->position_id)->pluck('id');
         
         $pendingJobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
@@ -56,6 +66,8 @@ class DashboardController extends Controller
                 ];
             });
 
+        // --- AMBIL DATA TUGAS (MENGGUNAKAN $teamMemberIds YANG SUDAH DIPERBAIKI) ---
+
         $tugasPenilaian = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user')
@@ -71,7 +83,6 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 3. Rencana Pelatihan Pending
         $tugasRencana = TrainingPlan::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_supervisor')
             ->with('user')
@@ -114,7 +125,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        
+        // Gabungkan Semua Tugas
         $tugasMendesak = $pendingJobProfiles
             ->concat($tugasPenilaian)
             ->concat($tugasRencana)
@@ -122,9 +133,9 @@ class DashboardController extends Controller
             ->concat($tugasSertifikat)
             ->sortByDesc('tanggal');  
 
+        // Ambil Data User Bawahan (Untuk daftar tim di dashboard)
+        $teamMembers = User::whereIn('id', $teamMemberIds)->get();
         
-        $teamMembers = \App\Models\User::where('manager_id', $user->id)->with('position')->get();
-
         return view('supervisor.dashboard', [
             'penilaianCount' => $penilaianCount,
             'rencanaCount'   => $rencanaCount,

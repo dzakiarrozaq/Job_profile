@@ -90,7 +90,7 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-bold text-gray-900 dark:text-white">{{ $member->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $member->batch_number ?? 'No Batch' }}</div>
+                                        <div class="text-xs text-gray-500">{{ $member->nik ?? 'NIK' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -99,7 +99,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $member->roles->pluck('name')->join(', ') }}
+                                    {{ $member->role->name ?? '-' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">

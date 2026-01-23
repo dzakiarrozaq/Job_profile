@@ -36,7 +36,7 @@
                     </div>
                     <div class="flex items-center gap-3 text-sm">
                         <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-500"><ion-icon name="id-card-outline"></ion-icon></div>
-                        <span class="text-gray-700 dark:text-gray-300">{{ $employee->batch_number ?? '-' }}</span>
+                        <span class="text-gray-700 dark:text-gray-300">{{ $employee->nik ?? '-' }}</span>
                     </div>
                     <div class="flex items-center gap-3 text-sm">
                         <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-500"><ion-icon name="business-outline"></ion-icon></div>

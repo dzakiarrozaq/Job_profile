@@ -22,12 +22,13 @@ class GapRecord extends Model
         'user_id',
         'job_profile_id',
         'competency_code',
-        'competency_name', 
+        'competency_name',
         'ideal_level',
+        'weight',
         'current_level',
         'gap_value',
         'weighted_gap',
-        'calculated_at',
+        'calculated_at'
     ];
 
     /**

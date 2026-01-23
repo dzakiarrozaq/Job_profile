@@ -23,7 +23,7 @@ class VerifikasiKompetensiController extends Controller
     {
         $supervisor = Auth::user();
         $employee = User::where('id', $userId)->firstOrFail();
-        $employee->load('position.jobProfile.competencies.master', 'employeeProfiles'); 
+        $employee->load('position.jobProfile.competencies.master', 'employeeProfile');
         $jobProfile = $employee->position->jobProfile;
 
         if (!$jobProfile) {

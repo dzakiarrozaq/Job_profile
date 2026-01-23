@@ -89,9 +89,10 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada usulan yang tertunda.</p>
                     @endforelse
                  </div>
-                 <button class="w-full mt-6 px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                    Kelola Katalog Pelatihan
-                 </button>
+                <a href="{{ route('admin.trainings.index') }}" 
+                    class="block w-full text-center mt-6 px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+                        Kelola Katalog Pelatihan
+                </a>
             </div>
 
         </div>

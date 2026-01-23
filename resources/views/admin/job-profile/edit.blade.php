@@ -252,13 +252,13 @@
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Unit/Instansi</label>
                                     <input type="text" x-model="row.unit_instansi" :name="'workRelations['+index+'][unit_instansi]'" 
                                            class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                           placeholder="Mis: Seluruh Unit Kerja / Vendor">
+                                           placeholder="Contoh: Seluruh Unit Kerja / Vendor">
                                 </div>
                                 <div class="col-span-4">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Tujuan</label>
                                     <textarea x-model="row.purpose" :name="'workRelations['+index+'][purpose]'" rows="2" 
                                               class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                              placeholder="Mis: Koordinasi requirement fitur"></textarea>
+                                              placeholder="Contoh: Koordinasi requirement fitur"></textarea>
                                 </div>
                                 <div class="col-span-1 flex items-center justify-end">
                                     <button type="button" @click.prevent="removeRow('workRelations', row.key)" class="text-red-500 hover:text-red-700">
@@ -309,72 +309,109 @@
                     </div>
                 </div>
                 
-                <div x-show="currentTab === 'kompetensi'" class="p-6 lg:p-8 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">4. Kompetensi</h3>
-                        <button type="button" @click.prevent="addRow('competencies')" 
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-                            <ion-icon name="add-outline" class="mr-1"></ion-icon> Tambah Kompetensi
-                        </button>
-                    </div>
+                <div x-show="currentTab === 'kompetensi'" class="p-6 space-y-6">
+    
+                    {{-- Header --}}
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">4. Kompetensi</h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Tipe</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Kode</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Nama Kompetensi (Cari di sini)</th>
-                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Level Ideal</th>
-                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Bobot</th>
-                                    <th class="px-4 py-2"></th>
+                    {{-- Tabel --}}
+                    <div class="w-full overflow-visible bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-gray-700">
+                            <thead>
+                                <tr class="bg-gray-50 dark:bg-gray-700/50 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <th class="py-3 px-4 w-24 rounded-tl-xl">Tipe</th>
+                                    <th class="py-3 px-2 w-28">Kode</th>
+                                    <th class="py-3 px-2">Nama Kompetensi <span class="text-red-500">*</span></th>
+                                    <th class="py-3 px-2 w-32 text-center">Level (1-5)</th>
+                                    <th class="py-3 px-4 w-12 text-center rounded-tr-xl">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700 overflow-visible">
+                                
+                                {{-- Empty State --}}
+                                <template x-if="competencies.length === 0">
+                                    <tr>
+                                        <td colspan="5" class="py-10 text-center text-gray-400 italic">
+                                            Belum ada kompetensi ditambahkan.
+                                        </td>
+                                    </tr>
+                                </template>
+
                                 <template x-for="(row, index) in competencies" :key="row.key">
-                                    <tr class="bg-white dark:bg-gray-800">
-                                        <td class="p-2">
+                                    <tr class="hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-colors group">
+                                        
+                                        {{-- 1. Tipe --}}
+                                        <td class="py-3 px-4 align-top">
                                             <input type="hidden" :name="'competencies['+index+'][competency_master_id]'" x-model="row.competency_master_id">
-                                            <input type="text" x-model="row.type" :name="'competencies['+index+'][type]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 " readonly>
+                                            <input type="text" x-model="row.type" 
+                                                class="w-full px-3 py-2 text-xs bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg text-gray-500 font-medium cursor-not-allowed focus:ring-0" 
+                                                readonly placeholder="-">
                                         </td>
-                                        <td class="p-2">
-                                            <input type="text" x-model="row.competency_code" :name="'competencies['+index+'][competency_code]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 " readonly>
+
+                                        {{-- 2. Kode --}}
+                                        <td class="py-3 px-2 align-top">
+                                            <input type="text" x-model="row.competency_code" 
+                                                class="w-full px-3 py-2 text-xs bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg text-gray-500 font-mono cursor-not-allowed focus:ring-0" 
+                                                readonly placeholder="-">
                                         </td>
-                                        <td class="p-2 relative">
-                                            <input type="text" 
-                                                   x-model="row.competency_name"
-                                                   @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
-                                                   @focus="if(row.competency_name.length >= 2) searchCompetencies(row.competency_name, index)"
-                                                   :name="'competencies['+index+'][competency_name]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                   :class="{ 'border-red-500': row.competency_master_id === null && row.competency_name.length > 0 }"
-                                                   placeholder="Ketik min 2 huruf...">
-                                            
-                                            <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
-                                                 @click.away="searchResults = []; activeSuggestionIndex = -1;" 
-                                                 class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600">
-                                                <template x-for="result in searchResults" :key="result.id">
-                                                    <div @click="selectCompetency(result, index)" 
-                                                         class="p-3 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0">
-                                                        <div class="font-bold dark:text-white" x-text="result.competency_name"></div>
-                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                            <span x-text="'Kode: ' + result.competency_code"></span>
-                                                            <span x-text="' | Tipe: ' + result.type"></span>
-                                                        </div>
-                                                    </div>
-                                                </template>
+
+                                        {{-- 3. Pencarian Nama --}}
+                                        <td class="py-3 px-2 align-top relative">
+                                            <div class="relative">
+                                                <ion-icon name="search" class="absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none"></ion-icon>
+                                                <input type="text" 
+                                                    x-model="row.competency_name"
+                                                    @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
+                                                    @focus="if(row.competency_name.length >= 2) searchCompetencies(row.competency_name, index)"
+                                                    :name="'competencies['+index+'][competency_name]'" 
+                                                    class="w-full pl-9 pr-4 py-2 rounded-lg border-gray-200 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                                                    :class="{ 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-200': row.competency_master_id === null && row.competency_name.length > 0 }"
+                                                    placeholder="Cari kompetensi..."
+                                                    autocomplete="off">
                                             </div>
-                                            
+
+                                            {{-- DROPDOWN HASIL PENCARIAN --}}
+                                            {{-- Perbaikan: w-full (agar pas lebar input) dan mt-1 (jarak tipis) --}}
+                                            <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
+                                                x-transition:enter="transition ease-out duration-100"
+                                                x-transition:enter-start="opacity-0 translate-y-1"
+                                                x-transition:enter-end="opacity-100 translate-y-0"
+                                                @click.away="searchResults = []; activeSuggestionIndex = -1;"
+                                                class="absolute z-50 left-0 mt-1 w-full bg-white dark:bg-gray-800 rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+                                                
+                                                <div class="bg-gray-50 dark:bg-gray-700 px-3 py-2 text-[10px] uppercase font-bold text-gray-500 border-b border-gray-100 dark:border-gray-600 flex justify-between items-center">
+                                                    <span>Hasil Pencarian</span>
+                                                    <button type="button" class="text-gray-400 hover:text-red-500" @click="searchResults = []; activeSuggestionIndex = -1;">
+                                                        <ion-icon name="close"></ion-icon>
+                                                    </button>
+                                                </div>
+
+                                                <div class="max-h-48 overflow-y-auto custom-scrollbar">
+                                                    <template x-for="result in searchResults" :key="result.id">
+                                                        <div @click="selectCompetency(result, index)" 
+                                                            class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-gray-50 dark:border-gray-700 last:border-0 group/item transition-colors">
+                                                            <div class="font-bold text-sm text-gray-800 dark:text-white group-hover/item:text-blue-600" x-text="result.competency_name"></div>
+                                                            <div class="flex items-center gap-2 mt-0.5">
+                                                                <span class="text-[10px] bg-gray-100 dark:bg-gray-600 px-1.5 rounded text-gray-500" x-text="result.type"></span>
+                                                                <span class="text-[10px] font-mono text-gray-400" x-text="result.competency_code"></span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+
                                             <p x-show="row.competency_master_id === null && row.competency_name.length > 0" 
-                                               class="text-xs text-red-500 mt-1">
-                                                ⚠️ Pilih kompetensi dari daftar suggestion
+                                            class="absolute -bottom-5 left-2 text-[10px] text-red-500 font-medium">
+                                                * Pilih dari daftar
                                             </p>
                                         </td>
-                                        <td class="p-2">
+
+                                        {{-- 4. Level --}}
+                                        <td class="py-3 px-2 align-top">
+                                            {{-- Perbaikan: Hapus wrapper relative & icon custom, hapus 'appearance-none' --}}
                                             <select x-model="row.ideal_level" :name="'competencies['+index+'][ideal_level]'" 
-                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                    class="w-full rounded-lg border-gray-200 text-sm py-2 px-3 text-center font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white cursor-pointer hover:border-gray-300 transition-colors">
                                                 <option value="1">1</option>
                                                 <option value="2">2</option>
                                                 <option value="3">3</option>
@@ -382,15 +419,12 @@
                                                 <option value="5">5</option>
                                             </select>
                                         </td>
-                                        <td class="p-2">
-                                            <input type="number" step="0.1" x-model="row.weight" :name="'competencies['+index+'][weight]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="1.0">
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <button type="button" @click.prevent="removeRow('competencies', row.key)" x-show="competencies.length > 0" 
-                                                    class="text-red-500 hover:text-red-700">
-                                                <ion-icon name="trash-outline" class="text-xl"></ion-icon>
+
+                                        {{-- 5. Hapus --}}
+                                        <td class="py-3 px-4 align-top text-center">
+                                            <button type="button" @click.prevent="removeRow('competencies', row.key)" 
+                                                    class="text-gray-400 hover:text-red-500 transition-colors pt-2">
+                                                <ion-icon name="trash-outline" class="text-lg"></ion-icon>
                                             </button>
                                         </td>
                                     </tr>
@@ -437,12 +471,12 @@
                                         <td class="p-2">
                                             <input type="text" x-model="row.requirement" :name="'specifications['+index+'][requirement]'" 
                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Mis: S1 / Bahasa Inggris">
+                                                   placeholder="Contoh: S1 / Bahasa Inggris">
                                         </td>
                                         <td class="p-2">
                                             <input type="text" x-model="row.level_or_notes" :name="'specifications['+index+'][level_or_notes]'" 
                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Mis: Minimal S1 / Level Basic">
+                                                   placeholder="Contoh: Minimal S1 / Level Basic">
                                         </td>
                                         <td class="p-2 text-center">
                                             <button type="button" @click.prevent="removeRow('specifications', row.key)" 

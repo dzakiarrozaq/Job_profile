@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use App\Models\Training;
 use App\Models\TrainingPlan;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -15,8 +16,10 @@ class DashboardController extends Controller
     {
         // 1. Statistik Katalog Pelatihan
         $totalCourses = Training::count();
-        $internalCourses = Training::where('type', 'internal')->count();
-        $externalCourses = Training::where('type', 'external')->count();
+        
+        // PERBAIKAN: Kolom 'type' tidak ada di database, jadi kita set 0 dulu agar tidak error SQL.
+        $internalCourses = 0; 
+        $externalCourses = 0; 
 
         // 2. Statistik Persetujuan (Pending di tahap LP)
         $pendingApprovals = TrainingPlan::where('status', 'pending_lp')->count();
@@ -29,10 +32,11 @@ class DashboardController extends Controller
             ->get();
 
         // 4. Pelatihan Populer (Top 5)
-        $popularTrainings = \Illuminate\Support\Facades\DB::table('training_plan_items')
+        // PERBAIKAN: Menghapus 'trainings.type' dari query karena kolomnya tidak ada
+        $popularTrainings = DB::table('training_plan_items')
             ->join('trainings', 'training_plan_items.training_id', '=', 'trainings.id')
-            ->select('trainings.title', 'trainings.type', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-            ->groupBy('trainings.title', 'trainings.type')
+            ->select('trainings.title', DB::raw('count(*) as total'))
+            ->groupBy('trainings.title')
             ->orderByDesc('total')
             ->take(5)
             ->get();

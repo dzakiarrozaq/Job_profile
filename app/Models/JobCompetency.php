@@ -13,7 +13,7 @@ class JobCompetency extends Model
 
     protected $fillable = [
         'job_profile_id',
-        'competency_master_id', 
+        'competency_master_id', // Pastikan ini sesuai kolom di DB
         'competency_name',
         'competency_code',      
         'ideal_level',          
@@ -25,8 +25,12 @@ class JobCompetency extends Model
         return $this->belongsTo(JobProfile::class);
     }
     
-    public function master()
+    // --- PERBAIKAN: NAMA FUNGSI HARUS 'competency' ---
+    // Agar sesuai dengan controller yang memanggil ->load('competency')
+    public function competency()
     {
+        // Sesuaikan 'CompetenciesMaster' dengan nama Model Master Kompetensi Mas
+        // Sesuaikan 'competency_master_id' dengan nama kolom di tabel job_competencies
         return $this->belongsTo(CompetenciesMaster::class, 'competency_master_id');
     }
 }

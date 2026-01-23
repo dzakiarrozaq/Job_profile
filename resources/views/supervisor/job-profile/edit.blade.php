@@ -273,13 +273,13 @@
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Unit/Instansi</label>
                                     <input type="text" x-model="row.unit_instansi" :name="'workRelations['+index+'][unit_instansi]'" 
                                            class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                           placeholder="Mis: Seluruh Unit Kerja / Vendor">
+                                           placeholder="Contoh : Seluruh Unit Kerja / Vendor">
                                 </div>
                                 <div class="col-span-4">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Tujuan</label>
                                     <textarea x-model="row.purpose" :name="'workRelations['+index+'][purpose]'" rows="2" 
                                               class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                              placeholder="Mis: Koordinasi requirement fitur"></textarea>
+                                              placeholder="Contoh : Koordinasi requirement fitur"></textarea>
                                 </div>
                                 <div class="col-span-1 flex items-center justify-end">
                                     <button type="button" @click.prevent="removeRow('workRelations', row.key)" class="text-red-500 hover:text-red-700">
@@ -474,12 +474,12 @@
                                         <td class="p-2">
                                             <input type="text" x-model="row.requirement" :name="'specifications['+index+'][requirement]'" 
                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Mis: S1 / Bahasa Inggris">
+                                                   placeholder="Contoh: S1 / Bahasa Inggris">
                                         </td>
                                         <td class="p-2">
                                             <input type="text" x-model="row.level_or_notes" :name="'specifications['+index+'][level_or_notes]'" 
                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Mis: Minimal S1 / Level Basic">
+                                                   placeholder="Contoh: Minimal S1 / Level Basic">
                                         </td>
                                         <td class="p-2 text-center">
                                             <button type="button" @click.prevent="removeRow('specifications', row.key)" 

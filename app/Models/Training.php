@@ -11,34 +11,41 @@ class Training extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title', 
-        'provider', 
-    
-        'type',   
-        'cost',     
-
-        'type',       
-        'difficulty',  
-        'description',
-        'duration',    
-        'link_url',    
-        'status',
-
-        'tags', 
-        'skill_tags',
-        
-        'created_by', 
-        'supervisor_approver_id', 
-        'supervisor_approved_at', 
-        'lp_approver_id', 
-        'lp_approved_at', 
-        'rejection_notes'
+        'title',            // Course Title
+        'competency_name',  // Nama Kompetensi (Baru)
+        'level',            // Course Level (Pengganti difficulty)
+        'duration',         // Duration/Hours
+        'objective',        // Course Objective (Pengganti description)
+        'content',          // Course Content (Baru)
+        'provider',         // Penyedia (Default: Internal)
+        'status',           // Draft/Approved
     ];
 
+    public function getDescriptionAttribute()
+    {
+        $desc = '';
+
+        // 1. Tambahkan Objective jika ada
+        if (!empty($this->objective)) {
+            $desc .= "Tujuan:\n" . $this->objective . "\n\n";
+        }
+
+        // 2. Tambahkan Content jika ada
+        if (!empty($this->content)) {
+            $desc .= "Materi:\n" . $this->content;
+        }
+
+        // 3. Jika keduanya kosong
+        if (empty($desc)) {
+            return 'Tidak ada deskripsi detail.';
+        }
+
+        return $desc;
+    }
+
+    // Casts opsional (jika duration mau dipastikan string/angka)
     protected $casts = [
-        'supervisor_approved_at' => 'datetime',
-        'lp_approved_at' => 'datetime',
-        'cost' => 'integer', 
+        // 'duration' => 'integer', // Aktifkan jika ingin durasi dianggap angka saja
     ];
 
     public function creator(): BelongsTo

@@ -14,13 +14,13 @@
 
     <div class="mt-6 space-y-4">
         {{-- Form ini akan men-submit ke controller baru kita --}}
-        <form method="POST" action="{{ route('role.set') }}">
+        <form method="POST" action="{{ route('role.select') }}">
             @csrf
             
             <div class="space-y-3">
                 {{-- Loop semua peran yang dimiliki user --}}
                 @foreach (Auth::user()->roles as $role)
-                    <button type="submit" name="role_id" value="{{ $role->id }}" 
+                    <button type="submit" name="role_name" value="{{ $role->name }}" 
                             class="w-full flex items-center justify-center px-4 py-3 bg-white border border-gray-300 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Masuk sebagai {{ $role->name }}
                     </button>

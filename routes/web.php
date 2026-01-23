@@ -31,6 +31,7 @@ use App\Http\Controllers\Supervisor\PersetujuanController;
 use App\Http\Controllers\Lp\LaporanController as LpLaporanController;
 use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
 use App\Http\Controllers\Lp\ProfileController as LpProfileController;
+use App\Http\Controllers\Lp\TrainingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,8 +55,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/minat', [ProfileController::class, 'editInterests'])->name('profile.interests.edit');
     Route::patch('/profile/minat', [ProfileController::class, 'updateInterests'])->name('profile.interests.update');
 
+    Route::post('/profile/job-history', [ProfileController::class, 'storeJobHistory'])->name('profile.job-history.store');
+    Route::post('/profile/education', [ProfileController::class, 'storeEducation'])->name('profile.education.store');
+    
+    Route::delete('/profile/job-history/{id}', [ProfileController::class, 'destroyJobHistory'])->name('profile.job-history.destroy');
+    Route::delete('/profile/education/{id}', [ProfileController::class, 'destroyEducation'])->name('profile.education.destroy');
+
+    Route::delete('/profile/job-history/{id}', [ProfileController::class, 'destroyJobHistory'])->name('profile.job-history.destroy');
+    Route::delete('/profile/education/{id}', [ProfileController::class, 'destroyEducation'])->name('profile.education.destroy');
+
     Route::post('/profile/trigger-reset-password', [ProfileController::class, 'triggerResetPassword'])
          ->name('profile.trigger-reset');
+    
 
     Route::get('/notifikasi/{id}/baca', [App\Http\Controllers\NotificationController::class, 'markAsReadAndRedirect'])->name('notifikasi.baca');
     Route::post('/notifikasi/baca-semua', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifikasi.bacaSemua');
@@ -81,7 +92,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/idp/{id}/edit', [IdpController::class, 'edit'])->name('idp.edit');
         Route::put('/idp/{id}', [IdpController::class, 'update'])->name('idp.update');
     
-    Route::get('/idp/{id}', [IdpController::class, 'show'])->name('idp.show');
+        Route::get('/idp/{id}', [IdpController::class, 'show'])->name('idp.show');
 
         Route::get('/rencana', [TrainingPlanController::class, 'index'])->name('rencana.index');
         Route::post('/rencana', [TrainingPlanController::class, 'store'])->name('rencana.store');
@@ -172,6 +183,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/trainings/{id}', [AdminTrainingController::class, 'destroy'])->name('trainings.destroy');
         Route::get('/trainings/{id}/edit', [AdminTrainingController::class, 'edit'])->name('trainings.edit');
         Route::put('/trainings/{id}', [AdminTrainingController::class, 'update'])->name('trainings.update');
+
+        Route::post('/admin/trainings/import', [AdminTrainingController::class, 'import'])->name('admin.trainings.import');
+
+        // Route untuk Halaman Index
+        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
+        
+        // --- TAMBAHKAN INI UNTUK FIX ERROR ---
+        Route::post('/trainings/import', [AdminTrainingController::class, 'import'])->name('trainings.import');
+        
+        // Route resource lainnya (create, store, edit, etc)
+        Route::resource('trainings', AdminTrainingController::class)->except(['index']);
     });
 
     
@@ -194,6 +216,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/profile', [LpProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [LpProfileController::class, 'update'])->name('profile.update');
         Route::put('/password', [LpProfileController::class, 'updatePassword'])->name('password.update');
+
+        Route::post('/katalog/import', [TrainingController::class, 'import'])->name('katalog.import');
+    
+        // Route resource katalog yang sudah ada (Pastikan ini ada di BAWAH route import)
+        Route::resource('katalog', TrainingController::class);
     });
 
     Route::get('/notifications/mark-read', function () {
@@ -201,9 +228,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return redirect()->back();
     })->name('notifications.markRead');
 
-    Route::get('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'create'])->name('role.selection');
-    Route::post('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'store'])->name('role.set');
+    Route::get('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'index'])->name('role.selection');
+    Route::post('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'select'])->name('role.select');
 
+   
 });
 
 require __DIR__.'/auth.php';

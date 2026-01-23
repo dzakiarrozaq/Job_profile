@@ -39,48 +39,43 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validasi Input
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'company_name' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'department_id' => ['required', 'exists:departments,id'],
             'position_id' => ['required', 'exists:positions,id'],
+            'nik' => ['required', 'string', 'max:50'],
         ]);
 
-        // -------------------------------------------------------------
-        // 2. LOGIC PENCARIAN SUPERVISOR OTOMATIS (PINDAHKAN KE SINI)
-        // -------------------------------------------------------------
+        
         $managerId = null;
         
-        // Cari data posisi yang dipilih user
         $position = Position::find($request->position_id);
 
-        // Cek apakah posisi tersebut punya atasan (atasan_id tidak null)
         if ($position && $position->atasan_id) {
-            // Cari USER real yang sedang menjabat di posisi atasan tersebut
             $manager = User::where('position_id', $position->atasan_id)->first();
             
             if ($manager) {
                 $managerId = $manager->id;
             }
         }
-        // -------------------------------------------------------------
-
-        // 3. Simpan User Baru
+        
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'company_name' => $request->company_name,
             'password' => Hash::make($request->password),
             'status' => 'active',
             'department_id' => $request->department_id,
             'position_id' => $request->position_id,
-            'manager_id' => $managerId, // <--- MASUKKAN HASIL PENCARIAN DI ATAS
+            'manager_id' => $managerId,
+            'nik' => $request->nik,
         ]);
 
-        // 4. Assign Role (Contoh: Default Karyawan Outsourcing / Organik)
-        // Sesuaikan nama role dengan database Anda
-        $roleName = 'Karyawan Outsourcing'; // Atau logika lain
+        
+        $roleName = 'Karyawan Outsourcing';
         $role = Role::where('name', $roleName)->first();
 
         if ($role) {
