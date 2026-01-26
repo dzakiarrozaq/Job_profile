@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('competencies_master', function (Blueprint $table) {
+            $table->id();
+            $table->string('competency_code', 50)->nullable();
+            $table->string('competency_name');
+            $table->string('name')->nullable();
+            $table->string('type', 50)->default('teknis')->nullable();
+            $table->text('description')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('competencies_master');
+    }
+};

@@ -22,7 +22,6 @@
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- JIKA DATA KOSONG --}}
             @if($positions->isEmpty())
                 <div class="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200 flex gap-3 text-yellow-800">
                     <ion-icon name="warning" class="text-xl mt-0.5 flex-shrink-0"></ion-icon>
@@ -33,7 +32,6 @@
                 </div>
             @endif
 
-            {{-- CARD FORM --}}
             <div class="bg-white dark:bg-gray-800 shadow-lg sm:rounded-xl border border-gray-100 dark:border-gray-700">
                 <div class="p-8">
                     <div class="mb-6 text-center">
@@ -49,7 +47,6 @@
                     <form action="{{ route('admin.job-profile.store') }}" method="POST" id="jobProfileForm">
                         @csrf
 
-                        {{-- CUSTOM SEARCHABLE DROPDOWN --}}
                         <div class="mb-6 dropdown-container" 
                              x-data="{
                                 items: {{ Js::from($positions) }},
@@ -121,7 +118,6 @@
                                 Posisi / Jabatan <span class="text-red-500">*</span>
                             </label>
 
-                            {{-- WRAPPER INPUT --}}
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <ion-icon name="search-outline" class="text-gray-400 text-lg"></ion-icon>
@@ -137,8 +133,6 @@
                                     class="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-text"
                                     autocomplete="off"
                                 >
-
-                                {{-- Tombol Clear --}}
                                 <button type="button" 
                                         x-show="query.length > 0" 
                                         @click="reset()"
@@ -160,15 +154,12 @@
                                 
                                 <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
                                     
-                                    {{-- LOOP 1: Nama Departemen (Key) --}}
                                     <template x-for="(deptItems, deptName) in groupedItems" :key="deptName">
                                         <div>
-                                            {{-- Header Departemen (Sticky) --}}
                                             <li class="sticky top-0 z-10 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600">
                                                 <span x-text="deptName"></span>
                                             </li>
 
-                                            {{-- LOOP 2: Item Jabatan dalam Departemen tersebut --}}
                                             <template x-for="item in deptItems" :key="item.id">
                                                 <li @click="selectItem(item)" 
                                                     class="cursor-pointer px-4 py-3 pl-6 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-between group border-b border-gray-50 dark:border-gray-600 last:border-0">
@@ -177,7 +168,6 @@
                                                         <span x-text="item.title" class="font-semibold block text-gray-800 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-300"></span>
                                                     </div>
 
-                                                    {{-- Centang --}}
                                                     <span x-show="selectedId == item.id" class="text-indigo-600 font-bold text-xl">
                                                         <ion-icon name="checkmark"></ion-icon>
                                                     </span>
@@ -186,7 +176,6 @@
                                         </div>
                                     </template>
 
-                                    {{-- Jika Tidak Ada Hasil --}}
                                     <li x-show="!hasResults" class="px-4 py-4 text-center text-gray-500 italic">
                                         Tidak ada jabatan yang cocok dengan "<span x-text="query" class="font-bold"></span>"
                                     </li>
@@ -204,7 +193,6 @@
                             </p>
                         </div>
 
-                        {{-- FOOTER BUTTONS --}}
                         <div class="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700">
                             <a href="{{ route('admin.job-profile.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                                 Batal

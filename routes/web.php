@@ -32,7 +32,7 @@ use App\Http\Controllers\Lp\LaporanController as LpLaporanController;
 use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
 use App\Http\Controllers\Lp\ProfileController as LpProfileController;
 use App\Http\Controllers\Lp\TrainingController;
-
+use App\Http\Controllers\Admin\PositionHierarchyController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -153,10 +153,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // --- Rute Admin ---
     Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
-        Route::resource('positions', PositionController::class);
         
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/positions/hierarchy', [PositionHierarchyController::class, 'index'])
+            ->name('positions.hierarchy');
+            
+        Route::post('/positions/hierarchy/update', [PositionHierarchyController::class, 'updateParent'])
+            ->name('positions.updateHierarchy');
+
+        Route::resource('positions', PositionController::class);
+
+        Route::post('/trainings/import', [AdminTrainingController::class, 'import'])->name('trainings.import');
+        
+        Route::resource('trainings', AdminTrainingController::class);
+
+        Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
+        Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+
         Route::get('/job-profile', [JobProfileController::class, 'index'])->name('job-profile.index');
         Route::get('/job-profile/create', [JobProfileController::class, 'create'])->name('job-profile.create');
         Route::post('/job-profile', [JobProfileController::class, 'store'])->name('job-profile.store');
@@ -164,36 +178,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/job-profile/{job_profile}', [JobProfileController::class, 'update'])->name('job-profile.update');
         Route::delete('/job-profile/{job_profile}', [JobProfileController::class, 'destroy'])->name('job-profile.destroy');
 
-        Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
-        Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
-
-        Route::resource('users', AdminUserController::class);
+        Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index'); // Custom Index
+        Route::resource('users', AdminUserController::class); // Standard Resource
 
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
         Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
-        
+
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
-
-        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
-
-        Route::get('/trainings/create', [AdminTrainingController::class, 'create'])->name('trainings.create');
-        Route::post('/trainings', [AdminTrainingController::class, 'store'])->name('trainings.store');
-        
-        Route::delete('/trainings/{id}', [AdminTrainingController::class, 'destroy'])->name('trainings.destroy');
-        Route::get('/trainings/{id}/edit', [AdminTrainingController::class, 'edit'])->name('trainings.edit');
-        Route::put('/trainings/{id}', [AdminTrainingController::class, 'update'])->name('trainings.update');
-
-        Route::post('/admin/trainings/import', [AdminTrainingController::class, 'import'])->name('admin.trainings.import');
-
-        // Route untuk Halaman Index
-        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
-        
-        // --- TAMBAHKAN INI UNTUK FIX ERROR ---
-        Route::post('/trainings/import', [AdminTrainingController::class, 'import'])->name('trainings.import');
-        
-        // Route resource lainnya (create, store, edit, etc)
-        Route::resource('trainings', AdminTrainingController::class)->except(['index']);
     });
 
     

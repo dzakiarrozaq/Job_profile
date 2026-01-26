@@ -1,21 +1,33 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
         Schema::create('job_requirements', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('job_profile_id');
             $table->string('competency_code');
             $table->string('competency_name')->nullable();
             $table->integer('ideal_level');
-            $table->float('weight')->default(1.0);
-            // Tidak ada timestamps() di sini
+            $table->double('weight')->default(1);
+            $table->timestamps();
+            $table->foreign('job_profile_id')->references('id')->on('job_profiles')->onDelete('cascade');
         });
     }
-    public function down(): void {
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
         Schema::dropIfExists('job_requirements');
     }
 };

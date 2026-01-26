@@ -6,25 +6,23 @@
 
     <form method="POST" action="{{ route('register') }}" class="mt-6 space-y-4" 
           x-data="{ 
-              selectedDepartment: '{{ old('department_id', '') }}', 
+              selectedOrganization: '{{ old('organization_id', '') }}', 
               positions: [],
-              allPositions: {{ $departments->flatMap(fn($dept) => $dept->positions)->keyBy('id')->toJson() }},
-              allDepartments: {{ $departments->keyBy('id')->toJson() }},
+              {{-- Data JSON sudah membawa urutan dan posisi dari Controller --}}
+              allOrganizations: {{ $organizations->keyBy('id')->toJson() }},
               
               init() {
-                  if (this.selectedDepartment) {
+                  if (this.selectedOrganization) {
                       this.updatePositionList();
                   }
               },
               
               updatePositionList() {
-                  if (this.selectedDepartment && this.allDepartments[this.selectedDepartment]) {
-                      this.positions = this.allDepartments[this.selectedDepartment].positions;
+                  if (this.selectedOrganization && this.allOrganizations[this.selectedOrganization]) {
+                      this.positions = this.allOrganizations[this.selectedOrganization].positions;
                   } else {
                       this.positions = [];
                   }
-                  // Reset pilihan posisi jika departemen berubah (kecuali saat load awal old input)
-                  // document.getElementById('position_id').value = ''; 
               }
           }"
           x-init="init()">
@@ -55,27 +53,29 @@
         </div>
 
         <div>
-            <x-input-label for="department_id" :value="__('Departemen (Penempatan)')" />
-            <select id="department_id" name="department_id" 
-                    x-model="selectedDepartment"
+            <x-input-label for="organization_id" :value="__('Unit / Organisasi (Penempatan)')" />
+            <select id="organization_id" name="organization_id" 
+                    x-model="selectedOrganization"
                     @change="updatePositionList()"
                     class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
                 
-                <option value="">Pilih Departemen</option>
+                <option value="">Pilih Unit / Organisasi</option>
                 
-                @foreach ($departments as $department)
-                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                @foreach ($organizations as $org)
+                    <option value="{{ $org->id }}">
+                        {{ $org->display_name }}
+                    </option>
                 @endforeach
 
             </select>
-            <x-input-error :messages="$errors->get('department_id')" class="mt-2" />
+            <x-input-error :messages="$errors->get('organization_id')" class="mt-2" />
         </div>
 
         <div>
             <x-input-label for="position_id" :value="__('Posisi / Jabatan')" />
             <select id="position_id" name="position_id" 
                     class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                    :disabled="!selectedDepartment"> 
+                    :disabled="!selectedOrganization"> 
                 
                 <option value="">Pilih Posisi</option>
                 

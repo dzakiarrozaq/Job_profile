@@ -43,7 +43,7 @@ class JobProfileController extends Controller
             ]);
         }
 
-        return view('supervisor.job-profile.index', [
+        return view('admin.job-profile.index', [
             'jobProfiles' => $jobProfiles
         ]);
     }

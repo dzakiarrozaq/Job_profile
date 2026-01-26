@@ -82,4 +82,14 @@ class Position extends Model
     {
         return $this->hasOne(JobProfile::class)->latestOfMany();
     }
+
+    /**
+     * RELASI TAMBAHAN: Untuk load struktur pohon (Tree View)
+     * Memanggil relasi 'bawahan' secara berulang (recursive).
+     */
+    public function bawahanRecursive()
+    {
+        // Pastikan 'bawahan' sesuai dengan nama fungsi HasMany yang sudah ada
+        return $this->bawahan()->with(['bawahanRecursive', 'organization']);
+    }
 }

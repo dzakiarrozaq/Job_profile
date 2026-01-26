@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\Position;
-use App\Models\Unit; // Pastikan Anda punya Model Unit
 use Illuminate\Http\Request;
-use Illuminate\Support\Str; // PENTING: Untuk fungsi Str::finish
+use Illuminate\Support\Str; 
 
 class PositionController extends Controller
 {
@@ -15,15 +15,12 @@ class PositionController extends Controller
      */
     public function index(Request $request)
     {
-        // Query data posisi beserta relasi Unit dan Atasan
-        $query = Position::with(['unit', 'parent']);
+        $query = Position::with(['organization', 'atasan']);
 
-        // Fitur Pencarian
         if ($request->has('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
-        // Urutkan dan Pagination
         $positions = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return view('admin.positions.index', compact('positions'));
@@ -34,10 +31,10 @@ class PositionController extends Controller
      */
     public function create()
     {
-        $units = Unit::all(); // Data untuk dropdown Unit
+        $organizations = Organization::all(); // Data untuk dropdown Organization
         $parents = Position::all(); // Data untuk dropdown Atasan
 
-        return view('admin.positions.create', compact('units', 'parents'));
+        return view('admin.positions.create', compact('organizations', 'parents'));
     }
 
     /**
@@ -45,15 +42,13 @@ class PositionController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $validated = $request->validate([
-            'title'     => 'required|string|max:255',
-            'unit_id'   => 'required|exists:units,id', // Wajib pilih unit
-            'atasan_id' => 'nullable|exists:positions,id', // Opsional (bisa null)
-            'tipe'      => 'required|in:organik,outsourcing', // Validasi Tipe
+            'title'           => 'required|string|max:255',
+            'organization_id' => 'required|exists:organizations,id', // Wajib pilih organization
+            'atasan_id'       => 'nullable|exists:positions,id', // Opsional (bisa null)
+            'tipe'            => 'required|in:organik,outsourcing', // Validasi Tipe
         ]);
 
-        // 2. LOGIKA OTOMATIS: Tambah (OS) jika outsourcing
         if ($validated['tipe'] === 'outsourcing') {
             // Str::finish akan menambahkan ' (OS)' di akhir HANYA jika belum ada
             $validated['title'] = Str::finish($validated['title'], ' (OS)');
@@ -72,13 +67,13 @@ class PositionController extends Controller
     public function edit($id)
     {
         $position = Position::findOrFail($id);
-        $units = Unit::all();
+        $organizations = Organization::all();
         
         // Ambil semua posisi KECUALI dirinya sendiri (untuk dropdown atasan)
         // Supaya tidak bisa memilih diri sendiri sebagai atasan (error loop)
         $parents = Position::where('id', '!=', $id)->get();
 
-        return view('admin.positions.edit', compact('position', 'units', 'parents'));
+        return view('admin.positions.edit', compact('position', 'organizations', 'parents'));
     }
 
     /**
@@ -90,10 +85,10 @@ class PositionController extends Controller
 
         // 1. Validasi
         $validated = $request->validate([
-            'title'     => 'required|string|max:255',
-            'unit_id'   => 'required|exists:units,id',
-            'atasan_id' => 'nullable|exists:positions,id',
-            'tipe'      => 'required|in:organik,outsourcing',
+            'title'           => 'required|string|max:255',
+            'organization_id' => 'required|exists:organizations,id',
+            'atasan_id'       => 'nullable|exists:positions,id',
+            'tipe'            => 'required|in:organik,outsourcing',
         ]);
 
         // 2. LOGIKA OTOMATIS SAAT UPDATE
@@ -120,7 +115,7 @@ class PositionController extends Controller
         $position = Position::findOrFail($id);
         
         // Cek apakah posisi ini punya bawahan? (Opsional: mencegah hapus atasan yg punya bawahan)
-        // if($position->children()->count() > 0) {
+        // if($position->bawahan()->count() > 0) {
         //     return back()->with('error', 'Gagal hapus! Posisi ini masih menjadi atasan posisi lain.');
         // }
 
