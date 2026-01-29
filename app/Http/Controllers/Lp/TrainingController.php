@@ -110,14 +110,11 @@ class TrainingController extends Controller
             
             Excel::import(new \App\Imports\TrainingsImport, $file);
             
-            // --- LOGIKA MANUAL (Contoh untuk CSV sederhana) ---
             if ($file->getClientOriginalExtension() == 'csv') {
                 $fileHandle = fopen($file->getPathname(), 'r');
-                $header = fgetcsv($fileHandle); // Skip header row
+                $header = fgetcsv($fileHandle); 
                 
                 while (($row = fgetcsv($fileHandle)) !== false) {
-                    // Pastikan urutan kolom di CSV sesuai: Title, Provider, Method, Level, Duration, Description
-                    // Contoh sederhana (sesuaikan index dengan file excel Anda):
                     if (count($row) >= 5) {
                         Training::create([
                             'title'       => $row[0] ?? 'No Title',
@@ -131,8 +128,6 @@ class TrainingController extends Controller
                 }
                 fclose($fileHandle);
             } else {
-                // Jika .xlsx dan belum ada library, kita return sukses dummy dulu
-                // Anda wajib menginstall maatwebsite/excel untuk support .xlsx yang baik
             }
 
             return redirect()->route('lp.katalog.index')->with('success', 'Data berhasil diimport (Mode CSV/Dummy).');

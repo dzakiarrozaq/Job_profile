@@ -20,4 +20,14 @@ class Organization extends Model
     {
         return $this->hasMany(Position::class);
     }
+
+    /**
+     * Relasi ke Induk Organisasi (Parent)
+     * Contoh: Unit -> Parent-nya Section -> Parent-nya Dept
+     */
+    public function parent()
+    {
+        // Asumsi: ada kolom 'parent_id' di tabel organizations
+        return $this->belongsTo(Organization::class, 'parent_id');
+    }
 }

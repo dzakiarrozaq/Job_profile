@@ -42,6 +42,38 @@
         $workRelationsData = old('workRelations', $jobProfile->workRelations->map(fn($w) => ['key' => 'db_'.$w->id, 'id' => $w->id, 'type' => $w->type, 'unit_instansi' => $w->unit_instansi, 'purpose' => $w->purpose])->toArray());
     @endphp
 
+    {{-- LOGIKA BARU: Deteksi Kedalaman Hirarki --}}
+    @php
+        $org = $jobProfile->position->organization;
+        $parent = $org->parent ?? null;       // Bapak (Parent)
+        $grandparent = $parent->parent ?? null; // Kakek (Grandparent)
+
+        // Default Value
+        $namaUnit = '-';
+        $namaSection = '-';
+        $namaDepartemen = 'N/A';
+
+        if ($grandparent) {
+            // SKENARIO A: 3 TINGKAT (Lengkap)
+            // Struktur: Unit -> Section -> Departemen
+            // Contoh: Bagging Unit -> Production Section -> Ops Dept
+            $namaUnit = $org->name;
+            $namaSection = $parent->name;
+            $namaDepartemen = $grandparent->name;
+        } elseif ($parent) {
+            // SKENARIO B: 2 TINGKAT
+            // Struktur: Section -> Departemen
+            // Contoh: Kiln Section -> Production Dept
+            // Di sini organisasi jabatan ($org) dianggap sebagai Section
+            $namaUnit = '-'; 
+            $namaSection = $org->name; 
+            $namaDepartemen = $parent->name;
+        } else {
+            // SKENARIO C: 1 TINGKAT (Langsung Departemen/Direktorat)
+            $namaDepartemen = $org->name ?? 'N/A';
+        }
+    @endphp
+
     <div class="max-w-7xl mx-auto" 
         x-data="{ 
             {{-- LOGIKA: Jika ada error di kompetensi, otomatis buka tab kompetensi --}}
@@ -188,26 +220,43 @@
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">1. Identifikasi Jabatan (v{{ $jobProfile->version }})</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        {{-- 1. Jabatan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan:</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->title ?? 'N/A' }}</span>
                         </div>
+
+                        {{-- 2. Job Grade --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Tingkat (Job Grade):</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->jobGrade->name ?? 'N/A' }}</span>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Direktorat:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->directorate->name ?? 'N/A' }}</span>
-                        </div>
+
+                        {{-- 3. Departemen (Hasil Logika PHP di atas) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->department->name ?? 'N/A' }}</span>
+                            <span class="text-gray-900 dark:text-white font-bold text-indigo-600">
+                                {{ $namaDepartemen }}
+                            </span>
                         </div>
+
+                        {{-- 4. Section (Hasil Logika PHP di atas) --}}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
+                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section:</span>
+                            <span class="text-gray-900 dark:text-white">
+                                {{ $namaSection }}
+                            </span>
+                        </div>
+
+                        {{-- 5. Unit (Hasil Logika PHP di atas) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->unit->name ?? 'N/A' }}</span>
+                            <span class="text-gray-900 dark:text-white">
+                                {{ $namaUnit }}
+                            </span>
                         </div>
+
+                        {{-- 6. Atasan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan Atasan:</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->atasan->title ?? 'N/A' }}</span>
@@ -437,72 +486,251 @@
                     </div>
                 </div>
 
-                <div x-show="currentTab === 'spesifikasi'" class="p-6 lg:p-8 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">5. Spesifikasi Lain</h3>
-                        <button type="button" @click.prevent="addRow('specifications')" 
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-                            <ion-icon name="add-outline" class="mr-1"></ion-icon> Tambah Spesifikasi
-                        </button>
+                <div x-show="currentTab === 'spesifikasi'" class="p-6 lg:p-8 space-y-10">
+    
+                    {{-- ALERT INFO --}}
+                    <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-start gap-3">
+                        <ion-icon name="information-circle" class="text-xl mt-0.5"></ion-icon>
+                        <p class="text-sm">Silakan lengkapi persyaratan untuk setiap kategori di bawah ini. Tekan tombol <b>+ Tambah Baris</b> jika ingin menambahkan lebih dari satu item.</p>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Tipe</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Persyaratan</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Level/Catatan</th>
-                                    <th class="px-4 py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <template x-for="(row, index) in specifications" :key="row.key">
-                                    <tr class="bg-white dark:bg-gray-800">
-                                        <td class="p-2">
-                                            <input type="hidden" :name="'specifications['+index+'][id]'" x-model="row.id">
-                                            <select x-model="row.type" :name="'specifications['+index+'][type]'" 
-                                                    class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                <option value="pendidikan">Pendidikan</option>
-                                                <option value="pengalaman">Pengalaman Kerja</option>
-                                                <option value="sertifikasi">Sertifikasi</option>
-                                                <option value="bahasa">Bahasa</option>
-                                                <option value="komputer">Komputer</option>
-                                                <option value="kesehatan">Kesehatan</option>
-                                            </select>
-                                        </td>
-                                        <td class="p-2">
-                                            <input type="text" x-model="row.requirement" :name="'specifications['+index+'][requirement]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Contoh: S1 / Bahasa Inggris">
-                                        </td>
-                                        <td class="p-2">
-                                            <input type="text" x-model="row.level_or_notes" :name="'specifications['+index+'][level_or_notes]'" 
-                                                   class="w-full rounded-md border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                   placeholder="Contoh: Minimal S1 / Level Basic">
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <button type="button" @click.prevent="removeRow('specifications', row.key)" 
-                                                    class="text-red-500 hover:text-red-700">
-                                                <ion-icon name="trash-outline" class="text-xl"></ion-icon>
+                    {{-- 1. PENDIDIKAN --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">A. Pendidikan</h4>
+                            <button type="button" @click.prevent="addRow('educations')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in educations" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    {{-- Hidden Inputs --}}
+                                    <input type="hidden" :name="'educations['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'educations['+index+'][type]'" value="pendidikan">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Jurusan / Jenjang <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" 
+                                            :name="'educations['+index+'][requirement]'" 
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                                            placeholder="Contoh: S1 Teknik Sipil">
+                                    </div>
+                                    
+                                    <div class="relative">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Catatan / IPK</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" x-model="row.level_or_notes" 
+                                                :name="'educations['+index+'][level_or_notes]'" 
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                                                placeholder="Contoh: Min IPK 3.00">
+                                            
+                                            <button type="button" @click.prevent="removeRow('educations', row.key)" 
+                                                    class="text-gray-400 hover:text-red-500 transition self-center"
+                                                    title="Hapus Baris">
+                                                <ion-icon name="trash-outline" class="text-lg"></ion-icon>
                                             </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
+
+                    {{-- 2. PENGALAMAN KERJA --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">B. Pengalaman Kerja</h4>
+                            <button type="button" @click.prevent="addRow('experiences')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in experiences" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    <input type="hidden" :name="'experiences['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'experiences['+index+'][type]'" value="pengalaman">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Posisi / Bidang <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" :name="'experiences['+index+'][requirement]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Staff Logistik">
+                                    </div>
+                                    <div class="relative flex gap-2">
+                                        <div class="w-full">
+                                            <label class="block text-xs font-medium text-gray-500 mb-1">Lama Bekerja / Industri</label>
+                                            <input type="text" x-model="row.level_or_notes" :name="'experiences['+index+'][level_or_notes]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Minimal 2 Tahun">
+                                        </div>
+                                        <button type="button" @click.prevent="removeRow('experiences', row.key)" class="text-gray-400 hover:text-red-500 transition self-end mb-2"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- 3. SERTIFIKASI --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">C. Sertifikasi / Lisensi</h4>
+                            <button type="button" @click.prevent="addRow('certifications')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in certifications" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    <input type="hidden" :name="'certifications['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'certifications['+index+'][type]'" value="sertifikasi">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Nama Sertifikasi <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" :name="'certifications['+index+'][requirement]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Ahli K3 Umum">
+                                    </div>
+                                    <div class="relative flex gap-2">
+                                        <div class="w-full">
+                                            <label class="block text-xs font-medium text-gray-500 mb-1">Penerbit / Masa Berlaku</label>
+                                            <input type="text" x-model="row.level_or_notes" :name="'certifications['+index+'][level_or_notes]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: BNSP / Masih Berlaku">
+                                        </div>
+                                        <button type="button" @click.prevent="removeRow('certifications', row.key)" class="text-gray-400 hover:text-red-500 transition self-end mb-2"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- 4. BAHASA --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">D. Bahasa</h4>
+                            <button type="button" @click.prevent="addRow('languages')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in languages" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    <input type="hidden" :name="'languages['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'languages['+index+'][type]'" value="bahasa">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Bahasa <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" :name="'languages['+index+'][requirement]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Bahasa Inggris">
+                                    </div>
+                                    <div class="relative flex gap-2">
+                                        <div class="w-full">
+                                            <label class="block text-xs font-medium text-gray-500 mb-1">Level (Lisan/Tulisan)</label>
+                                            <input type="text" x-model="row.level_or_notes" :name="'languages['+index+'][level_or_notes]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Fasih / TOEFL 500">
+                                        </div>
+                                        <button type="button" @click.prevent="removeRow('languages', row.key)" class="text-gray-400 hover:text-red-500 transition self-end mb-2"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- 5. KEAHLIAN KOMPUTER --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">E. Keahlian Komputer / Teknis</h4>
+                            <button type="button" @click.prevent="addRow('computers')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in computers" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    <input type="hidden" :name="'computers['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'computers['+index+'][type]'" value="komputer">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Software / Skill <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" :name="'computers['+index+'][requirement]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Microsoft Excel">
+                                    </div>
+                                    <div class="relative flex gap-2">
+                                        <div class="w-full">
+                                            <label class="block text-xs font-medium text-gray-500 mb-1">Tingkat Kemahiran</label>
+                                            <input type="text" x-model="row.level_or_notes" :name="'computers['+index+'][level_or_notes]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Advanced (Pivot/Macro)">
+                                        </div>
+                                        <button type="button" @click.prevent="removeRow('computers', row.key)" class="text-gray-400 hover:text-red-500 transition self-end mb-2"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- 6. KESEHATAN --}}
+                    <div class="border rounded-lg overflow-hidden border-gray-200 dark:border-gray-700">
+                        <div class="bg-gray-100 dark:bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200">F. Persyaratan Fisik / Kesehatan</h4>
+                            <button type="button" @click.prevent="addRow('healths')" 
+                                    class="text-xs flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition shadow-sm text-gray-700 dark:text-gray-200">
+                                <ion-icon name="add" class="mr-1"></ion-icon> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800">
+                            <template x-for="(row, index) in healths" :key="row.key">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                    <input type="hidden" :name="'healths['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'healths['+index+'][type]'" value="kesehatan">
+
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Persyaratan <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="row.requirement" :name="'healths['+index+'][requirement]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Tidak Buta Warna">
+                                    </div>
+                                    <div class="relative flex gap-2">
+                                        <div class="w-full">
+                                            <label class="block text-xs font-medium text-gray-500 mb-1">Keterangan Tambahan</label>
+                                            <input type="text" x-model="row.level_or_notes" :name="'healths['+index+'][level_or_notes]'" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Contoh: Surat Dokter Diperlukan">
+                                        </div>
+                                        <button type="button" @click.prevent="removeRow('healths', row.key)" class="text-gray-400 hover:text-red-500 transition self-end mb-2"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                 </div>
 
-                <div class="flex justify-end gap-4 border-t border-gray-200 dark:border-gray-700 p-6">
+                {{-- BAGIAN FOOTER TOMBOL ACTION --}}
+                <div class="flex flex-wrap justify-between items-center gap-4 border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+                    
+                    {{-- KIRI: Tombol Batal --}}
                     <a href="{{ route('supervisor.job-profile.index') }}" 
-                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600">
-                        Batal
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition">
+                        <ion-icon name="arrow-back-outline" class="mr-1 align-middle"></ion-icon> Kembali
                     </a>
-                    <button type="submit" 
-                            class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                        Simpan Perubahan Job Profile
-                    </button>
+
+                    {{-- KANAN: Group Tombol Aksi --}}
+                    <div class="flex gap-3">
+                        
+                        {{-- Hanya muncul jika status belum verified --}}
+                        @if($jobProfile->status !== 'verified')
+                            <button type="submit" name="action" value="reject"
+                                    onclick="return confirm('Apakah Anda yakin ingin MENOLAK Job Profile ini? Status akan kembali menjadi Draft.');"
+                                    class="px-4 py-2 text-sm font-bold text-red-700 bg-red-100 border border-red-200 rounded-lg hover:bg-red-200 focus:ring-2 focus:ring-red-500 transition">
+                                <ion-icon name="close-circle-outline" class="mr-1 align-middle"></ion-icon> Tolak
+                            </button>
+                        @endif
+
+                        <button type="submit" name="action" value="save_draft"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-600 dark:text-white dark:border-gray-500 hover:shadow-sm transition">
+                            <ion-icon name="save-outline" class="mr-1 align-middle"></ion-icon> Simpan Draft
+                        </button>
+
+                        @if($jobProfile->status !== 'verified')
+                            <button type="submit" name="action" value="approve"
+                                    onclick="return confirm('Apakah Anda yakin data sudah benar dan ingin MENYETUJUI Job Profile ini?');"
+                                    class="px-6 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 shadow-md transition transform hover:scale-105">
+                                <ion-icon name="checkmark-done-circle-outline" class="mr-1 align-middle text-lg"></ion-icon> Simpan & Setujui
+                            </button>
+                        @endif
+
+                    </div>
                 </div>
             </div>
         </form>

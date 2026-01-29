@@ -31,16 +31,24 @@ class RoleMiddleware
             return redirect('login')->with('error', 'Akun Anda tidak memiliki Role yang valid.');
         }
 
-        // 4. CEK APAKAH SALAH SATU ROLE USER BOLEH MASUK?
-        // Loop setiap role yang diizinkan oleh Route (misal: 'Admin', 'Supervisor')
-        // Jika user punya salah satunya, izinkan masuk.
+        // --- PERBAIKAN DI SINI ---
+        // 4. NORMALISASI ROLE YANG DIIZINKAN (HANDLING SIMBOL PIPA '|')
+        // Route::middleware(['role:Admin|Supervisor']) mengirim 'Admin|Supervisor' sebagai satu string
+        $rolesToCheck = [];
         foreach ($allowedRoles as $role) {
+            // Pecah string jika mengandung '|' (misal: "Admin|Supervisor")
+            $parts = explode('|', $role);
+            $rolesToCheck = array_merge($rolesToCheck, $parts);
+        }
+
+        // 5. CEK APAKAH SALAH SATU ROLE USER BOLEH MASUK?
+        foreach ($rolesToCheck as $role) {
             if (in_array($role, $userRoles)) {
                 return $next($request);
             }
         }
 
-        // 5. JIKA DITOLAK, LEMPAR KE DASHBOARD SESUAI PRIORITAS
+        // 6. JIKA DITOLAK, LEMPAR KE DASHBOARD SESUAI PRIORITAS
         // Kita cek role tertinggi yang dimiliki user untuk menentukan redirect
         
         $redirectUrl = route('dashboard'); // Default karyawan

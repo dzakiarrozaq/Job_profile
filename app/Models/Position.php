@@ -92,4 +92,41 @@ class Position extends Model
         // Pastikan 'bawahan' sesuai dengan nama fungsi HasMany yang sudah ada
         return $this->bawahan()->with(['bawahanRecursive', 'organization']);
     }
+
+    /**
+     * Relasi ke Departemen
+     */
+    public function department(): BelongsTo
+    {
+        // Asumsi: ada kolom 'department_id' di tabel positions
+        // Arahkan ke model Organization (karena biasanya dept adalah bagian dari organisasi)
+        return $this->belongsTo(Organization::class, 'department_id');
+    }
+
+    /**
+     * Relasi ke Unit
+     */
+    public function unit(): BelongsTo
+    {
+        // Asumsi: ada kolom 'unit_id'
+        return $this->belongsTo(Organization::class, 'unit_id');
+    }
+
+    /**
+     * Relasi ke Section (Seksi)
+     */
+    public function section(): BelongsTo
+    {
+        // Asumsi: ada kolom 'section_id'
+        return $this->belongsTo(Organization::class, 'section_id');
+    }
+
+    /**
+     * Relasi ke Direktorat (Tadi di View ada pemanggilan ->directorate->name)
+     */
+    public function directorate(): BelongsTo
+    {
+        // Asumsi: ada kolom 'directorate_id'
+        return $this->belongsTo(Organization::class, 'directorate_id');
+    }
 }

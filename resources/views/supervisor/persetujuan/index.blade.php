@@ -12,6 +12,30 @@
             Daftar antrean persetujuan yang membutuhkan tindakan Anda.
         </p>
     </x-slot>
+    
+    @php
+        $posOrg = $profile->position->organization ?? null;
+        $parent = $posOrg->parent ?? null;
+        $grandparent = $parent->parent ?? null;
+
+        $unitName = '-';
+        $sectionName = '-';
+        $deptName = 'N/A';
+
+        if ($grandparent) {
+            // 3 Level (Unit -> Section -> Dept)
+            $unitName = $posOrg->name;
+            $sectionName = $parent->name;
+            $deptName = $grandparent->name;
+        } elseif ($parent) {
+            // 2 Level (Section -> Dept)
+            $sectionName = $posOrg->name;
+            $deptName = $parent->name;
+        } else {
+            // 1 Level
+            $deptName = $posOrg->name ?? 'N/A';
+        }
+    @endphp
 
     {{-- Data State & Tab Management --}}
     <div class="max-w-7xl mx-auto space-y-6" x-data="{ activeTab: 'assessment' }">
@@ -177,38 +201,105 @@
 
         {{-- CONTENT 3: JOB PROFILE --}}
         <div x-show="activeTab === 'jobprofile'" class="space-y-4" style="display: none;"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform scale-95"
-             x-transition:enter-end="opacity-100 transform scale-100">
-             
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-95"
+            x-transition:enter-end="opacity-100 transform scale-100">
+            
             @forelse($jobProfiles as $profile)
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="flex items-center gap-4 w-full md:w-auto">
-                            <div class="p-3 bg-yellow-50 rounded-full text-yellow-600">
-                                <ion-icon name="briefcase" class="text-2xl"></ion-icon>
+                {{-- LOGIKA HIRARKI (PHP) --}}
+                @php
+                    $posOrg = $profile->position->organization ?? null;
+                    $parent = $posOrg->parent ?? null;
+                    $grandparent = $parent->parent ?? null;
+
+                    $unitName = '-';
+                    $sectionName = '-';
+                    $deptName = 'N/A';
+
+                    if ($grandparent) {
+                        // 3 Level (Unit -> Section -> Dept)
+                        $unitName = $posOrg->name;
+                        $sectionName = $parent->name;
+                        $deptName = $grandparent->name;
+                    } elseif ($parent) {
+                        // 2 Level (Section -> Dept)
+                        $sectionName = $posOrg->name;
+                        $deptName = $parent->name;
+                    } else {
+                        // 1 Level (Dept Only)
+                        $deptName = $posOrg->name ?? 'N/A';
+                    }
+                @endphp
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border-l-4 border-yellow-500 hover:shadow-md transition-all duration-200 mb-4">
+                    
+                    {{-- HEADER: JUDUL & VERSI --}}
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-600 dark:text-yellow-500">
+                                <ion-icon name="briefcase" class="text-xl"></ion-icon>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
                                     {{ $profile->position->title ?? 'Posisi Dihapus' }}
-                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md border">v{{ $profile->version }}</span>
                                 </h3>
-                                <p class="text-sm text-gray-600">Unit: {{ $profile->position->unit->name ?? '-' }}</p>
-                                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                                    <ion-icon name="create-outline"></ion-icon>
-                                    Edit: {{ $profile->creator->name ?? 'Sistem' }} • {{ $profile->updated_at->diffForHumans() }}
-                                </p>
+                                <div class="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                                    <ion-icon name="person-circle-outline"></ion-icon>
+                                    <span>{{ $profile->creator->name ?? 'Sistem' }}</span>
+                                    <span>•</span>
+                                    <span>{{ $profile->updated_at->diffForHumans() }}</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                             <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" 
-                                class="px-5 py-2.5 bg-yellow-500 text-white text-sm font-bold rounded-lg hover:bg-yellow-600 shadow-sm flex items-center transition-transform active:scale-95">
-                                <ion-icon name="eye-outline" class="mr-2"></ion-icon> Periksa Revisi
-                            </a>
+                        
+                        {{-- BADGE VERSI --}}
+                        <span class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-md border border-gray-200 dark:border-gray-600">
+                            v{{ $profile->version }}
+                        </span>
+                    </div>
+
+                    {{-- HIRARKI ORGANISASI (TAMPILAN BARU YANG RAPI) --}}
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 p-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-y-3 sm:gap-x-4">
+                            
+                            {{-- UNIT --}}
+                            <div class="flex flex-col">
+                                <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Unit</span>
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate" title="{{ $unitName }}">
+                                    {{ $unitName }}
+                                </span>
+                            </div>
+
+                            {{-- SECTION --}}
+                            <div class="flex flex-col sm:border-l sm:border-gray-200 dark:sm:border-gray-600 sm:pl-4">
+                                <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Section</span>
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate" title="{{ $sectionName }}">
+                                    {{ $sectionName }}
+                                </span>
+                            </div>
+
+                            {{-- DEPARTEMEN --}}
+                            <div class="flex flex-col sm:border-l sm:border-gray-200 dark:sm:border-gray-600 sm:pl-4">
+                                <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Departemen</span>
+                                <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400 truncate" title="{{ $deptName }}">
+                                    {{ $deptName }}
+                                </span>
+                            </div>
+
                         </div>
+                    </div>
+
+                    {{-- FOOTER TOMBOL --}}
+                    <div class="mt-4 flex justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
+                        <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" 
+                        class="group inline-flex items-center text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors">
+                            Periksa & Revisi
+                            <ion-icon name="arrow-forward" class="ml-1 transition-transform group-hover:translate-x-1"></ion-icon>
+                        </a>
                     </div>
                 </div>
             @empty
+                {{-- EMPTY STATE --}}
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-50 mb-4">
                         <ion-icon name="briefcase-outline" class="text-4xl text-yellow-400"></ion-icon>

@@ -107,85 +107,89 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/rencana/sertifikat/{itemId}', [TrainingPlanController::class, 'storeSertifikat'])->name('rencana.sertifikat.store');
     });
 
-    
-    // --- Rute Supervisor ---
-    Route::middleware(['role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
+    // ==============================================================================
+    // 1. GROUP KHUSUS SUPERVISOR (Prefix: /supervisor)
+    // ==============================================================================
+    Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
+        
+        // Dashboard & Menu Utama Supervisor
         Route::get('/dashboard', [SupervisorDashboardController::class, 'index'])->name('dashboard');
         Route::get('/persetujuan', [SupervisorPersetujuanController::class, 'index'])->name('persetujuan');
+        
+        // Verifikasi Kompetensi & Sertifikat
         Route::get('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'show'])->name('penilaian.show');
         Route::post('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'store'])->name('penilaian.store');
         Route::get('/verifikasi-sertifikat', [App\Http\Controllers\Supervisor\CertificateController::class, 'index'])->name('sertifikat.index');
         Route::post('/verifikasi-sertifikat/{id}/approve', [App\Http\Controllers\Supervisor\CertificateController::class, 'approve'])->name('sertifikat.approve');
         Route::post('/verifikasi-sertifikat/{id}/reject', [App\Http\Controllers\Supervisor\CertificateController::class, 'reject'])->name('sertifikat.reject');
         
+        // Profil Diri & Tim
         Route::get('/profile', function () { return view('supervisor.profile', ['user' => Auth::user()]); })->name('profile');
         Route::patch('/profile', [ProfileController::class, 'updateSupervisorProfile'])->name('profile.update');
-        
-        Route::get('/job-profile', [JobProfileController::class, 'index'])->name('job-profile.index');
-        Route::get('/job-profile/create', [JobProfileController::class, 'create'])->name('job-profile.create');
-        Route::post('/job-profile', [JobProfileController::class, 'store'])->name('job-profile.store');
-        Route::get('/job-profile/{job_profile}/edit', [JobProfileController::class, 'edit'])->name('job-profile.edit');
-        Route::patch('/job-profile/{job_profile}', [JobProfileController::class, 'update'])->name('job-profile.update');
-        Route::delete('/job-profile/{job_profile}', [JobProfileController::class, 'destroy'])->name('job-profile.destroy');
-        
-        Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
-        Route::get('/competencies/search', [App\Http\Controllers\Admin\JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+        Route::resource('tim', TeamController::class); // Menggantikan manual get/post/create
 
-        Route::get('/tim', [TeamController::class, 'index'])->name('tim.index');
-        Route::get('/tim/create', [TeamController::class, 'create'])->name('tim.create'); 
-        Route::post('/tim', [TeamController::class, 'store'])->name('tim.store');
-        Route::get('/tim/{user}', [TeamController::class, 'show'])->name('tim.show');
-
+        // Laporan & IDP
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
-
         Route::get('/idp-approval', [SupervisorIdpController::class, 'index'])->name('idp.index');
         Route::get('/idp-approval/{id}', [SupervisorIdpController::class, 'show'])->name('idp.show');
         Route::post('/idp-approval/{id}', [SupervisorIdpController::class, 'update'])->name('idp.update');
 
+        // Group Supervisor
+        Route::get('/persetujuan/idp/{id}', [PersetujuanController::class, 'showIdp'])->name('persetujuan.idp.show');
+        Route::post('/persetujuan/idp/{id}/approve', [PersetujuanController::class, 'approveIdp'])->name('persetujuan.idp.approve');
+        Route::post('/persetujuan/idp/{id}/reject', [PersetujuanController::class, 'rejectIdp'])->name('persetujuan.idp.reject');
+        
+        // Rencana Persetujuan Lainnya
         Route::get('/rencana/{id}', [PersetujuanController::class, 'show'])->name('rencana.show');
-        
         Route::post('/rencana/{id}/approve', [PersetujuanController::class, 'approve'])->name('approve');
-        
         Route::post('/rencana/{id}/reject', [PersetujuanController::class, 'reject'])->name('reject');
+
+        // --------------------------------------------------------------------------
+        // JOB PROFILE (Versi Supervisor)
+        // URL: /supervisor/job-profile/...
+        // Route Name: supervisor.job-profile.*
+        // --------------------------------------------------------------------------
+        Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
+        Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+        
+        // Gunakan Resource agar otomatis membuat index, create, store, edit, update, destroy
+        Route::resource('job-profile', JobProfileController::class); 
     });
 
-    
-    // --- Rute Admin ---
-    Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
-        
+
+    // ==============================================================================
+    // 2. GROUP KHUSUS ADMIN (Prefix: /admin)
+    // ==============================================================================
+    Route::middleware(['auth', 'role:Admin'])->prefix('admin')->name('admin.')->group(function () {
+
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/positions/hierarchy', [PositionHierarchyController::class, 'index'])
-            ->name('positions.hierarchy');
-            
-        Route::post('/positions/hierarchy/update', [PositionHierarchyController::class, 'updateParent'])
-            ->name('positions.updateHierarchy');
-
+        // Posisi & Hirarki
+        Route::get('/positions/hierarchy', [PositionHierarchyController::class, 'index'])->name('positions.hierarchy');
+        Route::post('/positions/hierarchy/update', [PositionHierarchyController::class, 'updateParent'])->name('positions.updateHierarchy');
         Route::resource('positions', PositionController::class);
 
+        // Training
         Route::post('/trainings/import', [AdminTrainingController::class, 'import'])->name('trainings.import');
-        
         Route::resource('trainings', AdminTrainingController::class);
+
+        // User Management
+        Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
+        Route::resource('users', AdminUserController::class);
+
+        // Laporan & Logs
+        Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
 
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
+        
+        // Resource Controller otomatis membuat semua route CRUD
+        Route::resource('job-profile', JobProfileController::class);
 
-        Route::get('/job-profile', [JobProfileController::class, 'index'])->name('job-profile.index');
-        Route::get('/job-profile/create', [JobProfileController::class, 'create'])->name('job-profile.create');
-        Route::post('/job-profile', [JobProfileController::class, 'store'])->name('job-profile.store');
-        Route::get('/job-profile/{job_profile}/edit', [JobProfileController::class, 'edit'])->name('job-profile.edit');
-        Route::patch('/job-profile/{job_profile}', [JobProfileController::class, 'update'])->name('job-profile.update');
-        Route::delete('/job-profile/{job_profile}', [JobProfileController::class, 'destroy'])->name('job-profile.destroy');
-
-        Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index'); // Custom Index
-        Route::resource('users', AdminUserController::class); // Standard Resource
-
-        Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
-        Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
-
-        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
-        Route::get('/logs/export', [ActivityLogController::class, 'export'])->name('logs.export'); 
     });
 
     

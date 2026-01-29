@@ -1,4 +1,15 @@
 <x-supervisor-layout>
+    {{-- Style khusus untuk scrollbar & utility --}}
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        /* Custom scrollbar untuk dropdown */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #999; }
+    </style>
+
     <x-slot name="header">
         <div class="flex items-center">
             <a href="{{ route('supervisor.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
@@ -9,64 +20,242 @@
         </div>
     </x-slot>
 
-    <div class="max-w-2xl mx-auto">
-        
-        <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-            <ion-icon name="information-circle" class="text-blue-500 text-xl mt-0.5"></ion-icon>
-            <div>
-                <h3 class="text-sm font-semibold text-blue-800">Langkah 1 dari 2</h3>
-                <p class="text-sm text-blue-600 mt-1">
-                    Pilih posisi jabatan yang ingin Anda buatkan profilnya. Setelah ini, Anda akan diarahkan ke halaman detail untuk mengisi Kompetensi, Tanggung Jawab, dan lainnya.
-                </p>
+    <div class="py-12">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+
+            {{-- Alert jika data posisi kosong --}}
+            @if($positions->isEmpty())
+                <div class="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200 flex gap-3 text-yellow-800">
+                    <ion-icon name="warning" class="text-xl mt-0.5 flex-shrink-0"></ion-icon>
+                    <div>
+                        <h3 class="font-semibold">Data Jabatan Kosong</h3>
+                        <p class="text-sm mt-1">
+                            Tidak ada jabatan yang tersedia untuk dibuatkan profil, atau semua jabatan sudah memiliki profil.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
+            <div class="bg-white dark:bg-gray-800 shadow-lg sm:rounded-xl border border-gray-100 dark:border-gray-700">
+                <div class="p-8">
+                    <div class="mb-6 text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                            <ion-icon name="briefcase" class="text-2xl"></ion-icon>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pilih Jabatan Target</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Silakan cari dan pilih jabatan yang ingin dibuatkan profil kompetensinya.
+                        </p>
+                    </div>
+
+                    {{-- 
+                        FORM UTAMA 
+                        Pastikan id="jobProfileForm" ada agar Javascript bisa menemukannya.
+                    --}}
+                    <form action="{{ route('supervisor.job-profile.store') }}" method="POST" id="jobProfileForm">
+                        @csrf
+
+                        {{-- AREA ALPINE JS (Melingkupi Input & Dropdown) --}}
+                        <div class="mb-6 dropdown-container relative" 
+                             x-data="{
+                                items: {{ Js::from($positions) }},
+                                query: '',
+                                selectedId: '',
+                                isOpen: false,
+                                showError: false,
+                                
+                                // HELPER: Menyusun Hirarki Organisasi (Unit -> Section -> Dept)
+                                getHierarchy(item) {
+                                    let parts = [];
+                                    let current = item.organization;
+
+                                    if (current) {
+                                        // 1. Diri Sendiri (Unit)
+                                        parts.push(current.name);
+                                        // 2. Parent (Section)
+                                        if (current.parent) {
+                                            parts.push(current.parent.name);
+                                            // 3. Grandparent (Dept)
+                                            if (current.parent.parent) {
+                                                parts.push(current.parent.parent.name);
+                                            }
+                                        }
+                                    } else {
+                                        return 'Tanpa Organisasi';
+                                    }
+                                    return parts.join(' ➜ ');
+                                },
+
+                                // Logic Filter & Grouping
+                                get groupedItems() {
+                                    const filtered = this.items.filter(item => {
+                                        if (this.query === '') return true;
+                                        const searchStr = (item.title + ' ' + this.getHierarchy(item)).toLowerCase();
+                                        return searchStr.includes(this.query.toLowerCase());
+                                    });
+
+                                    const groups = {};
+                                    filtered.forEach(item => {
+                                        // Cari Root Organization (Paling Atas) untuk Header Grouping
+                                        let rootOrg = 'Lainnya';
+                                        if (item.organization) {
+                                            let curr = item.organization;
+                                            while (curr.parent) { curr = curr.parent; }
+                                            rootOrg = curr.name;
+                                        }
+                                        if (!groups[rootOrg]) groups[rootOrg] = [];
+                                        groups[rootOrg].push(item);
+                                    });
+
+                                    return Object.keys(groups).sort().reduce((acc, key) => {
+                                        acc[key] = groups[key];
+                                        return acc;
+                                    }, {});
+                                },
+
+                                get hasResults() { return Object.keys(this.groupedItems).length > 0; },
+                                
+                                openDropdown() { this.isOpen = true; },
+                                closeDropdown() { this.isOpen = false; },
+                                
+                                selectItem(item) {
+                                    this.selectedId = item.id;
+                                    this.query = item.title;
+                                    this.isOpen = false;
+                                    this.showError = false;
+                                },
+                                
+                                reset() {
+                                    this.query = '';
+                                    this.selectedId = '';
+                                    this.showError = false;
+                                    this.openDropdown();
+                                },
+                                
+                                // FUNGSI SUBMIT MANUAL (Paling Aman)
+                                submitForm() {
+                                    // 1. Cek apakah jabatan sudah dipilih
+                                    if (!this.selectedId) { 
+                                        this.showError = true;
+                                        // Scroll ke input agar user sadar
+                                        this.$refs.containerInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                        return; 
+                                    }
+
+                                    // 2. Cari Form berdasarkan ID dan Submit
+                                    const formTarget = document.getElementById('jobProfileForm');
+                                    if (formTarget) {
+                                        formTarget.submit();
+                                    } else {
+                                        alert('Error Kritis: Form tidak ditemukan. Hubungi IT.');
+                                    }
+                                }
+                             }"
+                             @click.away="closeDropdown()">
+
+                            {{-- WADAH INPUT --}}
+                            <div class="relative" x-ref="containerInput">
+                                
+                                {{-- LABEL (Ditambahkan 'for' untuk aksesibilitas) --}}
+                                <label for="searchPosisi" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                    Posisi / Jabatan <span class="text-red-500">*</span>
+                                </label>
+
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <ion-icon name="search-outline" class="text-gray-400 text-lg"></ion-icon>
+                                    </div>
+
+                                    {{-- INPUT (Ditambahkan 'id' dan 'name' untuk menghilangkan error aksesibilitas) --}}
+                                    <input 
+                                        type="text" 
+                                        id="searchPosisi" 
+                                        name="search_query"
+                                        x-model="query" 
+                                        @click="openDropdown()" 
+                                        @focus="openDropdown()" 
+                                        @input="openDropdown()" 
+                                        placeholder="Ketik nama posisi..." 
+                                        class="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-text text-sm"
+                                        autocomplete="off"
+                                    >
+                                    
+                                    <button type="button" x-show="query.length > 0" @click="reset()" x-cloak
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 cursor-pointer transition-colors">
+                                        <ion-icon name="close-circle" class="text-xl"></ion-icon>
+                                    </button>
+                                </div>
+                                
+                                {{-- Hidden Input ID (Ini yang dikirim ke database) --}}
+                                <input type="hidden" name="position_id" x-model="selectedId">
+
+                                {{-- DROPDOWN LIST (Floating / Absolute) --}}
+                                <div x-show="isOpen" x-cloak 
+                                     class="absolute z-50 w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+                                    
+                                    <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
+                                        <template x-for="(deptItems, groupName) in groupedItems" :key="groupName">
+                                            <div>
+                                                {{-- Header Group --}}
+                                                <li class="sticky top-0 z-10 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600">
+                                                    <span x-text="groupName"></span>
+                                                </li>
+
+                                                {{-- Item List --}}
+                                                <template x-for="item in deptItems" :key="item.id">
+                                                    <li @click="selectItem(item)" 
+                                                        class="cursor-pointer px-4 py-3 pl-6 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-between group border-b border-gray-50 dark:border-gray-600 last:border-0">
+                                                        
+                                                        <div class="flex flex-col">
+                                                            <span x-text="item.title" class="font-bold text-gray-800 dark:text-white text-sm"></span>
+                                                            
+                                                            {{-- Detail Hirarki --}}
+                                                            <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                                                                <ion-icon name="git-network-outline" class="text-xs text-indigo-400"></ion-icon>
+                                                                <span x-text="getHierarchy(item)" class="font-mono"></span>
+                                                            </div>
+                                                        </div>
+
+                                                        <span x-show="selectedId == item.id" class="text-indigo-600 font-bold text-xl ml-2 flex-shrink-0">
+                                                            <ion-icon name="checkmark"></ion-icon>
+                                                        </span>
+                                                    </li>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <li x-show="!hasResults" class="px-4 py-4 text-center text-gray-500 italic">
+                                            Tidak ada jabatan yang cocok.
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                {{-- Pesan Error Validasi --}}
+                                @error('position_id')
+                                    <p class="text-sm text-red-600 mt-2 flex items-center gap-1"><ion-icon name="alert-circle"></ion-icon> {{ $message }}</p>
+                                @enderror
+                                <p x-show="showError" x-cloak class="text-sm text-red-600 mt-2 flex items-center gap-1 animate-pulse"><ion-icon name="alert-circle"></ion-icon> Mohon pilih jabatan dari list.</p>
+                            </div>
+
+                            {{-- ACTION BUTTONS --}}
+                            <div class="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700 mt-6">
+                                <a href="{{ route('supervisor.job-profile.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
+                                    Batal
+                                </a>
+                                
+                                {{-- Tombol Panggil Fungsi submitForm() --}}
+                                <button type="button" 
+                                        @click="submitForm()"
+                                        class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md">
+                                    Lanjut Langkah 2
+                                    <ion-icon name="arrow-forward" class="ml-2 text-base"></ion-icon>
+                                </button>
+                            </div>
+
+                        </div> {{-- End x-data --}}
+                    </form>
+                </div>
             </div>
         </div>
-
-        @if ($errors->any())
-            <div class="mb-4 bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg">
-                <ul class="list-disc list-inside">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <form action="{{ route('supervisor.job-profile.store') }}" method="POST">
-            @csrf
-            
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:p-8 space-y-6">
-                
-                <div>
-                    <label for="position_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Pilih Posisi / Jabatan
-                    </label>
-                    <div class="relative">
-                        <select id="position_id" name="position_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white py-3 pl-4 pr-10">
-                            <option value="">-- Pilih Posisi yang Belum Punya Profil --</option>
-                            @forelse ($positions as $pos)
-                                <option value="{{ $pos->id }}" {{ old('position_id') == $pos->id ? 'selected' : '' }}>
-                                    {{ $pos->title }} &mdash; ({{ $pos->department->name ?? 'No Dept' }})
-                                </option>
-                            @empty
-                                <option value="" disabled>Semua posisi sudah memiliki Job Profile</option>
-                            @endforelse
-                        </select>
-                    </div>
-                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Hanya posisi yang <strong>belum memiliki</strong> Job Profile yang muncul di sini.
-                    </p>
-                </div>
-
-                <div class="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 pt-6 mt-6">
-                    <a href="{{ route('supervisor.job-profile.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600">
-                        Batal
-                    </a>
-                    <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center shadow-sm">
-                        <span>Buat & Lanjut Mengisi</span>
-                        <ion-icon name="arrow-forward-outline" class="ml-2"></ion-icon>
-                    </button>
-                </div>
-            </div>
-        </form>
     </div>
 </x-supervisor-layout>

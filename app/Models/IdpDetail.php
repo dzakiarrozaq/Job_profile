@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class IdpDetail extends Model {
     protected $guarded = [];
+    protected $casts = [
+    'activities' => 'array', // Otomatis convert JSON ke Array
+    ];
 }

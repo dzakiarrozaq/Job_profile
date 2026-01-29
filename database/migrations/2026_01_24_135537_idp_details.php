@@ -14,11 +14,23 @@ return new class extends Migration
         Schema::create('idp_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('idp_id')->constrained('idps')->onDelete('cascade');
+            
+            // Sasaran & Kategori (Satu per baris)
             $table->text('development_goal');
-            $table->string('dev_category');
-            $table->text('activity');
-            $table->string('expected_date', 100);
-            $table->text('progress')->nullable();
+            $table->string('dev_category')->nullable();
+            
+            // --- PERUBAHAN UTAMA ---
+            // Karena 1 Goal bisa punya BANYAK Activities & Dates, kita pakai JSON.
+            // Struktur JSON nanti: [ {"desc": "Training A", "date": "Jan 2025"}, {"desc": "Mentoring", "date": "Feb 2025"} ]
+            $table->json('activities')->nullable(); 
+            
+            // Kolom lama ini DIHAPUS karena sudah masuk ke dalam JSON activities
+            // $table->text('activity'); // HAPUS
+            // $table->string('expected_date', 100); // HAPUS
+
+            // Progress bisa tetap text atau JSON tergantung kebutuhan tracking
+            $table->text('progress')->nullable(); 
+            
             $table->timestamps();
         });
     }

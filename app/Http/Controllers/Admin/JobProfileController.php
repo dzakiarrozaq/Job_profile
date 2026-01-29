@@ -23,28 +23,46 @@ class JobProfileController extends Controller
      */
     public function index(Request $request): View
     {
-        $activeRoleName = $request->session()->get('active_role_name');
+        $isSupervisorRoute = $request->routeIs('supervisor.*');
+        $query = JobProfile::with('position.organization', 'creator', 'position.atasan')
+                            ->orderBy('updated_at', 'desc');
 
-        $query = JobProfile::with('position.organization', 'creator')
-                            ->orderBy('created_at', 'desc');
-        
-        if ($activeRoleName === 'Supervisor') {
-            $query->where(function($q) {
-                $q->where('status', 'verified') // Yang sudah resmi
-                  ->orWhere('created_by', Auth::id()); // Draf buatan sendiri
-            });
-        }
+        if ($isSupervisorRoute) {
+            $request->session()->put('active_role_name', 'Supervisor');
+            $user = Auth::user();
+            
+            // Cek Bawahan (Recursive)
+            if ($user->position_id) {
+                $directSubordinates = \App\Models\Position::where('atasan_id', $user->position_id)->pluck('id')->toArray();
+                $indirectSubordinates = \App\Models\Position::whereIn('atasan_id', $directSubordinates)->pluck('id')->toArray();
+                $allSubordinatePositionIds = array_merge($directSubordinates, $indirectSubordinates);
 
-        $jobProfiles = $query->paginate(15); 
-        
-        if ($activeRoleName === 'Admin') {
-            return view('admin.job-profile.index', [
-                'jobProfiles' => $jobProfiles
+                $query->where(function($q) use ($user, $allSubordinatePositionIds) {
+                    // 1. Tampilkan Draft/Pending HANYA jika buatan sendiri
+                    $q->where('created_by', $user->id);
+                    
+                    // 2. Tampilkan milik bawahan HANYA jika sudah VERIFIED
+                    $q->orWhere(function($subQ) use ($allSubordinatePositionIds) {
+                        $subQ->whereIn('position_id', $allSubordinatePositionIds)
+                            ->where('status', 'verified'); // <--- KUNCI PERBAIKANNYA
+                    });
+
+                    // 3. Tampilkan verified public lainnya (jika perlu)
+                    $q->orWhere('status', 'verified'); 
+                });
+            } else {
+                // Jika user tidak punya jabatan, hanya lihat buatan sendiri
+                $query->where('created_by', $user->id);
+            }
+
+            return view('supervisor.job-profile.index', [
+                'jobProfiles' => $query->paginate(15)
             ]);
         }
-
+        
+        $request->session()->put('active_role_name', 'Admin');
         return view('admin.job-profile.index', [
-            'jobProfiles' => $jobProfiles
+            'jobProfiles' => $query->paginate(15)
         ]);
     }
 
@@ -52,12 +70,17 @@ class JobProfileController extends Controller
      * Menampilkan form untuk membuat Job Profile baru.
      */
     public function create(Request $request): View 
-    {
+    {        
         $positions = Position::whereDoesntHave('jobProfile')
-                        ->orderBy('title', 'asc')
-                        ->get();
-        
+                    ->with(['organization.parent.parent']) 
+                    ->orderBy('title', 'asc')
+                    ->get();
+
         $activeRoleName = $request->session()->get('active_role_name');
+
+        if (!$activeRoleName) {
+            $activeRoleName = $request->routeIs('admin.*') ? 'Admin' : 'Supervisor';
+        }
 
         $view = ($activeRoleName === 'Admin') 
                 ? 'admin.job-profile.create' 
@@ -116,7 +139,7 @@ class JobProfileController extends Controller
             'position.organization', 
             'position.jobGrade',
             'position.atasan',
-            'competencies.master', 
+            'competencies.competency', 
             'responsibilities',
             'specifications',
             'workRelations'
@@ -141,48 +164,63 @@ class JobProfileController extends Controller
      */
     public function update(Request $request, JobProfile $jobProfile)
     {
-        // 1. AMBIL SEMUA DATA (Tanpa Validasi Dulu)
         $input = $request->all();
 
-        // 2. BERSIHKAN DATA KOMPETENSI (AUTO-FIX)
-        // Masalah utama biasanya di sini: ID null, atau Array index loncat-loncat
+        $action = $request->input('action');
+        $newStatus = $jobProfile->status; 
+
+        if ($action === 'submit_verification') {
+            $newStatus = 'pending_verification'; 
+        } elseif ($action === 'approve') {
+            $newStatus = 'verified'; 
+        } elseif ($action === 'reject') {
+            $newStatus = 'draft'; 
+        } elseif ($action === 'save_draft') {
+            $newStatus = 'draft'; 
+        }
+
         $cleanCompetencies = [];
         if (!empty($input['competencies']) && is_array($input['competencies'])) {
             foreach ($input['competencies'] as $comp) {
-                // Hanya ambil yang namanya ada (menghindari baris kosong)
                 if (!empty($comp['competency_name'])) {
-                    
-                    // FIX 1: Jika ID Master kosong, cari otomatis
                     if (empty($comp['competency_master_id'])) {
                         $master = CompetenciesMaster::where('competency_name', $comp['competency_name'])->first();
                         $comp['competency_master_id'] = $master ? $master->id : null;
                         $comp['competency_code'] = $master ? $master->competency_code : null;
                     }
-
-                    // FIX 2: Pastikan Level & Bobot ada isinya (Default)
                     $comp['ideal_level'] = $comp['ideal_level'] ?? 1;
                     $comp['weight'] = $comp['weight'] ?? 1;
-
                     $cleanCompetencies[] = $comp;
                 }
             }
         }
 
+        $rawSpecifications = array_merge(
+            $request->input('educations', []),
+            $request->input('experiences', []),
+            $request->input('certifications', []),
+            $request->input('languages', []),
+            $request->input('computers', []),
+            $request->input('healths', [])
+        );
+
+        $cleanSpecifications = array_filter($rawSpecifications, function($item) {
+            return !empty($item['requirement']);
+        });
+
         DB::beginTransaction();
         try {
             $jobProfile->update([
-                'tujuan_jabatan' => $input['tujuan_jabatan'] ?? null,
-                'wewenang'       => $input['wewenang'] ?? null,
-                'dimensi_keuangan' => $input['dimensi_keuangan'] ?? null,
+                'tujuan_jabatan'       => $input['tujuan_jabatan'] ?? null,
+                'wewenang'             => $input['wewenang'] ?? null,
+                'dimensi_keuangan'     => $input['dimensi_keuangan'] ?? null,
                 'dimensi_non_keuangan' => $input['dimensi_non_keuangan'] ?? null,
-                'version'        => $jobProfile->version + 1,
-                'status'         => ($request->input('action') === 'submit_verification') ? 'pending_verification' : $jobProfile->status,
+                'version'              => $jobProfile->version + 1,
+                'status'               => $newStatus,
             ]);
 
             $jobProfile->competencies()->delete();
-            
             foreach ($cleanCompetencies as $c) {
-                
                 if (!empty($c['competency_master_id'])) {
                     $jobProfile->competencies()->create([
                         'competency_master_id' => $c['competency_master_id'],
@@ -194,33 +232,39 @@ class JobProfileController extends Controller
                 }
             }
 
-            // C. Simpan Relasi Lain (Pakai Logika Sederhana)
             $jobProfile->responsibilities()->delete();
             if (!empty($input['responsibilities'])) {
-                // array_values untuk reset index array biar urut 0,1,2
-                $jobProfile->responsibilities()->createMany(array_values($input['responsibilities']));
+                $validResps = array_filter($input['responsibilities'], fn($r) => !empty($r['description']));
+                $jobProfile->responsibilities()->createMany(array_values($validResps));
             }
 
             $jobProfile->specifications()->delete();
-            if (!empty($input['specifications'])) {
-                $jobProfile->specifications()->createMany(array_values($input['specifications']));
+            if (!empty($cleanSpecifications)) {
+                $jobProfile->specifications()->createMany(array_values($cleanSpecifications));
             }
 
             $jobProfile->workRelations()->delete();
             if (!empty($input['workRelations'])) {
-                $jobProfile->workRelations()->createMany(array_values($input['workRelations']));
+                $validRelations = array_filter($input['workRelations'], fn($w) => !empty($w['unit_instansi']));
+                $jobProfile->workRelations()->createMany(array_values($validRelations));
             }
 
             DB::commit();
 
-            $isAdmin = (auth()->id() === 1) || (session('active_role_name') === 'Admin');
-            $routePrefix = $isAdmin ? 'admin' : 'supervisor';
-            return redirect()->route($routePrefix . '.job-profile.index')->with('success', 'Job Profile BERHASIL DISIMPAN (Mode Paksa).');
+            $activeRoleName = $request->session()->get('active_role_name');
+            $routePrefix = ($activeRoleName === 'Admin') ? 'admin' : 'supervisor';
+
+            $message = 'Job Profile berhasil diperbarui.';
+            if ($newStatus === 'verified') $message = 'Job Profile berhasil DISETUJUI.';
+            if ($newStatus === 'draft' && $action === 'reject') $message = 'Job Profile berhasil DITOLAK.';
+
+            return redirect()
+                ->route($routePrefix . '.job-profile.index')
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // TAMPILKAN ERROR NYATA DI LAYAR (Biar tau salahnya dimana)
-            dd('GAGAL MENYIMPAN (SQL ERROR):', $e->getMessage(), $cleanCompetencies);
+            dd('GAGAL MENYIMPAN (SQL ERROR):', $e->getMessage());
         }
     }
 
@@ -311,7 +355,7 @@ class JobProfileController extends Controller
                     ['parts' => [['text' => $prompt]]]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.4, // Rendah agar hasil konsisten & formal
+                    'temperature' => 0.4, 
                     'maxOutputTokens' => 1000,
                 ]
             ]);
