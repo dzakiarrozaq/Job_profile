@@ -1,5 +1,4 @@
 <x-admin-layout>
-    {{-- Style khusus untuk scrollbar & utility --}}
     <style>
         [x-cloak] { display: none !important; }
         
@@ -12,7 +11,6 @@
 
     <x-slot name="header">
         <div class="flex items-center">
-            {{-- Link Kembali ke Index ADMIN --}}
             <a href="{{ route('admin.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -24,7 +22,6 @@
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Alert jika data posisi kosong --}}
             @if($positions->isEmpty())
                 <div class="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200 flex gap-3 text-yellow-800">
                     <ion-icon name="warning" class="text-xl mt-0.5 flex-shrink-0"></ion-icon>
@@ -49,14 +46,9 @@
                         </p>
                     </div>
 
-                    {{-- 
-                        FORM ADMIN (DIPERBAIKI)
-                        Menggunakan ID manual untuk submit form.
-                    --}}
                     <form action="{{ route('admin.job-profile.store') }}" method="POST" id="jobProfileForm">
                         @csrf
 
-                        {{-- AREA ALPINE JS --}}
                         <div class="mb-6 dropdown-container relative" 
                              x-data="{
                                 items: {{ Js::from($positions) }},
@@ -148,10 +140,8 @@
                              }"
                              @click.away="closeDropdown()">
 
-                            {{-- WADAH INPUT --}}
                             <div class="relative" x-ref="containerInput">
                                 
-                                {{-- LABEL --}}
                                 <label for="searchPosisi" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                     Posisi / Jabatan <span class="text-red-500">*</span>
                                 </label>
@@ -161,7 +151,6 @@
                                         <ion-icon name="search-outline" class="text-gray-400 text-lg"></ion-icon>
                                     </div>
 
-                                    {{-- INPUT --}}
                                     <input type="text" id="searchPosisi" name="search_query"
                                         x-model="query" @click="openDropdown()" @focus="openDropdown()" @input="openDropdown()" 
                                         placeholder="Ketik nama posisi..." 
@@ -174,22 +163,18 @@
                                     </button>
                                 </div>
                                 
-                                {{-- Hidden Input ID --}}
                                 <input type="hidden" name="position_id" x-model="selectedId">
 
-                                {{-- DROPDOWN LIST --}}
                                 <div x-show="isOpen" x-cloak 
                                      class="absolute z-50 w-full mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
                                     
                                     <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
                                         <template x-for="(deptItems, groupName) in groupedItems" :key="groupName">
                                             <div>
-                                                {{-- Header Group --}}
                                                 <li class="sticky top-0 z-10 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600">
                                                     <span x-text="groupName"></span>
                                                 </li>
 
-                                                {{-- Item List --}}
                                                 <template x-for="item in deptItems" :key="item.id">
                                                     <li @click="selectItem(item)" 
                                                         class="cursor-pointer px-4 py-3 pl-6 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-between group border-b border-gray-50 dark:border-gray-600 last:border-0">
@@ -218,20 +203,17 @@
                                     </ul>
                                 </div>
 
-                                {{-- Pesan Error --}}
                                 @error('position_id')
                                     <p class="text-sm text-red-600 mt-2 flex items-center gap-1"><ion-icon name="alert-circle"></ion-icon> {{ $message }}</p>
                                 @enderror
                                 <p x-show="showError" x-cloak class="text-sm text-red-600 mt-2 flex items-center gap-1 animate-pulse"><ion-icon name="alert-circle"></ion-icon> Mohon pilih jabatan dari list.</p>
                             </div>
 
-                            {{-- ACTION BUTTONS --}}
                             <div class="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700 mt-6">
                                 <a href="{{ route('admin.job-profile.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                                     Batal
                                 </a>
                                 
-                                {{-- Tombol Panggil Fungsi submitForm() --}}
                                 <button type="button" 
                                         @click="submitForm()"
                                         class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md">
@@ -240,7 +222,7 @@
                                 </button>
                             </div>
 
-                        </div> {{-- End x-data --}}
+                        </div> 
                     </form>
                 </div>
             </div>

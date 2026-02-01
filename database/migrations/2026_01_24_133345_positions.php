@@ -20,10 +20,12 @@ return new class extends Migration
             $table->unsignedBigInteger('atasan_id')->nullable();
             $table->timestamps();
             $table->string('tipe', 20)->default('organik')->nullable()->comment('organik / outsourcing');
+            $table->unsignedBigInteger('parent_id')->nullable();
 
             // Foreign Keys
             $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('set null');
             $table->foreign('atasan_id')->references('id')->on('positions')->onDelete('set null');
+            $table->foreign('parent_id')->references('id')->on('positions')->onDelete('set null');
         });
     }
 

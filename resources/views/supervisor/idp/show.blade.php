@@ -18,7 +18,8 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gray-800 px-6 py-4 flex justify-between items-center">
                     <h3 class="text-lg font-bold text-white tracking-wide">PERIODE IDP: {{ $idp->year }}</h3>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-yellow-500 text-white">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider 
+                        {{ $idp->status == 'approved' ? 'bg-green-500 text-white' : ($idp->status == 'rejected' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white') }}">
                         Status: {{ ucfirst($idp->status) }}
                     </span>
                 </div>
@@ -54,70 +55,110 @@
                 </div>
             </div>
 
-            {{-- 2. DEVELOPMENT PLAN (TABEL UTAMA) --}}
+            {{-- 2. DEVELOPMENT PLAN & PROGRESS --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                         <span class="bg-gray-800 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">1</span>
-                        Development Plan
+                        Development Plan & Progress
                     </h4>
                 </div>
 
                 {{-- Tabel Header --}}
                 <div class="hidden md:grid grid-cols-12 bg-gray-800 text-white font-bold text-xs uppercase tracking-wider">
                     <div class="col-span-4 p-3 border-r border-gray-700">Development Goals & Category</div>
-                    <div class="col-span-6 p-3 border-r border-gray-700">Development Activities</div>
-                    <div class="col-span-2 p-3 text-center">Expected Date</div>
+                    <div class="col-span-8 p-3 text-center">Activities & Realization</div>
                 </div>
 
                 <div class="divide-y divide-gray-200">
                     @forelse($idp->details as $index => $detail)
                         <div class="grid grid-cols-1 md:grid-cols-12 bg-white hover:bg-gray-50/50 transition">
-                            {{-- KOLOM KIRI --}}
+                            
+                            {{-- KOLOM KIRI (GOALS) --}}
                             <div class="md:col-span-4 p-5 md:border-r border-gray-200 space-y-4">
                                 <div>
                                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sasaran Pengembangan</label>
-                                    <p class="text-sm text-gray-800 font-medium">{{ $detail->development_goal }}</p>
+                                    <p class="text-sm text-gray-900 font-medium leading-relaxed">{{ $detail->development_goal }}</p>
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Kategori / Judul Project</label>
-                                    <span class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300">
+                                    <span class="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded border border-gray-300">
                                         {{ $detail->dev_category ?? '-' }}
                                     </span>
                                 </div>
                             </div>
 
-                            {{-- KOLOM TENGAH & KANAN (ACTIVITIES LOOP) --}}
-                            <div class="md:col-span-8 bg-gray-50/30">
+                            {{-- KOLOM KANAN (ACTIVITIES & PROGRESS) --}}
+                            <div class="md:col-span-8 bg-white p-0">
+                                {{-- Sub-Header --}}
+                                <div class="grid grid-cols-12 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase py-2 px-3 border-b border-gray-200">
+                                    <div class="col-span-7">Aktivitas</div>
+                                    <div class="col-span-5 border-l border-gray-200 pl-3">Realisasi / Catatan Progres</div>
+                                </div>
+
                                 <div class="divide-y divide-gray-100">
-                                    @if(is_array($detail->activities) || is_object($detail->activities))
+                                    {{-- LOGIKA LOOP JSON ACTIVITIES --}}
+                                    @if(is_array($detail->activities) && count($detail->activities) > 0)
                                         @foreach($detail->activities as $i => $act)
-                                            <div class="grid grid-cols-1 md:grid-cols-8 items-start p-2">
-                                                <div class="md:col-span-6 p-2 flex gap-3">
-                                                    <span class="text-gray-400 font-bold text-xs mt-0.5 bg-white w-5 h-5 flex items-center justify-center rounded-full border shadow-sm">{{ $i + 1 }}</span>
-                                                    <p class="text-sm text-gray-700">{{ $act['desc'] ?? '-' }}</p>
-                                                </div>
-                                                <div class="md:col-span-2 p-2 flex items-center justify-center">
-                                                    <span class="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded border shadow-sm">
-                                                        {{ $act['date'] ?? '-' }}
+                                            <div class="grid grid-cols-12 items-start p-3 hover:bg-gray-50 transition">
+                                                
+                                                {{-- Deskripsi Aktivitas --}}
+                                                <div class="col-span-7 pr-3 flex gap-3">
+                                                    <span class="text-gray-400 font-bold text-xs mt-0.5 bg-white w-5 h-5 flex items-center justify-center rounded-full border shadow-sm flex-shrink-0">
+                                                        {{ $i + 1 }}
                                                     </span>
+                                                    <div>
+                                                        <p class="text-sm text-gray-700 leading-relaxed">{{ $act['desc'] ?? '-' }}</p>
+                                                        @if(!empty($act['date']))
+                                                            <div class="mt-1 text-[10px] text-gray-400">
+                                                                <ion-icon name="calendar-outline" class="align-middle"></ion-icon>
+                                                                Target: {{ $act['date'] }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
+
+                                                {{-- Realisasi / Progres --}}
+                                                <div class="col-span-5 border-l border-gray-100 pl-3">
+                                                    @if(!empty($act['progress']))
+                                                        <div class="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-100">
+                                                            <strong class="block mb-1 text-green-800">Update:</strong>
+                                                            {{ $act['progress'] }}
+                                                        </div>
+                                                    @else
+                                                        <span class="text-xs text-gray-400 italic">- Belum ada update -</span>
+                                                    @endif
+                                                </div>
+
                                             </div>
                                         @endforeach
                                     @else
-                                        <div class="p-4 text-gray-400 text-sm italic">Tidak ada aktivitas detail.</div>
+                                        {{-- Fallback Data Lama (Jika ada) --}}
+                                        <div class="p-4 text-sm text-gray-500 italic">
+                                            @if($detail->activity)
+                                                <p><span class="font-bold">Aktivitas:</span> {{ $detail->activity }}</p>
+                                            @else
+                                                Tidak ada aktivitas detail.
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
                             </div>
+
                         </div>
                     @empty
-                        <div class="p-8 text-center text-gray-500 italic">Belum ada rencana pengembangan yang dibuat.</div>
+                        <div class="p-12 text-center">
+                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                                <ion-icon name="document-outline" class="text-gray-400 text-2xl"></ion-icon>
+                            </div>
+                            <p class="text-gray-500 italic">Belum ada rencana pengembangan yang dibuat.</p>
+                        </div>
                     @endforelse
                 </div>
             </div>
 
             {{-- 3. CAREER ASPIRATION --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                         <span class="bg-gray-800 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">2</span>

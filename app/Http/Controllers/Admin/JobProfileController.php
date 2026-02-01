@@ -15,6 +15,7 @@ use App\Models\JobCompetency;
 use App\Models\CompetenciesMaster;
 use App\Models\Position;
 use App\Models\AuditLog;
+use App\Models\BandResponsibility;
 
 class JobProfileController extends Controller
 {
@@ -31,27 +32,22 @@ class JobProfileController extends Controller
             $request->session()->put('active_role_name', 'Supervisor');
             $user = Auth::user();
             
-            // Cek Bawahan (Recursive)
             if ($user->position_id) {
-                $directSubordinates = \App\Models\Position::where('atasan_id', $user->position_id)->pluck('id')->toArray();
-                $indirectSubordinates = \App\Models\Position::whereIn('atasan_id', $directSubordinates)->pluck('id')->toArray();
+                $directSubordinates = Position::where('atasan_id', $user->position_id)->pluck('id')->toArray();
+                $indirectSubordinates = Position::whereIn('atasan_id', $directSubordinates)->pluck('id')->toArray();
                 $allSubordinatePositionIds = array_merge($directSubordinates, $indirectSubordinates);
 
                 $query->where(function($q) use ($user, $allSubordinatePositionIds) {
-                    // 1. Tampilkan Draft/Pending HANYA jika buatan sendiri
                     $q->where('created_by', $user->id);
                     
-                    // 2. Tampilkan milik bawahan HANYA jika sudah VERIFIED
                     $q->orWhere(function($subQ) use ($allSubordinatePositionIds) {
                         $subQ->whereIn('position_id', $allSubordinatePositionIds)
                             ->where('status', 'verified'); // <--- KUNCI PERBAIKANNYA
                     });
 
-                    // 3. Tampilkan verified public lainnya (jika perlu)
                     $q->orWhere('status', 'verified'); 
                 });
             } else {
-                // Jika user tidak punya jabatan, hanya lihat buatan sendiri
                 $query->where('created_by', $user->id);
             }
 
@@ -139,7 +135,9 @@ class JobProfileController extends Controller
             'position.organization', 
             'position.jobGrade',
             'position.atasan',
-            'competencies.competency', 
+            // PERBAIKAN: Load 'competencyMaster' dan 'keyBehaviors'
+            // Pastikan di model JobCompetency nama relasinya 'competencyMaster'
+            'competencies.competency.keyBehaviors', 
             'responsibilities',
             'specifications',
             'workRelations'
@@ -182,15 +180,30 @@ class JobProfileController extends Controller
         $cleanCompetencies = [];
         if (!empty($input['competencies']) && is_array($input['competencies'])) {
             foreach ($input['competencies'] as $comp) {
-                if (!empty($comp['competency_name'])) {
-                    if (empty($comp['competency_master_id'])) {
+                // Pastikan ada Nama atau ID
+                if (!empty($comp['competency_master_id']) || !empty($comp['competency_name'])) {
+                    
+                    // Prioritaskan ID Master yang valid
+                    $master = null;
+                    if (!empty($comp['competency_master_id'])) {
+                        $master = CompetenciesMaster::find($comp['competency_master_id']);
+                    } else {
+                        // Fallback cari by nama jika ID kosong
                         $master = CompetenciesMaster::where('competency_name', $comp['competency_name'])->first();
-                        $comp['competency_master_id'] = $master ? $master->id : null;
-                        $comp['competency_code'] = $master ? $master->competency_code : null;
                     }
-                    $comp['ideal_level'] = $comp['ideal_level'] ?? 1;
-                    $comp['weight'] = $comp['weight'] ?? 1;
-                    $cleanCompetencies[] = $comp;
+
+                    if ($master) {
+                        $comp['competency_master_id'] = $master->id;
+                        $comp['competency_name'] = $master->competency_name; 
+                        $comp['competency_code'] = $master->competency_code;
+                        
+                        // PERBAIKAN: Pastikan level antara 1-5
+                        $level = (int) ($comp['ideal_level'] ?? 1);
+                        $comp['ideal_level'] = min(max($level, 1), 5); 
+
+                        $comp['weight'] = $comp['weight'] ?? 1;
+                        $cleanCompetencies[] = $comp;
+                    }
                 }
             }
         }
@@ -394,7 +407,12 @@ class JobProfileController extends Controller
             return response()->json([]);
         }
 
-        $competencies = CompetenciesMaster::where('competency_name', 'LIKE', "%{$query}%")
+        // PERBAIKAN: Tambahkan ->with('keyBehaviors')
+        $competencies = CompetenciesMaster::with(['keyBehaviors' => function($q) {
+                                // Urutkan behavior dari level 1 ke 5 agar rapi
+                                $q->orderBy('level', 'asc');
+                            }])
+                            ->where('competency_name', 'LIKE', "%{$query}%")
                             ->orWhere('competency_code', 'LIKE', "%{$query}%")
                             ->take(10)
                             ->get();
@@ -418,5 +436,22 @@ class JobProfileController extends Controller
         );
 
         return redirect()->back()->with('success', 'Job Profile berhasil dihapus.');
+    }
+
+    public function getResponsibilitiesByBand(Request $request)
+    {
+        $band = $request->query('band');
+        
+        // Cari data berdasarkan band
+        $data = BandResponsibility::where('band', $band)->first();
+
+        if ($data) {
+            return response()->json([
+                'success' => true,
+                'responsibility' => $data->responsibility
+            ]);
+        }
+
+        return response()->json(['success' => false, 'responsibility' => '']);
     }
 }

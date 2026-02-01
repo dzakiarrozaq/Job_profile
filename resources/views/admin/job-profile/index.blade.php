@@ -32,7 +32,31 @@
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <p class="font-medium text-gray-900 dark:text-white">{{ $profile->position->title ?? 'Posisi Dihapus' }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $profile->position->department->name ?? '-' }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    @php
+                                        // Ambil organisasi dari posisi
+                                        $org = $profile->position->organization ?? null;
+                                        $path = [];
+
+                                        if ($org) {
+                                            // 1. Masukkan Unit (Level saat ini)
+                                            $path[] = $org->name; 
+
+                                            // 2. Cek apakah punya Parent (Section)
+                                            if ($org->parent) {
+                                                $path[] = $org->parent->name;
+
+                                                // 3. Cek apakah punya Parent lagi (Departemen)
+                                                if ($org->parent->parent) {
+                                                    $path[] = $org->parent->parent->name;
+                                                }
+                                            }
+                                        }
+                                    @endphp
+
+                                    {{-- Tampilkan digabung dengan tanda panah --}}
+                                    {{ !empty($path) ? implode(' -> ', $path) : '-' }}
+                                </p>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $profile->creator->name ?? 'Sistem' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">v{{ $profile->version }}</td>

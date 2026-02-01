@@ -1,5 +1,4 @@
 <x-admin-layout>
-    {{-- Style tambahan --}}
     <style>
         [x-cloak] { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -40,31 +39,22 @@
 
     @php
         $org = $jobProfile->position->organization;
-        $parent = $org->parent ?? null;       // Bapak (Parent)
-        $grandparent = $parent->parent ?? null; // Kakek (Grandparent)
+        $parent = $org->parent ?? null;       
+        $grandparent = $parent->parent ?? null; 
 
-        // Default Value
         $namaUnit = '-';
         $namaSection = '-';
         $namaDepartemen = 'N/A';
 
         if ($grandparent) {
-            // SKENARIO A: 3 TINGKAT (Lengkap)
-            // Struktur: Unit -> Section -> Departemen
-            // Contoh: Bagging Unit -> Production Section -> Ops Dept
             $namaUnit = $org->name;
             $namaSection = $parent->name;
             $namaDepartemen = $grandparent->name;
         } elseif ($parent) {
-            // SKENARIO B: 2 TINGKAT
-            // Struktur: Section -> Departemen
-            // Contoh: Kiln Section -> Production Dept
-            // Di sini organisasi jabatan ($org) dianggap sebagai Section
             $namaUnit = '-'; 
             $namaSection = $org->name; 
             $namaDepartemen = $parent->name;
         } else {
-            // SKENARIO C: 1 TINGKAT (Langsung Departemen/Direktorat)
             $namaDepartemen = $org->name ?? 'N/A';
         }
     @endphp
@@ -226,7 +216,6 @@
          }"
          x-init="init()">
         
-        {{-- Flash Messages --}}
         @if (session('success'))
             <div class="mb-4 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg">{{ session('success') }}</div>
         @endif
@@ -241,8 +230,6 @@
             @method('PATCH')
 
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                
-                {{-- Tabs Navigation --}}
                 <div class="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
                     <nav class="-mb-px flex space-x-8 px-6 min-w-max" aria-label="Tabs">
                         @foreach(['identifikasi' => '1. Identifikasi', 'dimensi' => '2. Dimensi', 'tanggung_jawab' => '3. Tanggung Jawab', 'kompetensi' => '4. Kompetensi', 'spesifikasi' => '5. Spesifikasi Lain'] as $key => $label)
@@ -255,24 +242,20 @@
                     </nav>
                 </div>
                 
-                {{-- TAB 1: IDENTIFIKASI --}}
                 <div x-show="currentTab === 'identifikasi'" class="p-6 lg:p-8 space-y-6">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">1. Identifikasi Jabatan (v{{ $jobProfile->version }})</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        {{-- 1. Jabatan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan:</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->title ?? 'N/A' }}</span>
                         </div>
 
-                        {{-- 2. Job Grade --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Tingkat (Job Grade):</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->jobGrade->name ?? 'N/A' }}</span>
                         </div>
 
-                        {{-- 3. Departemen (Hasil Logika PHP di atas) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
                             <span class="text-gray-900 dark:text-white font-bold text-indigo-600">
@@ -280,7 +263,6 @@
                             </span>
                         </div>
 
-                        {{-- 4. Section (Hasil Logika PHP di atas) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section:</span>
                             <span class="text-gray-900 dark:text-white">
@@ -288,7 +270,6 @@
                             </span>
                         </div>
 
-                        {{-- 5. Unit (Hasil Logika PHP di atas) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit:</span>
                             <span class="text-gray-900 dark:text-white">
@@ -296,7 +277,6 @@
                             </span>
                         </div>
 
-                        {{-- 6. Atasan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan Atasan:</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->atasan->title ?? 'N/A' }}</span>
@@ -315,7 +295,6 @@
                     </div>
                 </div>
 
-                {{-- TAB 2: DIMENSI --}}
                 <div x-show="currentTab === 'dimensi'" class="p-6 lg:p-8 space-y-6">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">2. Dimensi & Hubungan Kerja</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -360,7 +339,6 @@
                     </div>
                 </div>
 
-                {{-- TAB 3: TANGGUNG JAWAB --}}
                 <div x-show="currentTab === 'tanggung_jawab'" class="p-6 lg:p-8 space-y-6">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xl font-bold dark:text-gray-100">3. Tanggung Jawab</h3>
@@ -389,7 +367,6 @@
                     </div>
                 </div>
 
-                {{-- TAB 4: KOMPETENSI (Searchable) --}}
                 <div x-show="currentTab === 'kompetensi'" class="p-6 space-y-6">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xl font-bold dark:text-gray-100">4. Kompetensi</h3>
@@ -419,7 +396,6 @@
                                                    class="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                    :class="{'border-red-500': !row.competency_master_id}" placeholder="Cari...">
                                             
-                                            {{-- Dropdown Search --}}
                                             <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
                                                  @click.away="searchResults = []; activeSuggestionIndex = -1;"
                                                  class="absolute z-50 w-full bg-white dark:bg-gray-700 shadow-xl border rounded mt-1 max-h-48 overflow-y-auto">
@@ -446,30 +422,22 @@
                     </div>
                 </div>
 
-                {{-- TAB 5: SPESIFIKASI LAIN (6 KATEGORI TERPISAH) --}}
                 <div x-show="currentTab === 'spesifikasi'" class="p-6 lg:p-8 space-y-8">
                     <div class="bg-blue-50 text-blue-800 p-3 rounded text-sm mb-4">Lengkapi spesifikasi jabatan di bawah ini.</div>
 
-                    {{-- 1. Pendidikan --}}
                     @include('components.admin-spec-section', ['title' => 'A. Pendidikan', 'var' => 'educations', 'type' => 'pendidikan', 'ph1' => 'Jurusan (S1 Teknik)', 'ph2' => 'Catatan (Min IPK 3.00)'])
 
-                    {{-- 2. Pengalaman --}}
                     @include('components.admin-spec-section', ['title' => 'B. Pengalaman Kerja', 'var' => 'experiences', 'type' => 'pengalaman', 'ph1' => 'Posisi / Bidang', 'ph2' => 'Lama Kerja (Min 2 Tahun)'])
 
-                    {{-- 3. Sertifikasi --}}
                     @include('components.admin-spec-section', ['title' => 'C. Sertifikasi', 'var' => 'certifications', 'type' => 'sertifikasi', 'ph1' => 'Nama Sertifikat', 'ph2' => 'Penerbit / Masa Berlaku'])
 
-                    {{-- 4. Bahasa --}}
                     @include('components.admin-spec-section', ['title' => 'D. Bahasa', 'var' => 'languages', 'type' => 'bahasa', 'ph1' => 'Bahasa', 'ph2' => 'Level (Fasih/Pasif)'])
 
-                    {{-- 5. Komputer --}}
                     @include('components.admin-spec-section', ['title' => 'E. Komputer / Teknis', 'var' => 'computers', 'type' => 'komputer', 'ph1' => 'Software / Skill', 'ph2' => 'Level Kemahiran'])
 
-                    {{-- 6. Kesehatan --}}
                     @include('components.admin-spec-section', ['title' => 'F. Kesehatan / Fisik', 'var' => 'healths', 'type' => 'kesehatan', 'ph1' => 'Persyaratan', 'ph2' => 'Keterangan'])
                 </div>
 
-                {{-- Action Buttons --}}
                 <div class="flex justify-end gap-4 border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
                     <a href="{{ route('admin.job-profile.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</a>
                     

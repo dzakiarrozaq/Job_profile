@@ -9,16 +9,29 @@
                     Kelola data akses, peran, dan status karyawan.
                 </p>
             </div>
-            <a href="{{ route('admin.users.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-indigo-500/30">
-                <ion-icon name="person-add-outline" class="mr-2 text-lg"></ion-icon>
-                Tambah User
-            </a>
+            
+            {{-- Action Buttons Group --}}
+            <div class="flex items-center gap-3">
+                {{-- Import Excel Button --}}
+                <button onclick="document.getElementById('importUserModal').classList.remove('hidden')" 
+                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-green-500/30">
+                    <ion-icon name="document-text-outline" class="mr-2 text-lg"></ion-icon>
+                    Import Excel
+                </button>
+
+                {{-- Add User Button --}}
+                <a href="{{ route('admin.users.create') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-indigo-500/30">
+                    <ion-icon name="person-add-outline" class="mr-2 text-lg"></ion-icon>
+                    Tambah User
+                </a>
+            </div>
         </div>
     </x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">
         
+        {{-- Stats Cards (Unchanged) --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center">
                 <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-600 dark:text-blue-400 mr-4">
@@ -31,6 +44,7 @@
             </div>
         </div>
 
+        {{-- Filter & Search Section (Unchanged) --}}
         <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <form method="GET" action="{{ route('admin.users.index') }}" class="w-full">
                 <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -90,9 +104,10 @@
                                     <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Role / Jabatan</label>
                                     <select name="role" class="w-full text-sm rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 py-2">
                                         <option value="">Semua Role</option>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            {{ $user->role->name ?? '-' }}
-                                        </span>
+                                        {{-- Note: Ideally iterate through roles passed from controller --}}
+                                        <option value="Admin">Admin</option>
+                                        <option value="Supervisor">Supervisor</option>
+                                        <option value="Karyawan">Karyawan</option>
                                     </select>
                                 </div>
 
@@ -110,6 +125,7 @@
             </form>
         </div>
 
+        {{-- Table Section (Unchanged) --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -221,4 +237,70 @@
             @endif
         </div>
     </div>
+
+    {{-- === IMPORT USER MODAL === --}}
+    <div id="importUserModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('importUserModal').classList.add('hidden')"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            {{-- Modal Panel --}}
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100 dark:border-gray-700">
+                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                                <ion-icon name="cloud-upload-outline" class="text-green-600 dark:text-green-400 text-xl"></ion-icon>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100" id="modal-title">
+                                    Import Data Pengguna
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                        Upload file Excel (.xlsx atau .csv) berisi data pengguna baru. Pastikan format kolom sesuai dengan template.
+                                    </p>
+                                    
+                                    {{-- File Upload Input --}}
+                                    <div class="mt-1">
+                                        <input type="file" name="file" required
+                                            class="block w-full text-sm text-gray-500 dark:text-gray-300
+                                            file:mr-4 file:py-2.5 file:px-4
+                                            file:rounded-full file:border-0
+                                            file:text-xs file:font-bold file:uppercase
+                                            file:bg-indigo-50 file:text-indigo-700
+                                            hover:file:bg-indigo-100
+                                            dark:file:bg-gray-700 dark:file:text-gray-200
+                                            cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none">
+                                    </div>
+
+                                    {{-- Template Download Link --}}
+                                    <div class="mt-4 text-right">
+                                        <a href="{{ route('admin.users.template') }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline flex items-center justify-end gap-1">
+                                            <ion-icon name="download-outline"></ion-icon> Download Template Excel
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition">
+                            Upload & Import
+                        </button>
+                        <button type="button" onclick="document.getElementById('importUserModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </x-admin-layout>

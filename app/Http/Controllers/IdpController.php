@@ -51,6 +51,7 @@ class IdpController extends Controller
             'goals.*.activities'    => 'nullable|array',
             'goals.*.activities.*.desc' => 'required|string',
             'goals.*.activities.*.date' => 'nullable|string',
+            'goals.*.activities.*.progress' => 'nullable|string',
         ]);
 
         // 2. OLAH DATA CAREER ASPIRATION (Jadi JSON Array Rapi)

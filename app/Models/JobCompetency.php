@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+// TAMBAHKAN BARIS INI:
+use App\Models\CompetenciesMaster; 
 
 class JobCompetency extends Model
 {
@@ -13,7 +15,7 @@ class JobCompetency extends Model
 
     protected $fillable = [
         'job_profile_id',
-        'competency_master_id', // Pastikan ini sesuai kolom di DB
+        'competency_master_id',
         'competency_name',
         'competency_code',      
         'ideal_level',          
@@ -25,12 +27,9 @@ class JobCompetency extends Model
         return $this->belongsTo(JobProfile::class);
     }
     
-    // --- PERBAIKAN: NAMA FUNGSI HARUS 'competency' ---
-    // Agar sesuai dengan controller yang memanggil ->load('competency')
+    // Ini sudah benar
     public function competency()
     {
-        // Sesuaikan 'CompetenciesMaster' dengan nama Model Master Kompetensi Mas
-        // Sesuaikan 'competency_master_id' dengan nama kolom di tabel job_competencies
         return $this->belongsTo(CompetenciesMaster::class, 'competency_master_id');
     }
 }

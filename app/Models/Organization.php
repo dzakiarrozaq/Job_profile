@@ -12,7 +12,6 @@ class Organization extends Model
 
     protected $guarded = ['id'];
 
-    // --- TAMBAHKAN KODE INI ---
     /**
      * Relasi ke Position
      */
@@ -27,7 +26,6 @@ class Organization extends Model
      */
     public function parent()
     {
-        // Asumsi: ada kolom 'parent_id' di tabel organizations
         return $this->belongsTo(Organization::class, 'parent_id');
     }
 }

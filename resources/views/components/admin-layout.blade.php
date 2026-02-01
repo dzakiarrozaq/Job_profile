@@ -53,30 +53,44 @@
                     
                     <nav class="space-y-1">
                         <h2 class="sidebar-heading">Manajemen</h2>
+                        
                         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                             <ion-icon name="home-outline"></ion-icon>
                             Dashboard
                         </a>
+                        
                         <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.index') ? 'active' : '' }} relative">
                             <ion-icon name="people-outline"></ion-icon>
                             Manajemen Pengguna
                         </a>
+                        
                         <a href="{{ route('admin.job-profile.index') }}" class="sidebar-link {{ request()->routeIs('admin.job-profile.*') ? 'active' : '' }}">
                             <ion-icon name="briefcase-outline"></ion-icon>
                             Manajemen Job Profile
                         </a>
+
+                        {{-- MENU BARU DISINI --}}
+                        <a href="{{ route('admin.competencies.index') }}" class="sidebar-link {{ request()->routeIs('admin.competencies.*') ? 'active' : '' }}">
+                            <ion-icon name="ribbon-outline"></ion-icon>
+                            Master Kompetensi
+                        </a>
+                        {{-- MENU BARU SELESAI --}}
+
                         <a href="{{ route('admin.trainings.index') }}" class="sidebar-link {{ request()->routeIs('admin.trainings.*') ? 'active' : '' }}">
                             <ion-icon name="library-outline"></ion-icon>
                             Katalog Pelatihan
                         </a>
+                        
                         <a href="{{ route('admin.positions.index') }}" class="sidebar-link {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}">
                             <ion-icon name="person-outline"></ion-icon>
                             Manajemen Posisi
                         </a>
+                        
                         <a href="{{ route('admin.laporan.index') }}" class="sidebar-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
                             <ion-icon name="pie-chart-outline"></ion-icon>
                             Laporan Sistem
                         </a>
+                        
                         <a href="{{ route('admin.logs.index') }}" class="sidebar-link {{ request()->routeIs('admin.logs.*') ? 'active' : '' }}">
                             <ion-icon name="receipt-outline"></ion-icon>
                             Log Aktivitas

@@ -33,6 +33,7 @@ use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
 use App\Http\Controllers\Lp\ProfileController as LpProfileController;
 use App\Http\Controllers\Lp\TrainingController;
 use App\Http\Controllers\Admin\PositionHierarchyController;
+use App\Http\Controllers\Admin\CompetencyController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -177,6 +178,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // User Management
         Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
         Route::resource('users', AdminUserController::class);
+        Route::post('/users/import', [AdminUserController::class, 'import'])->name('users.import');
+        Route::get('/users/template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
+        
 
         // Laporan & Logs
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
@@ -189,7 +193,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Resource Controller otomatis membuat semua route CRUD
         Route::resource('job-profile', JobProfileController::class);
+        
+        Route::get('/competencies', [App\Http\Controllers\Admin\CompetencyController::class, 'index'])->name('competencies.index');
+        Route::post('/competencies/import', [App\Http\Controllers\Admin\CompetencyController::class, 'import'])->name('competencies.import');
 
+        Route::get('/competencies/{id}/edit', [CompetencyController::class, 'edit'])->name('competencies.edit');
+        Route::delete('/competencies/{id}', [CompetencyController::class, 'destroy'])->name('competencies.destroy');
+        Route::put('/competencies/{id}', [CompetencyController::class, 'update'])->name('competencies.update'); // <--- PENTING: PUT
+
+        Route::get('/api/get-responsibilities', [JobProfileController::class, 'getResponsibilitiesByBand'])->name('api.get-responsibilities');
     });
 
     

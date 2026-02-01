@@ -13,6 +13,8 @@ use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AuditLog; 
+use Maatwebsite\Excel\Facades\Excel; // Tambahkan ini
+use App\Imports\UsersImport; // Tambahkan ini (Pastikan file Import sudah dibuat)
 
 class UserController extends Controller
 {
@@ -25,7 +27,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('nik', 'like', "%{$search}%"); // Tambahkan pencarian NIK jika ada
             });
         }
 
@@ -49,7 +52,7 @@ class UserController extends Controller
     {
         return view('admin.users.create', [
             'roles' => Role::all(),
-            'organizations' => Organization::orderBy('name')->get(), 
+            'organizations' => Organization::orderBy('name', 'ASC')->get(),
             'positions' => Position::orderBy('title')->get(),
         ]);
     }
@@ -60,22 +63,21 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role_ids' => ['required', 'array'], // Wajib Array
+            'role_ids' => ['required', 'array'], 
             'role_ids.*' => ['exists:roles,id'],
             'position_id' => ['nullable', 'exists:positions,id'],
         ]);
 
-        // 1. Buat User (Tanpa kolom role_id)
+        // 1. Buat User
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'position_id' => $request->position_id,
-            // 'role_id' => ... HAPUS INI, karena sudah pakai tabel pivot
             'status' => 'active',
         ]);
 
-        // 2. Simpan Role ke tabel role_user
+        // 2. Simpan Role
         $user->roles()->sync($request->role_ids);
 
         AuditLog::record('Create User', "Menambahkan pengguna baru: {$user->name} ({$user->email})", $user);
@@ -107,7 +109,6 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'position_id' => $request->position_id,
-            // JANGAN update 'role_id' di sini
         ];
 
         if ($request->filled('password')) {
@@ -117,10 +118,7 @@ class UserController extends Controller
             $dataToUpdate['password'] = Hash::make($request->password);
         }
 
-        // 1. Update Data User
         $user->update($dataToUpdate);
-
-        // 2. Update Role di tabel role_user (Multi Role)
         $user->roles()->sync($request->role_ids);
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
@@ -137,5 +135,43 @@ class UserController extends Controller
 
         AuditLog::record('Delete User', "Menghapus pengguna: {$userName} (ID: {$user->id})", $user);
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus.');
+    }
+
+    // --- BARU: Method Import Excel ---
+    public function import(Request $request) 
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv',
+        ]);
+
+        // --- TAMBAHKAN BARIS INI ---
+        // Set timeout menjadi 10 menit (600 detik) atau 0 (unlimited)
+        // Agar proses import 5000 data tidak terputus di tengah jalan.
+        set_time_limit(0); 
+        // ---------------------------
+
+        try {
+            Excel::import(new UsersImport, $request->file('file'));
+            
+            AuditLog::record('Import User', "Melakukan import data pengguna dari Excel", Auth::user());
+
+            return back()->with('success', 'Data pengguna berhasil diimport! Silakan cek dan lengkapi role user baru.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import data: ' . $e->getMessage());
+        }
+    }
+
+    // --- BARU: Method Download Template ---
+    public function downloadTemplate()
+    {
+        // Pastikan Anda sudah membuat file excel template di folder public/templates
+        $path = public_path('templates/template_import_user.xlsx');
+        
+        if (!file_exists($path)) {
+            // Jika file fisik belum ada, kita bisa generate on-the-fly (opsional) atau return error
+            return back()->with('error', 'File template belum tersedia di server.');
+        }
+
+        return response()->download($path);
     }
 }
