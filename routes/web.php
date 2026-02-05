@@ -34,6 +34,9 @@ use App\Http\Controllers\Lp\ProfileController as LpProfileController;
 use App\Http\Controllers\Lp\TrainingController;
 use App\Http\Controllers\Admin\PositionHierarchyController;
 use App\Http\Controllers\Admin\CompetencyController;
+use App\Models\JobGrade;
+use App\Models\Position;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -202,6 +205,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/competencies/{id}', [CompetencyController::class, 'update'])->name('competencies.update'); // <--- PENTING: PUT
 
         Route::get('/api/get-responsibilities', [JobProfileController::class, 'getResponsibilitiesByBand'])->name('api.get-responsibilities');
+
+        // Route untuk Import Master Tanggung Jawab
+        Route::post('/master-responsibilities/import', [JobProfileController::class, 'importMasterResponsibilities'])
+        ->name('master.import'); // Nama route jadi 'admin.master.import' otomatis karena group name('admin.')
+
+        Route::post('/competencies/import-definition', [App\Http\Controllers\Admin\CompetencyController::class, 'importBehaviorDefinition'])
+        ->name('competencies.import.definition');
+
+        // 3. Route Import PERILAKU MATRIX (Untuk tombol ke-2 nanti)
+        // Tambahkan juga biar tidak error nanti:
+        Route::post('/competencies/import-behavior', [App\Http\Controllers\Admin\CompetencyController::class, 'importBehaviorMatrix'])
+            ->name('competencies.import.behavior');
+
+        Route::post('/competencies/import-technical-standard', [JobProfileController::class, 'importTechnicalStandard'])
+            ->name('competencies.import.technical-standard');
     });
 
     
@@ -240,6 +258,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pilih-peran', [App\Http\Controllers\Auth\RoleSelectionController::class, 'select'])->name('role.select');
 
    
+});
+
+Route::get('/cek-nama-kolom', function () {
+    // 1. Ambil 1 baris data dari Master (Sumber Pakem)
+    $master = \App\Models\MasterResponsibility::first();
+
+    // 2. Ambil 1 baris data dari Job Profile yang sudah tersimpan (Tujuan)
+    $profil = \App\Models\JobResponsibility::latest()->first();
+
+    return [
+        'SUMBER_DATA_MASTER' => $master ? $master->toArray() : 'Tabel Master Kosong!',
+        'TUJUAN_DATA_PROFIL' => $profil ? $profil->toArray() : 'Tabel Profil Kosong!',
+    ];
 });
 
 require __DIR__.'/auth.php';

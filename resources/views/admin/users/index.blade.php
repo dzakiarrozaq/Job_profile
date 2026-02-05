@@ -16,7 +16,7 @@
                 <button onclick="document.getElementById('importUserModal').classList.remove('hidden')" 
                         class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-green-500/30">
                     <ion-icon name="document-text-outline" class="mr-2 text-lg"></ion-icon>
-                    Import Excel
+                    Import User
                 </button>
 
                 {{-- Add User Button --}}
@@ -31,7 +31,7 @@
 
     <div class="max-w-7xl mx-auto space-y-6">
         
-        {{-- Stats Cards (Unchanged) --}}
+        {{-- Stats Cards --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center">
                 <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-600 dark:text-blue-400 mr-4">
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        {{-- Filter & Search Section (Unchanged) --}}
+        {{-- Filter & Search Section --}}
         <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <form method="GET" action="{{ route('admin.users.index') }}" class="w-full">
                 <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -104,7 +104,6 @@
                                     <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Role / Jabatan</label>
                                     <select name="role" class="w-full text-sm rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 py-2">
                                         <option value="">Semua Role</option>
-                                        {{-- Note: Ideally iterate through roles passed from controller --}}
                                         <option value="Admin">Admin</option>
                                         <option value="Supervisor">Supervisor</option>
                                         <option value="Karyawan">Karyawan</option>
@@ -125,13 +124,15 @@
             </form>
         </div>
 
-        {{-- Table Section (Unchanged) --}}
+        {{-- Table Section --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/50">
                         <tr>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">User Info</th>
+                            {{-- KOLOM BARU: NIK --}}
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">NIK</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jabatan</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
@@ -153,6 +154,13 @@
                                         <div class="text-xs text-gray-500 font-mono mt-0.5">{{ $user->email }}</div>
                                     </div>
                                 </div>
+                            </td>
+
+                            {{-- ISI KOLOM NIK --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-mono text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                    {{ $user->nik ?? '-' }}
+                                </span>
                             </td>
 
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -179,7 +187,9 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex flex-col">
                                     <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $user->position->title ?? '-' }}</span>
-                                    <span class="text-xs text-gray-400">{{ $user->department->name ?? 'Unit belum diset' }}</span>
+                                    <span class="text-xs text-gray-400">
+                                        {{ $user->position->organization->name ?? 'Unit belum diset' }}
+                                    </span>
                                 </div>
                             </td>
 
@@ -214,7 +224,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center bg-gray-50/50 dark:bg-gray-800">
+                            <td colspan="6" class="px-6 py-12 text-center bg-gray-50/50 dark:bg-gray-800">
                                 <div class="flex flex-col items-center justify-center">
                                     <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-full mb-3">
                                         <ion-icon name="search-outline" class="text-4xl text-gray-400"></ion-icon>
@@ -238,7 +248,7 @@
         </div>
     </div>
 
-    {{-- === IMPORT USER MODAL === --}}
+    {{-- === IMPORT USER MODAL (Tidak Berubah) === --}}
     <div id="importUserModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             

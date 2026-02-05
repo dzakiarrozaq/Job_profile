@@ -128,4 +128,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function interests() {
         return $this->hasMany(UserInterest::class);
     }
+
+    public function hasRole($roleName)
+    {
+        // Cek apakah koleksi roles milik user mengandung nama role yang dicari
+        return $this->roles->contains('name', $roleName);
+    }
 }

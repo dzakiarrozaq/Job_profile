@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\GapRecord;
 use App\Models\Training;
-use App\Models\Department;
+use App\Models\Organization; // Pengganti Department
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\JobProfile;
 use App\Exports\SystemReportExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Schema;
 
 class SystemReportController extends Controller
 {
@@ -39,55 +40,80 @@ class SystemReportController extends Controller
         // =====================================================================
         // 2. FILTER & QUERY DATA (UNTUK GRAFIK & TABEL)
         // =====================================================================
-        $queryGap = GapRecord::with(['user.department', 'user.position']);
         
+        // PENTING: User terhubung ke Posisi, Posisi terhubung ke Organisasi (Department)
+        // Jadi relasinya: GapRecord -> User -> Position -> Organization
+        
+        $queryGap = GapRecord::with(['user.position.organization']);
+        
+        // Filter Organisasi (Department)
         if ($request->department_id && $request->department_id != 'all') {
-            $queryGap->whereHas('user', fn($q) => $q->where('department_id', $request->department_id));
-        }
-        if ($request->position_id && $request->position_id != 'all') {
-            $queryGap->whereHas('user', fn($q) => $q->where('position_id', $request->position_id));
+            $queryGap->whereHas('user.position', fn($q) => 
+                $q->where('organization_id', $request->department_id)
+            );
         }
 
-        // Grafik: Kompetensi Paling Kritis
-        $criticalCompetencies = (clone $queryGap)
-            ->select('competency_name', DB::raw('AVG(gap_value) as avg_gap'))
-            ->groupBy('competency_name')
-            ->orderBy('avg_gap', 'asc')
-            ->take(3)
-            ->get();
+        // Filter Posisi
+        if ($request->position_id && $request->position_id != 'all') {
+            $queryGap->whereHas('user', fn($q) => 
+                $q->where('position_id', $request->position_id)
+            );
+        }
+
+        // Grafik: Kompetensi Paling Kritis (Gap Terbesar / Nilai Minus Paling Besar)
+        // Pastikan tabel gap_records ada sebelum query
+        $criticalCompetencies = collect();
+        if (Schema::hasTable('gap_records')) {
+            $criticalCompetencies = (clone $queryGap)
+                ->select('competency_name', DB::raw('AVG(gap_value) as avg_gap'))
+                ->groupBy('competency_name')
+                ->orderBy('avg_gap', 'asc') // Gap minus (-) berarti butuh training
+                ->take(5)
+                ->get();
+        }
 
         // Grafik: Pelatihan Populer
-        $popularTrainings = DB::table('training_plan_items')
-            ->join('trainings', 'training_plan_items.training_id', '=', 'trainings.id')
-            ->select('trainings.title', DB::raw('count(*) as total_participants'))
-            ->groupBy('trainings.title')
-            ->orderByDesc('total_participants')
-            ->take(3)
-            ->get();
+        $popularTrainings = collect();
+        if (Schema::hasTable('training_plan_items')) {
+            $popularTrainings = DB::table('training_plan_items')
+                ->join('trainings', 'training_plan_items.training_id', '=', 'trainings.id')
+                ->select('trainings.title', DB::raw('count(*) as total_participants'))
+                ->groupBy('trainings.title')
+                ->orderByDesc('total_participants')
+                ->take(5)
+                ->get();
+        }
 
         // =====================================================================
-        // 3. DATA PER KARYAWAN (UNTUK VIEW BARU)
+        // 3. DATA PER KARYAWAN (UNTUK TABEL DETAIL)
         // =====================================================================
         $employeesQuery = User::whereHas('gapRecords')
-            ->with(['position', 'department', 'gapRecords' => function($q) {
+            ->with(['position.organization', 'gapRecords' => function($q) {
                 $q->orderBy('gap_value', 'asc');
             }]);
 
         if ($request->department_id && $request->department_id != 'all') {
-            $employeesQuery->where('department_id', $request->department_id);
+            // Filter user yang posisinya ada di organisasi tertentu
+            $employeesQuery->whereHas('position', fn($q) => 
+                $q->where('organization_id', $request->department_id)
+            );
         }
         if ($request->position_id && $request->position_id != 'all') {
             $employeesQuery->where('position_id', $request->position_id);
         }
 
-        // INI VARIABEL YANG HILANG SEBELUMNYA
-        $employees = $employeesQuery->paginate(5);
+        $employees = $employeesQuery->paginate(10);
 
 
         // =====================================================================
-        // 4. DATA MASTER UNTUK FILTER
+        // 4. DATA MASTER UNTUK DROPDOWN FILTER
         // =====================================================================
-        $departments = Department::orderBy('name')->get();
+        
+        // AMBIL DEPARTEMEN DARI TABEL ORGANIZATIONS
+        $departments = Organization::where('type', 'department')
+                        ->orderBy('name')
+                        ->get();
+
         $positions = Position::orderBy('title')->get();
         $roles = Role::all();
 
@@ -105,10 +131,10 @@ class SystemReportController extends Controller
             'criticalCompetencies' => $criticalCompetencies,
             'popularTrainings' => $popularTrainings,
             
-            // Tabel Data Utama (PERBAIKAN: Menggunakan $employees)
+            // Tabel Data Utama
             'employees' => $employees, 
             
-            // Filter
+            // Filter Options
             'departments' => $departments,
             'positions' => $positions,
             'roles' => $roles,

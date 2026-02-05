@@ -57,8 +57,10 @@
                         </div>
                     @empty
                         <div class="col-span-3 flex flex-col items-center justify-center py-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <h4 class="text-gray-900 font-medium">Anda Kompeten!</h4>
+                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h4 class="text-gray-900 font-medium">Kompetensi Terpenuhi</h4>
                             <p class="text-gray-500 text-sm mt-1">Tidak ada gap kompetensi yang terdeteksi, atau belum ada pelatihan yang relevan.</p>
                         </div>
                     @endforelse

@@ -18,23 +18,70 @@
     </x-slot>
 
     @php
-        $responsibilitiesData = old('responsibilities', $jobProfile->responsibilities->map(fn($r) => ['key' => 'db_'.$r->id, 'id' => $r->id, 'description' => $r->description, 'expected_result' => $r->expected_result])->toArray());
-        
-        $competenciesData = old('competencies', $jobProfile->competencies->map(function($comp) {
-            return [
-                'key' => 'db_' . $comp->id,
+        // A. AMBIL DATA EXISTING (YANG SUDAH TERSIMPAN DI PROFILE INI)
+        $allComps = $jobProfile->competencies;
+
+        // Filter Kompetensi Teknis yang sudah tersimpan
+        $savedTechnicals = $allComps
+            ->filter(fn($c) => strtolower(trim($c->type)) !== 'perilaku')
+            ->map(fn($comp) => [
+                'key' => 'saved_' . $comp->id,
+                'id' => $comp->id,
                 'competency_master_id' => $comp->competency_master_id,
-                'competency_code' => optional($comp->master)->competency_code ?? 'N/A',
-                'competency_name' => optional($comp->master)->competency_name ?? 'N/A',
-                'type' => optional($comp->master)->type ?? 'N/A',
+                'competency_name' => $comp->competency_name,
                 'ideal_level' => $comp->ideal_level,
-                'weight' => $comp->weight
-            ];
-        })->toArray());
+                // Ambil behaviors dari relasi competency master
+                'behaviors' => optional($comp->competency)->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
+                'is_standard' => false // Penanda ini data manual/existing
+            ]);
+
+        // B. AMBIL DATA PAKEM (DARI TABEL STANDARD YANG BARU DI-IMPORT)
+        // Kita load standard beserta relasi master & behaviors-nya untuk efisiensi
+        $standardComps = $jobProfile->position->technicalStandards()
+            ->with(['competencyMaster.keyBehaviors'])
+            ->get();
+
+        // Mapping data pakem ke format array JS
+        $pakemTechnicals = $standardComps->map(fn($std) => [
+            'key' => 'std_' . $std->id,
+            'id' => null, // Null karena belum tersimpan di tabel job_profile_competencies
+            'competency_master_id' => $std->competency_master_id,
+            'competency_name' => $std->competencyMaster->competency_name ?? 'Unknown',
+            'ideal_level' => $std->ideal_level,
+            'behaviors' => $std->competencyMaster->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
+            'is_standard' => true // Penanda ini data pakem
+        ]);
+
+        // C. GABUNGKAN (MERGE)
+        // Logika: Tampilkan yang Saved. Jika Pakem belum ada di Saved, tambahkan Pakem.
         
-        $specificationsData = old('specifications', $jobProfile->specifications->map(fn($s) => ['key' => 'db_'.$s->id, 'id' => $s->id, 'type' => $s->type, 'requirement' => $s->requirement, 'level_or_notes' => $s->level_or_notes])->toArray());
-        
-        $workRelationsData = old('workRelations', $jobProfile->workRelations->map(fn($w) => ['key' => 'db_'.$w->id, 'id' => $w->id, 'type' => $w->type, 'unit_instansi' => $w->unit_instansi, 'purpose' => $w->purpose])->toArray());
+        // Ambil ID Master yang sudah ada di Saved agar tidak duplikat
+        $existingMasterIds = $savedTechnicals->pluck('competency_master_id')->toArray();
+
+        // Filter Pakem yang BELUM ada di Saved
+        $newStandards = $pakemTechnicals->filter(function($item) use ($existingMasterIds) {
+            return !in_array($item['competency_master_id'], $existingMasterIds);
+        });
+
+        // Gabungkan Saved + New Standards
+        $finalTechnicals = $savedTechnicals->merge($newStandards)->values()->toArray();
+
+        // D. FINALISASI DATA UNTUK VIEW
+        // Gunakan old() jika ada validasi error, jika tidak gunakan hasil merge di atas
+        $technicals = old('technicals', $finalTechnicals);
+
+        // Kompetensi Perilaku (Tetap sama seperti sebelumnya)
+        $behaviorals = old('behaviorals', $allComps
+            ->filter(fn($c) => strtolower(trim($c->type)) === 'perilaku')
+            ->map(fn($comp) => [
+                'key' => 'beh_' . $comp->id,
+                'id' => $comp->id,
+                'competency_master_id' => $comp->competency_master_id,
+                'competency_name' => $comp->competency_name,
+                'description' => optional($comp->competency)->description ?? '-', 
+                'ideal_level' => $comp->ideal_level,
+                'behaviors' => optional($comp->competency)->keyBehaviors->where('level', 0)->values() ?? []
+            ])->values()->toArray());
     @endphp
 
     @php
@@ -45,6 +92,12 @@
         $namaUnit = '-';
         $namaSection = '-';
         $namaDepartemen = 'N/A';
+
+        $responsibilities = old('responsibilities', $responsibilitiesData ?? []);
+        $technicals = old('technicals', $technicalsData ?? []);
+        $behaviorals = old('behaviorals', $behavioralsData ?? []);
+        $workRelations = old('workRelations', $workRelationsData ?? []);
+        $specifications = old('specifications', $specificationsData ?? []);
 
         if ($grandparent) {
             $namaUnit = $org->name;
@@ -61,160 +114,163 @@
 
     <div class="max-w-7xl mx-auto" 
          x-data="{ 
-            currentTab: 'tujuan',
-            isLoadingAI: false,
-            positionTitle: '',
-            tujuan_jabatan: '',
-            wewenang: '',
-            dimensi_keuangan: '',
-            dimensi_non_keuangan: '',
-            
-            // Array Data Utama
-            responsibilities: [],
-            competencies: [],
-            workRelations: [],
+                currentTab: 'tujuan',
+                isLoadingAI: false,
+                positionTitle: '',
+                tujuan_jabatan: '',
+                wewenang: '',
+                dimensi_keuangan: '',
+                dimensi_non_keuangan: '',
+                
+                // --- PERUBAHAN 1: MEMISAHKAN ARRAY ---
+                responsibilities: [],
+                workRelations: [],
+                technicals: [],  
+                behaviorals: [], 
 
-            // Array Spesifikasi (Dipecah jadi 6)
-            educations: [],
-            experiences: [],
-            certifications: [],
-            languages: [],
-            computers: [],
-            healths: [],
-            
-            searchQuery: '',
-            searchResults: [],
-            activeSuggestionIndex: -1,
-            
-            init() {
-                // 1. Load Data Dasar
-                this.positionTitle = {{ Js::from($jobProfile->position->title ?? '') }};
-                this.tujuan_jabatan = {{ Js::from(old('tujuan_jabatan', $jobProfile->tujuan_jabatan ?? '')) }};
-                this.wewenang = {{ Js::from(old('wewenang', $jobProfile->wewenang ?? '')) }};
-                this.dimensi_keuangan = {{ Js::from(old('dimensi_keuangan', $jobProfile->dimensi_keuangan ?? '')) }};
-                this.dimensi_non_keuangan = {{ Js::from(old('dimensi_non_keuangan', $jobProfile->dimensi_non_keuangan ?? '')) }};
+                // Array Spesifikasi
+                educations: [], experiences: [], certifications: [], 
+                languages: [], computers: [], healths: [],
                 
-                // 2. Load Relasi (Tanggung Jawab, Kompetensi, Hubungan Kerja)
-                this.responsibilities = {{ Js::from(old('responsibilities', $jobProfile->responsibilities->map(fn($r) => ['key' => 'db_'.$r->id, 'id' => $r->id, 'description' => $r->description, 'expected_result' => $r->expected_result]))) }};
+                searchQuery: '',
+                searchResults: [],
+                activeSuggestionIndex: -1,
                 
-                this.workRelations = {{ Js::from(old('workRelations', $jobProfile->workRelations->map(fn($w) => ['key' => 'db_'.$w->id, 'id' => $w->id, 'type' => $w->type, 'unit_instansi' => $w->unit_instansi, 'purpose' => $w->purpose]))) }};
-
-                this.competencies = {{ Js::from(old('competencies', $jobProfile->competencies->map(function($comp) {
-                    return [
-                        'key' => 'db_' . $comp->id,
-                        'competency_master_id' => $comp->competency_master_id,
-                        'competency_code' => optional($comp->master)->competency_code ?? 'N/A',
-                        'competency_name' => optional($comp->master)->competency_name ?? 'N/A',
-                        'type' => optional($comp->master)->type ?? 'N/A',
-                        'ideal_level' => $comp->ideal_level,
-                        'weight' => $comp->weight
-                    ];
-                }))) }};
-                
-                // 3. LOGIKA MEMECAH SPESIFIKASI MENJADI 6 KATEGORI
-                const rawSpecs = {{ Js::from(old('specifications', $jobProfile->specifications->map(fn($s) => ['key' => 'db_'.$s->id, 'id' => $s->id, 'type' => $s->type, 'requirement' => $s->requirement, 'level_or_notes' => $s->level_or_notes]))) }};
-
-                // Helper function untuk filter dan inisialisasi
-                const loadSpec = (type) => {
-                    const filtered = rawSpecs.filter(s => s.type === type);
-                    // Jika kosong, isi 1 baris default agar form muncul
-                    return filtered.length ? filtered : [{ key: 'new_'+type+'_'+Date.now(), id: null, type: type, requirement: '', level_or_notes: '' }];
-                };
-
-                this.educations = loadSpec('pendidikan');
-                this.experiences = loadSpec('pengalaman');
-                this.certifications = loadSpec('sertifikasi');
-                this.languages = loadSpec('bahasa');
-                this.computers = loadSpec('komputer');
-                this.healths = loadSpec('kesehatan');
-            },
-            
-            // Fungsi Tambah Baris Universal
-            addRow(type) {
-                const key = 'new_' + Date.now() + Math.random(); // Key unik
-                
-                // Relasi Umum
-                if (type === 'responsibilities') this.responsibilities.push({ key: key, id: null, description: '', expected_result: '' });
-                if (type === 'workRelations') this.workRelations.push({ key: key, id: null, type: 'internal', unit_instansi: '', purpose: '' });
-                if (type === 'competencies') this.competencies.push({ key: key, id: null, competency_master_id: null, competency_code: '', competency_name: '', type: 'teknis', ideal_level: 3, weight: 1.0 });
-                
-                // Spesifikasi (6 Kategori)
-                if (type === 'educations') this.educations.push({ key: key, id: null, type: 'pendidikan', requirement: '', level_or_notes: '' });
-                if (type === 'experiences') this.experiences.push({ key: key, id: null, type: 'pengalaman', requirement: '', level_or_notes: '' });
-                if (type === 'certifications') this.certifications.push({ key: key, id: null, type: 'sertifikasi', requirement: '', level_or_notes: '' });
-                if (type === 'languages') this.languages.push({ key: key, id: null, type: 'bahasa', requirement: '', level_or_notes: '' });
-                if (type === 'computers') this.computers.push({ key: key, id: null, type: 'komputer', requirement: '', level_or_notes: '' });
-                if (type === 'healths') this.healths.push({ key: key, id: null, type: 'kesehatan', requirement: '', level_or_notes: '' });
-            },
-            
-            // Fungsi Hapus Baris Universal
-            removeRow(arrName, key) {
-                // Untuk spesifikasi, jika sisa 1 jangan dihapus, tapi dikosongkan (opsional, tapi bagus utk UX)
-                const specsArrays = ['educations', 'experiences', 'certifications', 'languages', 'computers', 'healths'];
-                
-                if (specsArrays.includes(arrName)) {
-                    if (this[arrName].length > 1) {
-                        this[arrName] = this[arrName].filter(item => item.key !== key);
-                    } else {
-                        // Reset baris terakhir
-                        this[arrName][0].requirement = '';
-                        this[arrName][0].level_or_notes = '';
-                    }
-                } else {
-                    // Untuk tabel lain (kompetensi dll) hapus saja
-                    this[arrName] = this[arrName].filter(item => item.key !== key);
-                }
-            },
-
-            // ... (Fungsi AI dan Search Kompetensi SAMA SEPERTI SEBELUMNYA) ...
-            async getAiSuggestion(fieldType) {
-                this.isLoadingAI = true;
-                try {
-                    const response = await (await fetch('{{ route('admin.job-profile.suggestText') }}', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-                        body: JSON.stringify({ position_title: this.positionTitle, field_type: fieldType })
-                    })).json();
+                init() {
+                    // 1. Load Data Dasar
+                    this.positionTitle = {{ Js::from($jobProfile->position->title ?? '') }};
+                    this.tujuan_jabatan = {{ Js::from(old('tujuan_jabatan', $jobProfile->tujuan_jabatan ?? '')) }};
+                    this.wewenang = {{ Js::from(old('wewenang', $jobProfile->wewenang ?? '')) }};
+                    this.dimensi_keuangan = {{ Js::from(old('dimensi_keuangan', $jobProfile->dimensi_keuangan ?? '')) }};
+                    this.dimensi_non_keuangan = {{ Js::from(old('dimensi_non_keuangan', $jobProfile->dimensi_non_keuangan ?? '')) }};
                     
-                    if (response.error) throw new Error(response.details || response.error);
+                    // 2. Load Relasi
+                    this.responsibilities = {{ Js::from($responsibilitiesData) }};
+                    this.workRelations = {{ Js::from($workRelationsData) }};
 
-                    if (fieldType === 'tanggung_jawab') {
-                        this.responsibilities = response.map((r, i) => ({ ...r, key: 'ai_' + i, id: null }));
-                    } else if (fieldType === 'tujuan_jabatan') {
-                        this.tujuan_jabatan = response.text;
-                    } else if (fieldType === 'wewenang') {
-                        this.wewenang = response.text;
+                    // --- PERUBAHAN 2: LOAD DATA TERPISAH ---
+                    // Pastikan di bagian PHP atas file sudah mendefinisikan $technicals dan $behaviorals
+                    this.technicals = {{ Js::from($technicals) }};
+                    this.behaviorals = {{ Js::from($behaviorals) }};
+                    
+                    // 3. Load Spesifikasi
+                    const rawSpecs = {{ Js::from($specificationsData) }};
+                    const loadSpec = (type) => {
+                        const filtered = rawSpecs.filter(s => s.type === type);
+                        return filtered.length ? filtered : [{ key: 'new_'+type+'_'+Date.now(), id: null, type: type, requirement: '', level_or_notes: '' }];
+                    };
+
+                    this.educations = loadSpec('pendidikan');
+                    this.experiences = loadSpec('pengalaman');
+                    this.certifications = loadSpec('sertifikasi');
+                    this.languages = loadSpec('bahasa');
+                    this.computers = loadSpec('komputer');
+                    this.healths = loadSpec('kesehatan');
+                },
+                
+                // Fungsi Tambah Baris
+                addRow(type) {
+                    const key = 'new_' + Date.now() + Math.random(); 
+
+                    if (type === 'responsibilities') this.responsibilities.push({ key: key, id: null, description: '', expected_result: '' });
+                    if (type === 'workRelations') this.workRelations.push({ key: key, id: null, type: 'internal', unit_instansi: '', purpose: '' });
+
+                    // --- PERUBAHAN 3: ADD ROW HANYA UNTUK TEKNIS ---
+                    // Tidak ada logika addRow untuk 'behaviorals' karena itu Pakem
+                    if (type === 'technicals') {
+                        this.technicals.push({ 
+                            key: key, 
+                            id: null, 
+                            competency_master_id: null, 
+                            competency_name: '', 
+                            type: 'Teknis', // Paksa tipe Teknis
+                            ideal_level: 1, 
+                            behaviors: [] 
+                        });
                     }
-                } catch (e) {
-                    alert('Gagal mengambil data AI: ' + e.message);
-                } finally {
-                    this.isLoadingAI = false;
+
+                    // Specs
+                    if (type === 'educations') this.educations.push({ key: key, id: null, type: 'pendidikan', requirement: '', level_or_notes: '' });
+                    if (type === 'experiences') this.experiences.push({ key: key, id: null, type: 'pengalaman', requirement: '', level_or_notes: '' });
+                    if (type === 'certifications') this.certifications.push({ key: key, id: null, type: 'sertifikasi', requirement: '', level_or_notes: '' });
+                    if (type === 'languages') this.languages.push({ key: key, id: null, type: 'bahasa', requirement: '', level_or_notes: '' });
+                    if (type === 'computers') this.computers.push({ key: key, id: null, type: 'komputer', requirement: '', level_or_notes: '' });
+                    if (type === 'healths') this.healths.push({ key: key, id: null, type: 'kesehatan', requirement: '', level_or_notes: '' });
+                },
+                
+                // Fungsi Hapus Baris
+                removeRow(arrName, key) {
+                    const specsArrays = ['educations', 'experiences', 'certifications', 'languages', 'computers', 'healths'];
+                    
+                    // --- PERUBAHAN 4: REMOVE ROW TEKNIS ---
+                    if (arrName === 'technicals') {
+                        this.technicals = this.technicals.filter(item => item.key !== key);
+                    }
+                    else if (specsArrays.includes(arrName)) {
+                        if (this[arrName].length > 1) {
+                            this[arrName] = this[arrName].filter(item => item.key !== key);
+                        } else {
+                            this[arrName][0].requirement = '';
+                            this[arrName][0].level_or_notes = '';
+                        }
+                    } else {
+                        // Default remove (responsibilities, workRelations)
+                        this[arrName] = this[arrName].filter(item => item.key !== key);
+                    }
+                },
+
+                // AI Suggestion (Tidak Berubah)
+                async getAiSuggestion(fieldType) {
+                    this.isLoadingAI = true;
+                    try {
+                        const response = await (await fetch('{{ route('supervisor.job-profile.suggestText') }}', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                            body: JSON.stringify({ position_title: this.positionTitle, field_type: fieldType })
+                        })).json();
+                        
+                        if (response.error) throw new Error(response.details || response.error);
+
+                        if (fieldType === 'tanggung_jawab') {
+                            this.responsibilities = response.map((r, i) => ({ ...r, key: 'ai_' + i, id: null }));
+                        } else if (fieldType === 'tujuan_jabatan') {
+                            this.tujuan_jabatan = response.text;
+                        } else if (fieldType === 'wewenang') {
+                            this.wewenang = response.text;
+                        }
+                    } catch (e) {
+                        alert('Gagal mengambil data AI: ' + e.message);
+                    } finally {
+                        this.isLoadingAI = false;
+                    }
+                },
+                
+                // --- PERUBAHAN 5: SEARCH HANYA KE ARRAY TECHNICALS ---
+                async searchCompetencies(query, index) {
+                    this.activeSuggestionIndex = index; 
+                    if (query.length < 2) { this.searchResults = []; return; }
+                    
+                    // Reset ID di array technicals
+                    this.technicals[index].competency_master_id = null; 
+                    
+                    try {
+                        const url = `{{ route('supervisor.competencies.search') }}?q=${encodeURIComponent(query)}`;
+                        const response = await (await fetch(url)).json();
+                        this.searchResults = response;
+                    } catch (e) { this.searchResults = []; }
+                },
+                
+                // --- PERUBAHAN 6: SELECT HANYA KE ARRAY TECHNICALS ---
+                selectCompetency(item, index) {
+                    this.technicals[index].competency_master_id = item.id;
+                    this.technicals[index].competency_name = item.competency_name;
+                    this.technicals[index].behaviors = item.key_behaviors || [];
+
+                    this.searchResults = [];
+                    this.activeSuggestionIndex = -1;
                 }
-            },
-            
-            async searchCompetencies(query, index) {
-                this.activeSuggestionIndex = index; 
-                if (query.length < 2) { this.searchResults = []; return; }
-                
-                this.competencies[index].competency_master_id = null; // Reset ID jika ketik ulang
-                
-                try {
-                    const url = `{{ route('admin.competencies.search') }}?q=${encodeURIComponent(query)}`;
-                    const response = await (await fetch(url)).json();
-                    this.searchResults = response;
-                } catch (e) { this.searchResults = []; }
-            },
-            
-            selectCompetency(competency, index) {
-                this.competencies[index].competency_master_id = competency.id;
-                this.competencies[index].competency_code = competency.competency_code;
-                this.competencies[index].competency_name = competency.competency_name;
-                this.competencies[index].type = competency.type;
-                this.searchResults = []; 
-                this.activeSuggestionIndex = -1;
-            }
-         }"
-         x-init="init()">
+            }"
+            x-init="init()">
         
         @if (session('success'))
             <div class="mb-4 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg">{{ session('success') }}</div>
@@ -246,41 +302,77 @@
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">1. Identifikasi Jabatan (v{{ $jobProfile->version }})</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+    
+                        {{-- 1. Jabatan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->title ?? 'N/A' }}</span>
+                            <span class="text-gray-900 dark:text-white font-medium">{{ $jobProfile->position->title ?? 'N/A' }}</span>
                         </div>
 
+                        {{-- 2. Tingkat (Job Grade) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Tingkat (Job Grade):</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->jobGrade->name ?? 'N/A' }}</span>
+                            <div class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    Band {{ $jobProfile->position->jobGrade->name ?? 'N/A' }}
+                                </span>
+                            </div>
                         </div>
 
+                        {{-- 3. [BARU] Jalur Karir (Struktural/Fungsional) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
-                            <span class="text-gray-900 dark:text-white font-bold text-indigo-600">
-                                {{ $namaDepartemen }}
-                            </span>
+                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jalur Karir (Job Family):</span>
+                            <div class="mt-1">
+                                @php
+                                    // Ambil data dan ubah ke huruf besar agar pengecekan konsisten
+                                    $familyRaw = strtoupper($jobProfile->position->job_family ?? '');
+                                    
+                                    // Tentukan warna badge
+                                    $badgeClass = 'bg-gray-100 text-gray-800 border-gray-200'; // Default abu-abu
+                                    
+                                    if (str_contains($familyRaw, 'STRUKTURAL')) {
+                                        $badgeClass = 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700';
+                                    } elseif (str_contains($familyRaw, 'FUNGSIONAL')) {
+                                        $badgeClass = 'bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900 dark:text-teal-200 dark:border-teal-700';
+                                    }
+                                @endphp
+
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }}">
+                                    {{ $jobProfile->position->job_family ?? 'Belum Ditentukan' }}
+                                </span>
+                            </div>
                         </div>
 
-                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section:</span>
-                            <span class="text-gray-900 dark:text-white">
-                                {{ $namaSection }}
-                            </span>
-                        </div>
-
-                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit:</span>
-                            <span class="text-gray-900 dark:text-white">
-                                {{ $namaUnit }}
-                            </span>
-                        </div>
-
+                        {{-- 4. Jabatan Atasan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan Atasan:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->atasan->title ?? 'N/A' }}</span>
+                            <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->atasan->title ?? '-' }}</span>
                         </div>
+
+                        {{-- 5. Departemen --}}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
+                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
+                            <span class="text-gray-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
+                                {{ $namaDepartemen ?? '-' }}
+                            </span>
+                        </div>
+
+                        {{-- 6. Unit --}}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
+                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit (Biro):</span>
+                            <span class="text-gray-900 dark:text-white">
+                                {{ $namaUnit ?? '-' }}
+                            </span>
+                        </div>
+
+                        {{-- 7. Section --}}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md md:col-span-2">
+                            <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section (Seksi):</span>
+                            <span class="text-gray-900 dark:text-white">
+                                {{ $namaSection ?? '-' }}
+                            </span>
+                        </div>
+
                     </div>
                     <hr class="dark:border-gray-700">
                     <div>
@@ -367,58 +459,173 @@
                     </div>
                 </div>
 
-                <div x-show="currentTab === 'kompetensi'" class="p-6 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold dark:text-gray-100">4. Kompetensi</h3>
-                        <button type="button" @click.prevent="addRow('competencies')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">+ Tambah</button>
-                    </div>
-                    <div class="overflow-x-visible">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gray-100 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">Tipe</th>
-                                    <th class="px-4 py-2 text-left">Kode</th>
-                                    <th class="px-4 py-2 text-left w-1/3">Nama Kompetensi</th>
-                                    <th class="px-4 py-2 text-center">Level</th>
-                                    <th class="px-4 py-2 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <template x-for="(row, index) in competencies" :key="row.key">
-                                    <tr class="bg-white dark:bg-gray-800">
-                                        <td class="p-2"><input type="text" x-model="row.type" readonly class="w-full text-xs bg-gray-100 rounded border-0"></td>
-                                        <td class="p-2"><input type="text" x-model="row.competency_code" readonly class="w-full text-xs bg-gray-100 rounded border-0"></td>
-                                        <td class="p-2 relative">
-                                            <input type="hidden" :name="'competencies['+index+'][competency_master_id]'" x-model="row.competency_master_id">
-                                            <input type="text" x-model="row.competency_name" 
-                                                   @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
-                                                   @focus="if(row.competency_name.length>=2) searchCompetencies(row.competency_name, index)"
-                                                   class="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                   :class="{'border-red-500': !row.competency_master_id}" placeholder="Cari...">
-                                            
-                                            <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
-                                                 @click.away="searchResults = []; activeSuggestionIndex = -1;"
-                                                 class="absolute z-50 w-full bg-white dark:bg-gray-700 shadow-xl border rounded mt-1 max-h-48 overflow-y-auto">
-                                                <template x-for="res in searchResults" :key="res.id">
-                                                    <div @click="selectCompetency(res, index)" class="p-2 hover:bg-blue-50 dark:hover:bg-gray-600 cursor-pointer border-b">
-                                                        <div class="font-bold text-xs" x-text="res.competency_name"></div>
-                                                        <div class="text-[10px] text-gray-500" x-text="res.competency_code"></div>
+                <div x-show="currentTab === 'kompetensi'" class="p-6 space-y-12">
+    
+                    {{-- 4.1 KOMPETENSI TEKNIS (Editable Table) --}}
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">4.1 Kompetensi Teknis</h3>
+                                <p class="text-xs text-gray-500">Tambahkan kompetensi spesifik operasional.</p>
+                            </div>
+                            <button type="button" @click.prevent="addRow('technicals')" 
+                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center shadow-sm transition">
+                                <ion-icon name="add-circle-outline" class="mr-1"></ion-icon> Tambah Teknis
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-visible">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 uppercase text-xs leading-normal">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left w-1/2">Nama Kompetensi</th>
+                                        <th class="px-4 py-3 text-center w-1/6">Target Level</th>
+                                        <th class="px-4 py-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                
+                                <template x-for="(row, index) in technicals" :key="row.key">
+                                    <tbody class="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition" 
+                                        x-data="{ showGuide: false }">
+                                        
+                                        <tr class="align-top">
+                                            <td class="p-2 relative">
+                                                <input type="hidden" :name="'technicals['+index+'][id]'" x-model="row.id">
+                                                <input type="hidden" :name="'technicals['+index+'][competency_master_id]'" x-model="row.competency_master_id">
+                                                
+                                                <div class="relative">
+                                                    <input type="text" x-model="row.competency_name"
+                                                        @keyup.debounce.300ms="searchCompetencies(row.competency_name, index)"
+                                                        class="w-full rounded-md border-gray-300 text-sm font-bold dark:bg-gray-700 dark:text-white pl-8" {{-- Tambah pl-8 --}}
+                                                        :class="{'border-red-400 bg-red-50': row.competency_master_id === null && row.competency_name.length > 0, 'bg-orange-50 border-orange-200': row.is_standard}"
+                                                        placeholder="Cari kompetensi...">
+                                                    
+                                                    {{-- Ikon Penanda --}}
+                                                    <div class="absolute left-2 top-2.5 text-gray-400">
+                                                        {{-- Jika ini Pakem, tampilkan ikon Kunci/Lock --}}
+                                                        <template x-if="row.is_standard">
+                                                            <ion-icon name="lock-closed" class="text-orange-500" title="Standar Pakem Posisi"></ion-icon>
+                                                        </template>
+                                                        {{-- Jika Manual, tampilkan ikon Search --}}
+                                                        <template x-if="!row.is_standard">
+                                                            <ion-icon name="search"></ion-icon>
+                                                        </template>
                                                     </div>
-                                                </template>
-                                            </div>
-                                        </td>
-                                        <td class="p-2">
-                                            <select :name="'competencies['+index+'][ideal_level]'" x-model="row.ideal_level" class="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+
+                                                    <div class="absolute right-2 top-2.5">
+                                                        <span x-show="row.competency_master_id" class="text-green-500"><ion-icon name="checkmark-circle"></ion-icon></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex justify-between items-center mt-1">
+                                                    <button type="button" x-show="row.behaviors && row.behaviors.length > 0" @click="showGuide = !showGuide"
+                                                            class="text-[10px] font-bold text-indigo-600 hover:underline flex items-center gap-1 uppercase">
+                                                        <ion-icon :name="showGuide ? 'chevron-up-outline' : 'book-outline'"></ion-icon>
+                                                        <span x-text="showGuide ? 'Tutup Panduan' : 'Lihat Panduan Level'"></span>
+                                                    </button>
+                                                </div>
+
+                                                {{-- Suggestions --}}
+                                                <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
+                                                    @click.away="searchResults = []"
+                                                    class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-xl border rounded-md mt-1 max-h-60 overflow-y-auto">
+                                                    <template x-for="res in searchResults" :key="res.id">
+                                                        <div @click="selectCompetency(res, index); showGuide = true;" 
+                                                            class="p-2.5 hover:bg-blue-50 dark:hover:bg-gray-600 cursor-pointer border-b last:border-0 border-gray-100 flex justify-between items-center group">
+                                                            <div>
+                                                                <div class="font-bold text-xs text-gray-800 dark:text-white group-hover:text-blue-700 uppercase" x-text="res.competency_name"></div>
+                                                                <div class="text-[9px] text-gray-400" x-text="res.competency_code"></div>
+                                                            </div>
+                                                            <ion-icon name="arrow-forward-circle-outline" class="text-gray-300 group-hover:text-blue-500"></ion-icon>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </td>
+
+                                            <td class="p-2">
+                                                <select :name="'technicals['+index+'][ideal_level]'" x-model="row.ideal_level" 
+                                                        class="w-full rounded-md border-gray-300 text-sm text-center font-bold dark:bg-gray-700 dark:text-white focus:ring-blue-500">
+                                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                                </select>
+                                            </td>
+
+                                            <td class="p-2 text-center">
+                                                <button type="button" @click.prevent="removeRow('technicals', row.key)" class="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded-full">
+                                                    <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        {{-- Baris Panduan Level (Accordion) --}}
+                                        <tr x-show="showGuide" x-transition.opacity class="bg-indigo-50/50 dark:bg-gray-900/50 border-t border-indigo-100">
+                                            <td colspan="3" class="p-4">
+                                                <div class="grid grid-cols-1 gap-2">
+                                                    <template x-for="behavior in row.behaviors" :key="behavior.id">
+                                                        <div class="flex items-start gap-3 p-3 rounded-md border transition-all"
+                                                            :class="parseInt(row.ideal_level) === parseInt(behavior.level) 
+                                                                ? 'bg-white border-indigo-400 shadow-sm ring-1 ring-indigo-200 dark:bg-gray-800' 
+                                                                : 'bg-white/60 border-transparent opacity-75'">
+                                                            <div class="flex-shrink-0 w-12">
+                                                                <span class="px-2 py-1 rounded text-[10px] font-bold uppercase block text-center border"
+                                                                    :class="parseInt(row.ideal_level) === parseInt(behavior.level) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'">
+                                                                    LVL <span x-text="behavior.level"></span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed" 
+                                                                x-html="behavior.behavior ? behavior.behavior.replace(/(\d+\.\s)/g, '<br>$1') : '-'">
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </template>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- 4.2 KOMPETENSI PERILAKU (Grid Cards) --}}
+                    <div class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex justify-between items-end border-b pb-2">
+                            <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">4.2 Kompetensi Perilaku (Standard)</h3>
+                            <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold uppercase tracking-widest">Fixed List</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <template x-for="(row, index) in behaviorals" :key="row.key">
+                                <div class="p-5 border rounded-2xl bg-white dark:bg-gray-800 shadow-sm border-indigo-100 hover:shadow-md transition-shadow">
+                                    <input type="hidden" :name="'behaviorals['+index+'][id]'" x-model="row.id">
+                                    <input type="hidden" :name="'behaviorals['+index+'][competency_master_id]'" x-model="row.competency_master_id">
+                                    
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="pr-2">
+                                            <div class="font-bold text-indigo-900 dark:text-indigo-200 text-sm uppercase" x-text="row.competency_name"></div>
+                                            <p class="text-[10px] text-gray-400 mt-1 leading-tight italic" x-text="row.description"></p>
+                                        </div>
+                                        <div class="flex-shrink-0 text-center">
+                                            <label class="text-[9px] text-gray-400 block uppercase font-bold mb-1">Target</label>
+                                            <select :name="'behaviorals['+index+'][ideal_level]'" x-model="row.ideal_level" 
+                                                    class="w-14 rounded-lg border-indigo-200 text-xs text-center font-black text-indigo-700 focus:ring-indigo-500 py-1">
                                                 <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
                                             </select>
-                                        </td>
-                                        <td class="p-2 text-center">
-                                            <button type="button" @click.prevent="removeRow('competencies', row.key)" class="text-red-500"><ion-icon name="trash-outline"></ion-icon></button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-indigo-50/50 dark:bg-gray-900 rounded-xl border border-indigo-50">
+                                        <div class="text-[9px] font-bold text-indigo-400 uppercase mb-2">Indikator Utama:</div>
+                                        <div class="space-y-2 custom-scrollbar max-h-40 overflow-y-auto">
+                                            <template x-for="beh in row.behaviors" :key="beh.id">
+                                                <div class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed flex gap-2">
+                                                    <span class="text-indigo-400 font-bold">•</span>
+                                                    <span x-text="beh.behavior"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
 

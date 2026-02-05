@@ -25,65 +25,46 @@ class TeamController extends Controller
     public function index(Request $request): View
     {
         $supervisor = Auth::user();
-        $supervisorPositionId = $supervisor->position_id;
         
-        // --- PERBAIKAN 1: Gunakan 'roles' (jamak) ---
-        $baseQuery = User::whereHas('position', function($query) use ($supervisorPositionId) {
-                            $query->where('atasan_id', $supervisorPositionId);
-                        })
-                        ->with(['position.organization', 'roles']); // Disini pakai 'roles'
+        // Pastikan supervisor punya posisi
+        if (!$supervisor->position) {
+            return view('supervisor.tim.index', [
+                'teamMembers' => collect([]), 'totalCount' => 0, 'organicCount' => 0, 
+                'outsourcingCount' => 0, 'roles' => Role::all()
+            ]);
+        }
+
+        // AMBIL SEMUA ID POSISI BAWAHAN (SM, AM, Officer, dst)
+        $allSubordinatePositionIds = $supervisor->position->getAllSubordinateIds();
+
+        // Query User yang menduduki posisi-posisi tersebut
+        $baseQuery = User::whereIn('position_id', $allSubordinatePositionIds)
+                        ->with(['position.organization', 'roles', 'employeeProfile']);
 
         // Filter Pencarian
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $baseQuery->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+            $baseQuery->where(fn($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
         }
 
-        // Filter Role (Gunakan 'roles' jamak)
-        if ($request->has('roles') && $request->role != 'all') {
-            $baseQuery->whereHas('roles', function($q) use ($request) { // Disini pakai 'roles'
-                $q->where('name', $request->roles);
-            });
+        // Filter Role
+        if ($request->filled('roles') && $request->roles != 'all') {
+            $baseQuery->whereHas('roles', fn($q) => $q->where('name', $request->roles));
         }
 
-        // Ambil Data (Pagination)
         $teamMembers = $baseQuery->paginate(10);
         
-        // Hitung Statistik
-        $allMemberIds = User::whereHas('position', function($query) use ($supervisorPositionId) {
-            $query->where('atasan_id', $supervisorPositionId);
-        })->pluck('id');
-        
-        $totalCount = $allMemberIds->count();
-        
-        // Perbaikan: Gunakan 'roles'
-        $organicCount = User::whereIn('id', $allMemberIds)
-                            ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Organik'))
-                            ->count();
+        // Statistik menggunakan list ID yang sama
+        $totalCount = User::whereIn('position_id', $allSubordinatePositionIds)->count();
+        $organicCount = User::whereIn('position_id', $allSubordinatePositionIds)
+                            ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Organik'))->count();
+        $outsourcingCount = User::whereIn('position_id', $allSubordinatePositionIds)
+                                ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Outsourcing'))->count();
 
-        // Perbaikan: Gunakan 'roles'
-        $outsourcingCount = User::whereIn('id', $allMemberIds)
-                            ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Outsourcing'))
-                            ->count();
-
-        // Cek Status Assessment
+        // Mapping Status Assessment
         foreach ($teamMembers as $member) {
-            $latestAssessment = EmployeeProfile::where('user_id', $member->id)
-                    ->orderBy('submitted_at', 'desc')
-                    ->first();
-            
-            if (!$latestAssessment) {
-                $member->assessment_status = 'not_started'; 
-            } else {
-                $member->assessment_status = $latestAssessment->status;
-            }
+            $member->assessment_status = $member->employeeProfile->status ?? 'not_started';
         }
-
-        // Perbaikan: Gunakan Role::all() (Singular Class Name)
-        $roles = Role::all(); 
 
         return view('supervisor.tim.index', [
             'teamMembers' => $teamMembers,
@@ -91,43 +72,39 @@ class TeamController extends Controller
             'totalCount' => $totalCount,           
             'organicCount' => $organicCount,       
             'outsourcingCount' => $outsourcingCount,
-            'roles' => $roles,
+            'roles' => Role::all(),
         ]);
     }
 
     /**
      * Menampilkan detail profil anggota tim.
      */
-    public function show(User $user): View
+    public function show($id): View
     {
         $supervisor = Auth::user();
-        
-        $isSubordinate = false;
-        if ($user->position && $user->position->atasan_id == $supervisor->position_id) {
-            $isSubordinate = true;
-        }
+        $user = User::with('position')->findOrFail($id);
 
-        if (!$isSubordinate) {
-            abort(403, 'Anda tidak memiliki akses ke profil karyawan ini.');
+        // Cek apakah posisi user tersebut masuk dalam daftar hirarki bawahan supervisor
+        $allSubordinatePositionIds = $supervisor->position->getAllSubordinateIds();
+        
+        if (!in_array($user->position_id, $allSubordinatePositionIds)) {
+            abort(403, 'Anda tidak memiliki akses ke profil anggota tim di luar hirarki Anda.');
         }
 
         $user->load(['position.organization', 'position.jobGrade', 'jobHistories', 'educationHistories', 'skills']);
-
-        $gapRecords = GapRecord::where('user_id', $user->id)
-                        ->orderBy('gap_value', 'asc')
-                        ->get();
-
+        $gapRecords = GapRecord::where('gap_records.user_id', $user->id)
+            ->leftJoin('competencies_master', 'gap_records.competency_name', '=', 'competencies_master.competency_name')
+            ->select('gap_records.*', 'competencies_master.type') // Ambil type dari master
+            ->orderBy('gap_value', 'asc')
+            ->get();
+        
         $activePlans = TrainingPlan::where('user_id', $user->id)
                         ->whereIn('status', ['pending_supervisor', 'pending_lp', 'approved'])
-                        ->with('items.training')
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+                        ->with('items.training')->orderBy('created_at', 'desc')->get();
 
         $completedHistory = TrainingPlan::where('user_id', $user->id)
                         ->whereIn('status', ['completed', 'rejected'])
-                        ->with('items.training')
-                        ->orderBy('updated_at', 'desc')
-                        ->get();
+                        ->with('items.training')->orderBy('updated_at', 'desc')->get();
 
         return view('supervisor.tim.show', [
             'employee' => $user,
@@ -199,7 +176,7 @@ class TeamController extends Controller
             ]);
 
             // Jika menggunakan pivot table (roles jamak), aktifkan baris ini:
-            // $user->roles()->attach($request->role_id); 
+            $user->roles()->attach($request->role_id); 
         });
 
         return redirect()->route('supervisor.tim.index')->with('success', 'Anggota tim baru berhasil ditambahkan.');

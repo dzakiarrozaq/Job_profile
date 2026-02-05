@@ -28,6 +28,7 @@ class GapRecord extends Model
         'current_level',
         'gap_value',
         'weighted_gap',
+        'evidence',
         'calculated_at'
     ];
 

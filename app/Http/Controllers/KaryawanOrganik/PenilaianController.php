@@ -15,17 +15,11 @@ class PenilaianController extends Controller
     public function index()
     {
         $user = Auth::user();
-
-        //dd($user->id, $user->name, $user->position_id, $user->position);
-        
         $position = $user->position;
-        $jobProfile = $position?->jobProfile;
-
-        // dd([
-        //     'Cek Posisi' => $position->toArray(),
-        //     'Cek Job Profile' => $jobProfile
-        // ]);
-
+        
+        // Load JobProfile beserta relasi kompetensi -> master -> key behaviors
+        // Pastikan model JobCompetency Anda memiliki relasi 'competency' ke CompetenciesMaster
+        $jobProfile = $position?->jobProfile?->load(['competencies.competency.keyBehaviors']);
 
         if (!$position || !$jobProfile) {
             return redirect()->route('dashboard')
@@ -42,13 +36,18 @@ class PenilaianController extends Controller
             $gap = $existingGaps->firstWhere('competency_name', $comp->competency_name);
 
             return (object) [
-                'id'              => $comp->id,
+                'id'              => $comp->id, 
                 'competency_name' => $comp->competency_name,
-                'competency_code' => $comp->competency_code ?? '-', 
+                'competency_code' => $comp->competency_code ?? '-',
                 
-                'ideal_level'     => $comp->ideal_level, 
-                
+                // TAMBAHKAN BARIS INI:
+                // Kita ambil tipe dari tabel master (melalui relasi competency)
+                'type'            => $comp->type ?? optional($comp->competency)->type ?? 'Teknis',
+
+                'ideal_level'     => $comp->ideal_level,
                 'current_level'   => $gap ? $gap->current_level : 0,
+                'evidence'        => $gap ? $gap->evidence : null,
+                'key_behaviors'   => $comp->competency->keyBehaviors ?? collect([]),
             ];
         });
 
@@ -67,34 +66,53 @@ class PenilaianController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        $jobProfile = $user->position->jobProfile;
+        // Pastikan load jobProfile aman
+        $position = $user->position;
+        if(!$position || !$position->jobProfile) {
+            return back()->with('error', 'Profil tidak ditemukan.');
+        }
+        
+        $jobProfile = $position->jobProfile;
 
         $request->validate([
-            'competencies' => 'required|array',
+            'competencies'   => 'required|array',
             'competencies.*' => 'required|integer|min:1|max:5',
+            // TAMBAHAN: Validasi input evidence (boleh null/kosong)
+            'evidence'       => 'nullable|array',
+            'evidence.*'     => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
             foreach ($request->competencies as $competencyId => $currentLevel) {
+                // $competencyId di sini adalah ID dari tabel 'job_competencies'
                 $masterComp = JobCompetency::find($competencyId);
                 
                 if($masterComp) {
                     $idealLevel = $masterComp->ideal_level;
-                    
                     $gapValue = $currentLevel - $idealLevel;
+
+                    // Ambil text evidence dari request berdasarkan ID
+                    $evidenceText = $request->input("evidence.{$competencyId}", null);
+
+                    // Jika level aktual <= ideal, evidence tidak wajib/bisa dikosongkan
+                    if ($currentLevel <= $idealLevel) {
+                        $evidenceText = null; 
+                    }
 
                     GapRecord::updateOrCreate(
                         [
-                            'user_id' => $user->id,
-                            'job_profile_id' => $jobProfile->id,
+                            'user_id'         => $user->id,
+                            'job_profile_id'  => $jobProfile->id,
                             'competency_name' => $masterComp->competency_name
                         ],
                         [
-                            'competency_code' => $masterComp->competency_code,
-                            'ideal_level' => $idealLevel,
-                            'current_level' => $currentLevel,
-                            'gap_value' => $gapValue
+                            'competency_code' => $masterComp->competency_code ?? ('ID-' . $masterComp->id),
+                            'ideal_level'     => $idealLevel,
+                            'current_level'   => $currentLevel,
+                            'gap_value'       => $gapValue,
+                            // TAMBAHAN: Simpan Evidence
+                            'evidence'        => $evidenceText 
                         ]
                     );
                 }
@@ -103,7 +121,7 @@ class PenilaianController extends Controller
             EmployeeProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'status' => 'pending_verification',
+                    'status'       => 'pending_verification',
                     'submitted_at' => now()
                 ]
             );
@@ -114,6 +132,7 @@ class PenilaianController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
+            dd($e->getMessage());
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

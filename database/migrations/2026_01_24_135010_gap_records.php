@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('weight')->default(1)->nullable();
             $table->integer('current_level')->default(0)->nullable();
             $table->integer('gap_value')->default(0)->nullable();
+            
             $table->decimal('weighted_gap', 10, 2)->default(0.00)->nullable();
             $table->timestamp('calculated_at')->useCurrent();
             

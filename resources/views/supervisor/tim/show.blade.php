@@ -83,49 +83,130 @@
             </div>
 
             <div x-show="currentTab === 'analisis'" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Peta Gap Kompetensi</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Peta Gap Kompetensi</h3>
                 
                 @if($gapRecords->count() > 0)
-                    <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
-                        <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Kompetensi</th>
-                                    <th class="px-4 py-3 text-center font-semibold text-gray-600 dark:text-gray-300">Target</th>
-                                    <th class="px-4 py-3 text-center font-semibold text-gray-600 dark:text-gray-300">Aktual</th>
-                                    <th class="px-4 py-3 text-center font-semibold text-gray-600 dark:text-gray-300">Gap</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                                @foreach($gapRecords as $gap)
-                                <tr>
-                                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                        {{ $gap->competency_name }}
-                                        <div class="text-xs text-gray-400 font-normal">{{ $gap->competency_code }}</div>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">{{ $gap->ideal_level }}</td>
-                                    <td class="px-4 py-3 text-center">
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white text-xs font-bold">
-                                            {{ $gap->current_level }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($gap->gap_value < 0)
-                                            <span class="text-red-600 font-bold">{{ $gap->gap_value }}</span>
-                                        @elseif($gap->gap_value > 0)
-                                            <span class="text-blue-600 font-bold">+{{ $gap->gap_value }}</span>
-                                        @else
-                                            <span class="text-green-600 font-bold">0</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    @php
+                        /** * SARINGAN GANDA: 
+                         * Menggunakan str_contains + strtolower + trim 
+                         * supaya tidak "bocor" meskipun di DB tulisannya huruf kecil atau ada spasi.
+                         */
+                        $behavioralGaps = $gapRecords->filter(function($g) {
+                            $tipe = strtolower(trim($g->type ?? ''));
+                            return str_contains($tipe, 'perilaku');
+                        });
+
+                        $technicalGaps = $gapRecords->filter(function($g) {
+                            $tipe = strtolower(trim($g->type ?? ''));
+                            return !str_contains($tipe, 'perilaku');
+                        });
+                    @endphp
+
+                    <div class="space-y-10">
+                        {{-- 1. TABEL KOMPETENSI TEKNIS (HARD SKILLS) --}}
+                        <div class="space-y-3">
+                            <h4 class="flex items-center gap-2 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
+                                <ion-icon name="construct-outline" class="text-lg"></ion-icon>
+                                Kompetensi Teknis (Fungsional)
+                            </h4>
+                            <div class="overflow-x-auto border rounded-xl border-teal-100 dark:border-gray-700 shadow-sm">
+                                <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-teal-50/50 dark:bg-gray-900">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left font-bold text-teal-900 dark:text-gray-300">Kompetensi</th>
+                                            <th class="px-4 py-3 text-center font-bold text-teal-900 dark:text-gray-300">Target</th>
+                                            <th class="px-4 py-3 text-center font-bold text-teal-900 dark:text-gray-300">Aktual</th>
+                                            <th class="px-4 py-3 text-center font-bold text-teal-900 dark:text-gray-300">Gap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                        @forelse($technicalGaps as $gap)
+                                            <tr class="hover:bg-teal-50/30 transition">
+                                                <td class="px-4 py-3 font-bold text-gray-900 dark:text-white">
+                                                    {{ $gap->competency_name }}
+                                                    <div class="text-[10px] text-gray-400 font-normal uppercase tracking-tighter">{{ $gap->competency_code }}</div>
+                                                </td>
+                                                <td class="px-4 py-3 text-center font-bold text-gray-500">{{ $gap->ideal_level }}</td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-white text-xs font-black">
+                                                        {{ $gap->current_level }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    @if($gap->gap_value < 0)
+                                                        <span class="px-2 py-1 rounded-md bg-red-100 text-red-700 font-black text-xs">{{ $gap->gap_value }}</span>
+                                                    @elseif($gap->gap_value > 0)
+                                                        <span class="px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-black text-xs">+{{ $gap->gap_value }}</span>
+                                                    @else
+                                                        <span class="px-2 py-1 rounded-md bg-green-100 text-green-700 font-black text-xs">0</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">Data kompetensi teknis belum tersedia.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- 2. TABEL KOMPETENSI PERILAKU (SOFT SKILLS) --}}
+                        <div class="space-y-3">
+                            <h4 class="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                                <ion-icon name="people-circle-outline" class="text-lg"></ion-icon>
+                                Kompetensi Perilaku (Matrix)
+                            </h4>
+                            <div class="overflow-x-auto border rounded-xl border-indigo-100 dark:border-gray-700">
+                                <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-indigo-50/50 dark:bg-gray-900">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left font-bold text-indigo-900 dark:text-gray-300">Kompetensi</th>
+                                            <th class="px-4 py-3 text-center font-bold text-indigo-900 dark:text-gray-300">Target</th>
+                                            <th class="px-4 py-3 text-center font-bold text-indigo-900 dark:text-gray-300">Aktual</th>
+                                            <th class="px-4 py-3 text-center font-bold text-indigo-900 dark:text-gray-300">Gap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                        @forelse($behavioralGaps as $gap)
+                                            <tr class="hover:bg-indigo-50/30 transition">
+                                                <td class="px-4 py-3 font-bold text-gray-900 dark:text-white">
+                                                    {{ $gap->competency_name }}
+                                                    <div class="text-[10px] text-gray-400 font-normal uppercase tracking-tighter">{{ $gap->competency_code }}</div>
+                                                </td>
+                                                <td class="px-4 py-3 text-center font-bold text-gray-500">{{ $gap->ideal_level }}</td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 dark:bg-gray-700 text-indigo-700 dark:text-white text-xs font-black">
+                                                        {{ $gap->current_level }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    @if($gap->gap_value < 0)
+                                                        <span class="px-2 py-1 rounded-md bg-red-100 text-red-700 font-black text-xs">{{ $gap->gap_value }}</span>
+                                                    @elseif($gap->gap_value > 0)
+                                                        <span class="px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-black text-xs">+{{ $gap->gap_value }}</span>
+                                                    @else
+                                                        <span class="px-2 py-1 rounded-md bg-green-100 text-green-700 font-black text-xs">0</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">Data kompetensi perilaku belum ditarik/diverifikasi.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        
                     </div>
                 @else
-                    <div class="text-center py-10">
-                        <p class="text-gray-500">Belum ada data penilaian kompetensi yang diverifikasi.</p>
+                    <div class="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-300">
+                        <ion-icon name="analytics-outline" class="text-5xl text-gray-200 mb-2"></ion-icon>
+                        <p class="text-gray-500 font-medium">Belum ada data penilaian yang diverifikasi untuk anggota tim ini.</p>
                     </div>
                 @endif
             </div>

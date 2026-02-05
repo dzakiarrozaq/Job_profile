@@ -119,38 +119,44 @@
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Anggota Tim Saya
-                ({{ $teamMembers->count() }} Orang)</h3>
-            <div class="space-y-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">
+                    Hirarki Tim Saya ({{ $teamMembers->count() }} Orang)
+                </h3>
+                <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Recursive View</span>
+            </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 @forelse ($teamMembers as $member)
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between p-3 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-gray-100 dark:border-gray-700">
                         <div class="flex items-center">
-                            <div class="relative inline-block">
-                                <img class="h-16 w-16 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md mr-4" 
-                                    src="{{ $member->profile_photo_path ? asset('storage/' . $member->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($member->name) }}" 
-                                    alt="Foto">
-                            </div>
-                            <div>
-                                <p class="font-semibold text-gray-900 dark:text-white">{{ $member->name }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <img class="h-12 w-12 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm mr-3" 
+                                src="{{ $member->profile_photo_path ? asset('storage/' . $member->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($member->name) }}" 
+                                alt="Foto">
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-gray-900 dark:text-white text-sm truncate w-40">{{ $member->name }}</p>
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate w-40">
                                     {{ $member->position->title ?? 'Belum ada posisi' }}
                                 </p>
                             </div>
                         </div>
                         <a href="{{ route('supervisor.tim.show', $member->id) }}"
-                            class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-sm">Lihat
-                            Profil</a>
+                        class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 font-bold text-xs bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition">
+                            Profil
+                        </a>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Anda belum memiliki anggota tim.</p>
+                    <div class="col-span-2 py-10 text-center text-gray-500 dark:text-gray-400 border-2 border-dashed rounded-xl">
+                        <ion-icon name="people-outline" class="text-4xl mb-2 opacity-20"></ion-icon>
+                        <p>Belum ada anggota tim yang terdaftar dalam hirarki Anda.</p>
+                    </div>
                 @endforelse
-
             </div>
+
             <a href="{{ route('supervisor.tim.index') }}"
-                class="block w-full mt-6 px-4 py-3 text-sm font-medium text-center text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">
-                Kelola Semua Anggota Tim
+                class="block w-full mt-6 px-4 py-3 text-sm font-bold text-center text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none transition-all">
+                Buka Manajemen Tim Lengkap
             </a>
         </div>
 

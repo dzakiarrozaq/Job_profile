@@ -1,8 +1,6 @@
 <x-admin-layout>
     <style>
         [x-cloak] { display: none !important; }
-        
-        /* Custom scrollbar untuk dropdown */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
@@ -14,7 +12,7 @@
             <a href="{{ route('admin.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
-                Buat Job Profile Baru (Admin)
+                Buat Job Profile Baru
             </h2>
         </div>
     </x-slot>
@@ -46,6 +44,44 @@
                         </p>
                     </div>
 
+                    {{-- ================================================= --}}
+                    {{-- 1. AREA PESAN ERROR (LOGIC & VALIDASI) --}}
+                    {{-- ================================================= --}}
+                    @if (session('error'))
+                        <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm animate-pulse">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <ion-icon name="alert-circle" class="h-5 w-5 text-red-500"></ion-icon>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-bold text-red-800">Gagal Menyimpan</h3>
+                                    <div class="mt-1 text-sm text-red-700">
+                                        <p>{{ session('error') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($errors->any())
+                        <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <ion-icon name="close-circle" class="h-5 w-5 text-red-500"></ion-icon>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-bold text-red-800">Terdapat Kesalahan Input</h3>
+                                    <ul class="mt-1 list-disc list-inside text-sm text-red-700">
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    {{-- ================================================= --}}
+
                     <form action="{{ route('admin.job-profile.store') }}" method="POST" id="jobProfileForm">
                         @csrf
 
@@ -57,11 +93,9 @@
                                 isOpen: false,
                                 showError: false,
                                 
-                                // HELPER: Menyusun Hirarki Organisasi (Unit -> Section -> Dept)
                                 getHierarchy(item) {
                                     let parts = [];
                                     let current = item.organization;
-
                                     if (current) {
                                         parts.push(current.name);
                                         if (current.parent) {
@@ -76,7 +110,6 @@
                                     return parts.join(' ➜ ');
                                 },
 
-                                // Logic Filter & Grouping
                                 get groupedItems() {
                                     const filtered = this.items.filter(item => {
                                         if (this.query === '') return true;
@@ -121,7 +154,6 @@
                                     this.openDropdown();
                                 },
                                 
-                                // FUNGSI SUBMIT MANUAL (SOLUSI FIX)
                                 submitForm() {
                                     if (!this.selectedId) { 
                                         this.showError = true;
@@ -129,7 +161,6 @@
                                         return; 
                                     }
                                     
-                                    // Cari form by ID dan submit manual (Bukan lewat this.$el)
                                     const formTarget = document.getElementById('jobProfileForm');
                                     if(formTarget) {
                                         formTarget.submit();
@@ -152,13 +183,13 @@
                                     </div>
 
                                     <input type="text" id="searchPosisi" name="search_query"
-                                        x-model="query" @click="openDropdown()" @focus="openDropdown()" @input="openDropdown()" 
-                                        placeholder="Ketik nama posisi..." 
-                                        class="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-text text-sm"
-                                        autocomplete="off">
+                                           x-model="query" @click="openDropdown()" @focus="openDropdown()" @input="openDropdown()" 
+                                           placeholder="Ketik nama posisi..." 
+                                           class="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-text text-sm"
+                                           autocomplete="off">
                                     
                                     <button type="button" x-show="query.length > 0" @click="reset()" x-cloak
-                                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 cursor-pointer transition-colors">
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 cursor-pointer transition-colors">
                                         <ion-icon name="close-circle" class="text-xl"></ion-icon>
                                     </button>
                                 </div>
@@ -182,7 +213,6 @@
                                                         <div class="flex flex-col">
                                                             <span x-text="item.title" class="font-bold text-gray-800 dark:text-white text-sm"></span>
                                                             
-                                                            {{-- Detail Hirarki --}}
                                                             <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
                                                                 <ion-icon name="git-network-outline" class="text-xs text-indigo-400"></ion-icon>
                                                                 <span x-text="getHierarchy(item)" class="font-mono"></span>

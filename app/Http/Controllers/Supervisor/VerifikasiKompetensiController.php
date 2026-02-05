@@ -23,29 +23,37 @@ class VerifikasiKompetensiController extends Controller
     {
         $supervisor = Auth::user();
         $employee = User::where('id', $userId)->firstOrFail();
-        $employee->load('position.jobProfile.competencies.master', 'employeeProfile');
+        
+        // Load relasi competency -> keyBehaviors
+        $employee->load('position.jobProfile.competencies.competency.keyBehaviors', 'employeeProfile');
+        
         $jobProfile = $employee->position->jobProfile;
 
         if (!$jobProfile) {
-            return redirect()->back()->with('error', 'Karyawan ini posisi jabatannya belum memiliki Job Profile.');
+            return redirect()->back()->with('error', 'Job Profile belum tersedia.');
         }
 
         $competencies = $jobProfile->competencies->map(function ($comp) use ($employee) {
-    
+            
+            // Cari data gap record (penilaian karyawan)
             $userGap = GapRecord::where('user_id', $employee->id)
-                        ->where('competency_code', $comp->master->competency_code)
+                        ->where('competency_name', $comp->competency->competency_name)
                         ->first();
 
-
             return (object) [
-                'competency_code' => $comp->master->competency_code,
-                'competency_name' => $comp->master->competency_name,
-                'type'            => $comp->master->type,
+                'competency_code' => $comp->competency->competency_code ?? ('ID-'.$comp->id),
+                'competency_name' => $comp->competency->competency_name,
+                'type'            => $comp->competency->type,
                 'ideal_level'     => $comp->ideal_level,
                 
                 'submitted_level' => $userGap ? $userGap->current_level : 0, 
                 'current_level'   => $userGap ? $userGap->current_level : 0,
                 
+                // --- DATA PENTING UNTUK FITUR BARU ---
+                'evidence'        => $userGap ? $userGap->evidence : null, // Alasan Karyawan
+                'key_behaviors'   => $comp->competency->keyBehaviors ?? [], // Kamus Perilaku
+                // -------------------------------------
+
                 'status'          => 'pending_verification',
                 'reviewer_notes'  => '',
             ];
@@ -62,34 +70,62 @@ class VerifikasiKompetensiController extends Controller
      */
     public function store(Request $request, $userId)
     {
-        $request->validate([
-            'verified_level' => 'required|array',
-            'verified_level.*' => 'required|integer|min:1|max:5',
-            'notes' => 'nullable|array',
-        ]);
+        $action = $request->input('action'); 
 
         $employee = User::findOrFail($userId);
-        $jobProfile = $employee->position->jobProfile;
+        
+        if ($action === 'reject') {
+            EmployeeProfile::updateOrCreate(
+                ['user_id' => $userId],
+                [
+                    'status'      => 'draft', // Balik ke draft
+                    'verified_at' => null,
+                    'verified_by' => null,
+                ]
+            );
+
+            $employee->notify(new StatusDiperbarui(
+                'Penilaian Perlu Revisi',
+                'Supervisor meminta Anda merevisi penilaian kompetensi. Silakan cek kembali.',
+                route('supervisor.persetujuan'), 
+                'error' // Icon merah
+            ));
+
+            return redirect()->route('supervisor.persetujuan')
+                            ->with('success', 'Pengajuan berhasil ditolak dan dikembalikan ke karyawan.');
+        }
+
+        $request->validate([
+            'verified_level'   => 'required|array',
+            'verified_level.*' => 'required|integer|min:1|max:5',
+            'notes'            => 'nullable|array',
+        ]);
+
+        $jobProfile = $employee->position->jobProfile->load('competencies.competency');
 
         DB::beginTransaction();
         try {
+            // ... (KODE SIMPAN GAP RECORD YANG LAMA TETAP SAMA) ...
             foreach ($request->input('verified_level') as $code => $level) {
+                // ... logika simpan gap record ...
+                // (Copy paste logika foreach yang sudah benar sebelumnya di sini)
+                $jobComp = $jobProfile->competencies->first(function ($jc) use ($code) {
+                    return optional($jc->competency)->competency_code === $code;
+                });
                 
-                $compMaster = $jobProfile->competencies
-                    ->first(fn($c) => $c->master->competency_code == $code);
-                
-                if ($compMaster) {
-                    $idealLevel = $compMaster->ideal_level;
-                    $gapValue = $level - $idealLevel;
-                    
+                if ($jobComp) {
+                    $idealLevel = $jobComp->ideal_level;
+                    $gapValue   = $level - $idealLevel;
+                    $compName = optional($jobComp->competency)->competency_name;
+
                     GapRecord::updateOrCreate(
                         [
-                            'user_id' => $userId,
-                            'job_profile_id' => $jobProfile->id,
-                            'competency_code' => $code
+                            'user_id'         => $userId,
+                            'job_profile_id'  => $jobProfile->id,
+                            'competency_name' => $compName 
                         ],
                         [
-                            'competency_name' => $compMaster->master->competency_name, 
+                            'competency_code' => $code,
                             'ideal_level'     => $idealLevel,
                             'current_level'   => $level, 
                             'gap_value'       => $gapValue,
@@ -99,41 +135,30 @@ class VerifikasiKompetensiController extends Controller
                 }
             }
 
+            // Update Status jadi Verified
             EmployeeProfile::updateOrCreate(
                 ['user_id' => $userId],
                 [
-                    'status' => 'verified',
+                    'status'      => 'verified',
                     'verified_at' => now(),
                     'verified_by' => Auth::id(),
                 ]
             );
 
-            DB::commit();
-            
+            // Notifikasi Sukses
             $employee->notify(new StatusDiperbarui(
                 'Penilaian Disetujui',
-                'Supervisor telah memverifikasi penilaian kompetensi Anda. Silakan cek analisis gap terbaru.',
-                route('dashboard'), // Arahkan ke dashboard karyawan
+                'Supervisor telah memverifikasi penilaian Anda.',
+                route('dashboard'),
                 'success'
             ));
 
-            AuditLog::create([
-                'user_id' => Auth::id(),
-                'action' => 'Verifikasi Kompetensi',
-                'description' => "Memverifikasi kompetensi karyawan: {$employee->name}"
-            ]);
-
+            DB::commit();
             return redirect()->route('supervisor.persetujuan')
-                             ->with('success', 'Verifikasi berhasil disimpan.');
+                            ->with('success', 'Verifikasi berhasil disimpan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            dd([
-                'BAGIAN' => 'TERJADI ERROR SAAT SIMPAN KE DB',
-                'PESAN ERROR' => $e->getMessage(),
-                'BARIS ERROR' => $e->getLine(),
-                'FILE ERROR' => $e->getFile()
-            ]);
             return back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }

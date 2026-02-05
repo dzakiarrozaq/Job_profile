@@ -105,14 +105,17 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                @if($member->assessment_status == 'verified')
+                                @php
+                                    // Contoh logika: jika ada data di employee_profile
+                                    $status = $member->employeeProfile->status ?? 'belum_mengisi';
+                                @endphp
+
+                                @if($status == 'verified')
                                     <span class="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800 uppercase">SUDAH TERVERIFIKASI</span>
-                                @elseif($member->assessment_status == 'pending_verification')
+                                @elseif($status == 'pending_verification')
                                     <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 uppercase">MENUNGGU VERIFIKASI</span>
-                                @elseif($member->assessment_status == 'in_review')
-                                    <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-600 uppercase">BELUM DINILAI</span>
                                 @else
-                                    <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800 border border-red-200 uppercase"> BELUM MENGISI </span>
+                                    <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800 border border-red-200 uppercase">BELUM MENGISI</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

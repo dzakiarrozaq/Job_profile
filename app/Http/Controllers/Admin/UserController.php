@@ -25,10 +25,15 @@ class UserController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
+            // Di dalam closure pencarian method index()
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('nik', 'like', "%{$search}%"); // Tambahkan pencarian NIK jika ada
+                ->orWhere('nik', 'like', "%{$search}%")
+                // Tambahan: Cari berdasarkan Nama Jabatan
+                ->orWhereHas('position', function($pos) use ($search) {
+                    $pos->where('title', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -138,24 +143,34 @@ class UserController extends Controller
     }
 
     // --- BARU: Method Import Excel ---
+    // --- UPDATE METHOD IMPORT ---
     public function import(Request $request) 
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv',
+            // Wajib xlsx karena script kita membaca Sheet ('5000' dan 'Atasan')
+            // CSV tidak mendukung multiple sheet.
+            'file' => 'required|mimes:xlsx', 
         ]);
 
-        // --- TAMBAHKAN BARIS INI ---
-        // Set timeout menjadi 10 menit (600 detik) atau 0 (unlimited)
-        // Agar proses import 5000 data tidak terputus di tengah jalan.
+        // Set unlimited time & memory (Penting untuk file besar)
         set_time_limit(0); 
-        // ---------------------------
+        ini_set('memory_limit', '512M'); // Tambah memori jika perlu
 
         try {
-            Excel::import(new UsersImport, $request->file('file'));
+            // Kita bungkus import dalam DB Transaction agar aman
+            // (Opsional, tapi recommended untuk integritas data)
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                Excel::import(new UsersImport, $request->file('file'));
+            });
             
-            AuditLog::record('Import User', "Melakukan import data pengguna dari Excel", Auth::user());
+            AuditLog::record('Import User', "Melakukan import data pengguna (User & Hierarki) dari Excel", Auth::user());
 
-            return back()->with('success', 'Data pengguna berhasil diimport! Silakan cek dan lengkapi role user baru.');
+            return back()->with('success', 'Data pengguna, jabatan, dan struktur atasan berhasil diimport!');
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+             // Menangkap error validasi baris Excel (jika pakai WithValidation)
+             $failures = $e->failures();
+             $errorMsg = "Gagal pada baris: " . $failures[0]->row() . ". Error: " . implode(', ', $failures[0]->errors());
+             return back()->with('error', $errorMsg);
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal import data: ' . $e->getMessage());
         }
@@ -164,14 +179,15 @@ class UserController extends Controller
     // --- BARU: Method Download Template ---
     public function downloadTemplate()
     {
-        // Pastikan Anda sudah membuat file excel template di folder public/templates
-        $path = public_path('templates/template_import_user.xlsx');
+        // Ubah nama file template agar sesuai konteks
+        // Pastikan Anda menaruh file 'Maskar Database_ok.xlsx' (yang kosong/contoh) 
+        // di folder 'public/templates/template_user_hierarki.xlsx'
+        $path = public_path('templates/template_user_hierarki.xlsx');
         
         if (!file_exists($path)) {
-            // Jika file fisik belum ada, kita bisa generate on-the-fly (opsional) atau return error
-            return back()->with('error', 'File template belum tersedia di server.');
+            return back()->with('error', 'File template belum tersedia. Silakan hubungi admin IT.');
         }
 
-        return response()->download($path);
+        return response()->download($path, 'Template_Import_User_Hierarki.xlsx');
     }
 }

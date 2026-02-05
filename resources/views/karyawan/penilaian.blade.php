@@ -3,130 +3,224 @@
         <h1 class="text-3xl font-bold text-gray-900">
             Penilaian Kompetensi Saya
         </h1>
-        <p class="text-gray-600 mt-1">Perbarui level kompetensi Anda di bawah ini. Penilaian akan ditinjau dan diverifikasi oleh atasan.</p>
+        <p class="text-gray-600 mt-1">Isi penilaian mandiri (Self-Assessment). Berikan alasan/bukti jika nilai Anda melebihi standar.</p>
     </x-slot>
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
+            {{-- Alert Messages --}}
             @if (session('success'))
-                <div class="mb-6 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg">
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="mb-6 bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg">
-                    {{ session('error') }}
+                <div class="mb-6 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2 shadow-sm">
+                    <ion-icon name="checkmark-circle" class="text-xl"></ion-icon> 
+                    <span class="font-medium">{{ session('success') }}</span>
                 </div>
             @endif
 
-            <div class="bg-white rounded-lg shadow p-6 lg:p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
                 
-                <h2 class="text-xl font-bold text-gray-900">Formulir Self-Assessment</h2>
-
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Status saat ini: 
-                    @if($globalStatus === 'verified')
-                        <span class="font-bold text-green-600">Semua Sudah Terverifikasi</span>
-                    @elseif($globalStatus === 'pending_verification') {{-- Sesuaikan dengan ENUM database --}}
-                        <span class="font-bold text-yellow-600">Menunggu Verifikasi Supervisor</span>
-                    @elseif($globalStatus === 'not_started') 
-                        <span class="font-bold text-red-600">Belum Mengisi (Wajib Diisi)</span>
-                    @else
-                        <span class="font-bold text-gray-600">Draf / Belum Diajukan</span>
-                    @endif
-                </p>
+                {{-- Header Status --}}
+                <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Formulir Self-Assessment (Teknis)</h2>
+                        <p class="text-xs text-gray-500 mt-1">Hanya menampilkan kompetensi fungsional/teknis sesuai jabatan Anda.</p>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 mb-1">Status Dokumen</span>
+                        @if($globalStatus === 'verified')
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-bold text-xs flex items-center gap-1">
+                                <ion-icon name="shield-checkmark"></ion-icon> Terverifikasi
+                            </span>
+                        @elseif($globalStatus === 'pending_verification')
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full font-bold text-xs flex items-center gap-1">
+                                <ion-icon name="time"></ion-icon> Menunggu Review
+                            </span>
+                        @elseif($globalStatus === 'rejected')
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-bold text-xs flex items-center gap-1">
+                                <ion-icon name="alert-circle"></ion-icon> Perlu Revisi
+                            </span>
+                        @else
+                            <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-bold text-xs flex items-center gap-1">
+                                <ion-icon name="document-text"></ion-icon> Draft
+                            </span>
+                        @endif
+                    </div>
+                </div>
 
                 <form action="{{ route('penilaian.store') }}" method="POST">
                     @csrf
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50">
+                    
+                    @php
+                        // Di file penilaian.blade.php
+                        $technicalAssessments = $assessments->filter(function($a) {
+                            // Tambahkan ?? '' agar jika type null tetap jadi string kosong dan tidak error
+                            return !str_contains(strtolower(trim($a->type ?? '')), 'perilaku');
+                        });
+                    @endphp
+                    
+                    <div class="overflow-hidden rounded-lg border border-gray-200">
+                        <table class="min-w-full text-sm border-collapse bg-white">
+                            <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kompetensi</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Level Ideal</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Level Aktual</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Input Level Saya</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Gap</th>
+                                    <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider w-1/3">Kompetensi & Definisi</th>
+                                    <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider w-24">Target</th>
+                                    <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider w-24">Aktual</th>
+                                    <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider w-32">Pilihan Saya</th>
+                                    <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider">Gap & Bukti Perilaku</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                
-                                @forelse ($assessments as $item)
-                                <tr class="@if($globalStatus == 'verified')  @elseif($globalStatus == 'pending_verification') bg-yellow-50 @endif">
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <p class="font-medium text-gray-900">{{ $item->competency_name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $item->competency_code }}</p>
-                                    </td>
-                                    <td class="px-4 py-4 text-center font-medium text-gray-700">{{ $item->ideal_level }}</td>
+                            
+                            @forelse ($technicalAssessments as $index => $item)
+                                <tbody class="border-b border-gray-100 hover:bg-gray-50/50 transition" 
+                                       x-data="{ 
+                                           selectedLevel: {{ $item->current_level ?? 0 }}, 
+                                           idealLevel: {{ $item->ideal_level }},
+                                           showDetails: false
+                                       }">
                                     
-                                    <td class="px-4 py-4 text-center font-bold text-lg {{ $item->current_level > 0 ? 'text-green-600' : 'text-gray-400' }}">
-                                        {{ $item->current_level > 0 ? $item->current_level : '-' }}
-                                    </td>
+                                    {{-- BARIS UTAMA (INPUT) --}}
+                                    <tr>
+                                        <td class="px-4 py-5 align-top">
+                                            <div class="flex flex-col">
+                                                <span class="font-black text-gray-900 text-base leading-tight">{{ $item->competency_name }}</span>
+                                                <span class="text-[10px] text-indigo-500 font-bold mt-0.5 tracking-widest">{{ $item->competency_code }}</span>
+                                                
+                                                {{-- Tombol Lihat Kamus --}}
+                                                <button type="button" @click="showDetails = !showDetails" 
+                                                        class="mt-3 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition uppercase tracking-tighter">
+                                                    <ion-icon :name="showDetails ? 'chevron-up-circle' : 'book'" class="text-base"></ion-icon>
+                                                    <span x-text="showDetails ? 'Tutup Panduan' : 'Lihat Panduan Level (1-5)'"></span>
+                                                </button>
+                                            </div>
+                                        </td>
 
-                                    <td class="px-4 py-4 text-center">
-                                        
-                                        @if ($globalStatus == 'draft' || $globalStatus == 'not_started')
-                                            <select name="competencies[{{ $item->id }}]" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 w-20 text-center">
-                                                <option value="">-</option>
-                                                <option value="1" @selected($item->current_level == 1)>1</option>
-                                                <option value="2" @selected($item->current_level == 2)>2</option>
-                                                <option value="3" @selected($item->current_level == 3)>3</option>
-                                                <option value="4" @selected($item->current_level == 4)>4</option>
-                                                <option value="5" @selected($item->current_level == 5)>5</option>
-                                            </select>
-                                        @else
-                                            <select class="rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed w-20 text-center" disabled>
-                                                <option>{{ $item->current_level }}</option>
-                                            </select>
-                                        @endif
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 text-center">
-                                        
-                                        @if($globalStatus === 'verified')
-                                            @php
-                                                $gap = $item->current_level - $item->ideal_level;
-                                            @endphp
-
-                                            @if($gap < 0)
-                                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800">{{ $gap }}</span>
-                                            @elseif($gap > 0)
-                                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800">+{{ $gap }}</span>
-                                            @else
-                                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">OK</span>
-                                            @endif
-
-                                        @elseif($item->current_level > 0)
-                                            <span class="px-2 py-1 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                                Menunggu Verifikasi
+                                        <td class="px-4 py-5 text-center align-top pt-6">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 font-black text-indigo-700 border border-indigo-100 shadow-sm">
+                                                {{ $item->ideal_level }}
                                             </span>
-                                            
-                                        @else
-                                            <span class="text-gray-400">-</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="px-4 py-6 text-center text-gray-500">
-                                        Tidak ada data kompetensi yang ditemukan untuk posisi ini.
-                                    </td>
-                                </tr>
-                                @endforelse
+                                        </td>
 
-                            </tbody>
+                                        <td class="px-4 py-5 text-center align-top pt-6">
+                                            <span class="font-black text-lg {{ ($item->current_level ?? 0) >= $item->ideal_level ? 'text-green-600' : 'text-red-400 opacity-50' }}">
+                                                {{ $item->current_level > 0 ? $item->current_level : '-' }}
+                                            </span>
+                                        </td>
+
+                                        <td class="px-4 py-5 text-center align-top pt-5">
+                                            @if ($globalStatus == 'draft' || $globalStatus == 'not_started' || $globalStatus == 'rejected')
+                                                <select name="competencies[{{ $item->id }}]" x-model="selectedLevel" 
+                                                        class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-full text-center font-black text-indigo-700 py-2">
+                                                    <option value="">Pilih</option>
+                                                    @foreach(range(1, 5) as $lvl)
+                                                        <option value="{{ $lvl }}">{{ $lvl }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <input type="text" value="{{ $item->current_level }}" disabled 
+                                                       class="w-full text-center border-gray-100 bg-gray-50 rounded-lg font-black text-gray-400 py-2">
+                                            @endif
+                                        </td>
+
+                                        <td class="px-4 py-5 align-top">
+                                            <div class="flex flex-col gap-3">
+                                                {{-- Indikator GAP Real-time --}}
+                                                <div x-show="selectedLevel > 0" class="flex items-center gap-2">
+                                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Gap:</span>
+                                                    <span class="px-2 py-0.5 rounded text-[11px] font-black shadow-sm"
+                                                          :class="{
+                                                              'bg-green-500 text-white': selectedLevel == idealLevel,
+                                                              'bg-blue-500 text-white': selectedLevel > idealLevel,
+                                                              'bg-red-500 text-white': selectedLevel < idealLevel
+                                                          }"
+                                                          x-text="selectedLevel - idealLevel > 0 ? '+' + (selectedLevel - idealLevel) : (selectedLevel - idealLevel)">
+                                                    </span>
+                                                </div>
+
+                                                {{-- KOTAK BUKTI (Wajib jika Nilai > Target) --}}
+                                                <div>
+                                                    <div x-show="parseInt(selectedLevel) > parseInt(idealLevel)" 
+                                                         x-transition class="mb-2">
+                                                        <label class="block text-[10px] font-black text-blue-700 uppercase mb-1">
+                                                            ⚠️ Alasan/Bukti (Wajib):
+                                                        </label>
+                                                    </div>
+                                                    <textarea name="evidence[{{ $item->id }}]" 
+                                                              rows="2" 
+                                                              class="w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 text-xs bg-gray-50 placeholder-gray-400"
+                                                              placeholder="Ceritakan bukti atau pengalaman Anda di level ini..."
+                                                              @if($globalStatus !== 'draft' && $globalStatus !== 'rejected' && $globalStatus !== 'not_started') disabled @endif
+                                                    >{{ old('evidence.'.$item->id, $item->evidence ?? '') }}</textarea>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    {{-- BARIS PANDUAN LEVEL (ACCORDION) --}}
+                                    <tr x-show="showDetails" x-cloak class="bg-indigo-50/30 border-t border-indigo-100">
+                                        <td colspan="5" class="px-6 py-6">
+                                            <div class="max-w-4xl">
+                                                <div class="flex items-center gap-2 mb-4">
+                                                    <ion-icon name="library" class="text-indigo-600 text-lg"></ion-icon>
+                                                    <h4 class="text-xs font-black uppercase text-indigo-700 tracking-widest">Kamus Perilaku: {{ $item->competency_name }}</h4>
+                                                </div>
+                                                
+                                                <div class="grid grid-cols-1 gap-3">
+                                                    @php $behaviors = $item->key_behaviors ?? []; @endphp
+
+                                                    @forelse($behaviors as $behavior)
+                                                        <div class="flex items-start gap-4 p-4 rounded-xl border transition-all duration-300 shadow-sm"
+                                                             :class="selectedLevel == {{ $behavior->level }} ? 'bg-white border-indigo-400 ring-2 ring-indigo-100' : 'bg-white/50 border-gray-100 opacity-60'">
+                                                            
+                                                            <div class="flex-shrink-0 text-center">
+                                                                <span class="px-3 py-1 text-[11px] font-black uppercase rounded-lg border block"
+                                                                      :class="selectedLevel == {{ $behavior->level }} ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 text-gray-400 border-gray-200'">
+                                                                    Level {{ $behavior->level }}
+                                                                </span>
+                                                                @if($behavior->level == $item->ideal_level)
+                                                                    <div class="mt-2 text-[9px] font-black text-green-600 uppercase bg-green-50 rounded border border-green-100 py-0.5">Target</div>
+                                                                @endif
+                                                            </div>
+                                                            
+                                                            <div class="text-sm text-gray-700 leading-relaxed font-medium">
+                                                                {!! nl2br(preg_replace('/(\d+\.\s)/', '<br>$1', e($behavior->behavior))) !!}
+                                                            </div>
+                                                        </div>
+                                                    @empty
+                                                        <p class="text-xs text-gray-400 italic font-medium">Data panduan perilaku belum tersedia.</p>
+                                                    @endforelse
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            @empty
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-20 text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                                    <ion-icon name="construct-outline" class="text-4xl text-gray-300"></ion-icon>
+                                                </div>
+                                                <p class="font-bold text-gray-500">Belum ada kompetensi teknis yang ditetapkan.</p>
+                                                <p class="text-xs text-gray-400 mt-1">Profil kompetensi teknis posisi Anda mungkin masih dalam proses verifikasi.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            @endforelse
                         </table>
                     </div>
 
-                    <div class="mt-6 flex justify-end gap-4">
+                    {{-- Tombol Submit --}}
+                    <div class="mt-10 flex justify-end gap-3 pt-8 border-t border-gray-100">
                         @if($globalStatus === 'verified' || $globalStatus === 'pending_verification')
-                            <button type="button" disabled class="px-6 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
-                                {{ $globalStatus === 'verified' ? 'Penilaian Selesai' : 'Sedang Diverifikasi' }}
+                            <button type="button" disabled class="px-8 py-3 bg-gray-100 text-gray-400 rounded-xl cursor-not-allowed font-black uppercase text-xs flex items-center gap-2 border border-gray-200">
+                                <ion-icon name="lock-closed" class="text-lg"></ion-icon>
+                                {{ $globalStatus === 'verified' ? 'Dokumen Terkunci (Selesai)' : 'Sedang Diverifikasi' }}
                             </button>
                         @else
-                            <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm">
-                                Simpan & Ajukan Verifikasi
+                            <button type="submit" class="px-8 py-3 text-xs font-black uppercase text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition transform hover:-translate-y-1 flex items-center gap-2">
+                                <ion-icon name="send" class="text-lg"></ion-icon> Simpan & Ajukan Verifikasi
                             </button>
                         @endif
                     </div>
