@@ -18,10 +18,8 @@
     </x-slot>
 
     @php
-        // A. AMBIL DATA EXISTING (YANG SUDAH TERSIMPAN DI PROFILE INI)
         $allComps = $jobProfile->competencies;
 
-        // Filter Kompetensi Teknis yang sudah tersimpan
         $savedTechnicals = $allComps
             ->filter(fn($c) => strtolower(trim($c->type)) !== 'perilaku')
             ->map(fn($comp) => [
@@ -30,47 +28,40 @@
                 'competency_master_id' => $comp->competency_master_id,
                 'competency_name' => $comp->competency_name,
                 'ideal_level' => $comp->ideal_level,
-                // Ambil behaviors dari relasi competency master
                 'behaviors' => optional($comp->competency)->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
-                'is_standard' => false // Penanda ini data manual/existing
+                'is_standard' => false 
             ]);
 
         // B. AMBIL DATA PAKEM (DARI TABEL STANDARD YANG BARU DI-IMPORT)
-        // Kita load standard beserta relasi master & behaviors-nya untuk efisiensi
         $standardComps = $jobProfile->position->technicalStandards()
             ->with(['competencyMaster.keyBehaviors'])
             ->get();
 
-        // Mapping data pakem ke format array JS
         $pakemTechnicals = $standardComps->map(fn($std) => [
             'key' => 'std_' . $std->id,
-            'id' => null, // Null karena belum tersimpan di tabel job_profile_competencies
+            'id' => null, 
             'competency_master_id' => $std->competency_master_id,
             'competency_name' => $std->competencyMaster->competency_name ?? 'Unknown',
             'ideal_level' => $std->ideal_level,
             'behaviors' => $std->competencyMaster->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
-            'is_standard' => true // Penanda ini data pakem
+            'is_standard' => true 
         ]);
 
         // C. GABUNGKAN (MERGE)
         // Logika: Tampilkan yang Saved. Jika Pakem belum ada di Saved, tambahkan Pakem.
         
-        // Ambil ID Master yang sudah ada di Saved agar tidak duplikat
         $existingMasterIds = $savedTechnicals->pluck('competency_master_id')->toArray();
 
-        // Filter Pakem yang BELUM ada di Saved
         $newStandards = $pakemTechnicals->filter(function($item) use ($existingMasterIds) {
             return !in_array($item['competency_master_id'], $existingMasterIds);
         });
 
-        // Gabungkan Saved + New Standards
         $finalTechnicals = $savedTechnicals->merge($newStandards)->values()->toArray();
 
         // D. FINALISASI DATA UNTUK VIEW
         // Gunakan old() jika ada validasi error, jika tidak gunakan hasil merge di atas
         $technicals = old('technicals', $finalTechnicals);
 
-        // Kompetensi Perilaku (Tetap sama seperti sebelumnya)
         $behaviorals = old('behaviorals', $allComps
             ->filter(fn($c) => strtolower(trim($c->type)) === 'perilaku')
             ->map(fn($comp) => [
@@ -303,13 +294,11 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
     
-                        {{-- 1. Jabatan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan:</span>
                             <span class="text-gray-900 dark:text-white font-medium">{{ $jobProfile->position->title ?? 'N/A' }}</span>
                         </div>
 
-                        {{-- 2. Tingkat (Job Grade) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Tingkat (Job Grade):</span>
                             <div class="mt-1">
@@ -319,15 +308,12 @@
                             </div>
                         </div>
 
-                        {{-- 3. [BARU] Jalur Karir (Struktural/Fungsional) --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jalur Karir (Job Family):</span>
                             <div class="mt-1">
                                 @php
-                                    // Ambil data dan ubah ke huruf besar agar pengecekan konsisten
                                     $familyRaw = strtoupper($jobProfile->position->job_family ?? '');
                                     
-                                    // Tentukan warna badge
                                     $badgeClass = 'bg-gray-100 text-gray-800 border-gray-200'; // Default abu-abu
                                     
                                     if (str_contains($familyRaw, 'STRUKTURAL')) {
@@ -343,13 +329,11 @@
                             </div>
                         </div>
 
-                        {{-- 4. Jabatan Atasan --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan Atasan:</span>
                             <span class="text-gray-900 dark:text-white">{{ $jobProfile->position->atasan->title ?? '-' }}</span>
                         </div>
 
-                        {{-- 5. Departemen --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
                             <span class="text-gray-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
@@ -357,7 +341,6 @@
                             </span>
                         </div>
 
-                        {{-- 6. Unit --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit (Biro):</span>
                             <span class="text-gray-900 dark:text-white">
@@ -365,7 +348,6 @@
                             </span>
                         </div>
 
-                        {{-- 7. Section --}}
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md md:col-span-2">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section (Seksi):</span>
                             <span class="text-gray-900 dark:text-white">
@@ -500,13 +482,10 @@
                                                         :class="{'border-red-400 bg-red-50': row.competency_master_id === null && row.competency_name.length > 0, 'bg-orange-50 border-orange-200': row.is_standard}"
                                                         placeholder="Cari kompetensi...">
                                                     
-                                                    {{-- Ikon Penanda --}}
                                                     <div class="absolute left-2 top-2.5 text-gray-400">
-                                                        {{-- Jika ini Pakem, tampilkan ikon Kunci/Lock --}}
                                                         <template x-if="row.is_standard">
                                                             <ion-icon name="lock-closed" class="text-orange-500" title="Standar Pakem Posisi"></ion-icon>
                                                         </template>
-                                                        {{-- Jika Manual, tampilkan ikon Search --}}
                                                         <template x-if="!row.is_standard">
                                                             <ion-icon name="search"></ion-icon>
                                                         </template>
@@ -525,7 +504,6 @@
                                                     </button>
                                                 </div>
 
-                                                {{-- Suggestions --}}
                                                 <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
                                                     @click.away="searchResults = []"
                                                     class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-xl border rounded-md mt-1 max-h-60 overflow-y-auto">
@@ -556,7 +534,6 @@
                                             </td>
                                         </tr>
 
-                                        {{-- Baris Panduan Level (Accordion) --}}
                                         <tr x-show="showGuide" x-transition.opacity class="bg-indigo-50/50 dark:bg-gray-900/50 border-t border-indigo-100">
                                             <td colspan="3" class="p-4">
                                                 <div class="grid grid-cols-1 gap-2">

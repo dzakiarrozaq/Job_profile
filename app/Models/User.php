@@ -67,7 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function roles()
     {
         // Relasi Many-to-Many via tabel pivot 'role_user'
-        return $this->belongsToMany(\App\Models\Role::class, 'role_user', 'user_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     public function position(): BelongsTo 
@@ -133,5 +133,24 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Cek apakah koleksi roles milik user mengandung nama role yang dicari
         return $this->roles->contains('name', $roleName);
+    }
+
+    public function manager()
+    {
+        // Opsi A: Jika manager_id ada langsung di tabel users
+        // return $this->belongsTo(User::class, 'manager_id');
+
+        // Opsi B: Jika struktur Anda menggunakan Position (User -> Position -> Parent Position -> User)
+        // Ini lebih kompleks, biasanya kita ambil via position
+        return $this->hasOneThrough(
+            User::class,
+            Position::class,
+            'id', // Foreign key on positions table...
+            'position_id', // Foreign key on users table...
+            'position_id', // Local key on users table...
+            'atasan_id' // Local key on positions table...
+        );
+        // CATATAN: Opsi B seringkali ribet. 
+        // Jika Anda hanya ingin NAMA manager, lebih aman pakai helper atau relasi manual di controller.
     }
 }

@@ -14,6 +14,8 @@ use App\Models\Idp;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\TrainingPlanItem;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\TrainingRejectedNotification;
 
 class PersetujuanController extends Controller
 {
@@ -24,10 +26,6 @@ class PersetujuanController extends Controller
     {
         $supervisor = Auth::user();
         
-        // --- PERBAIKAN UTAMA DI SINI ---
-        // Kita TIDAK menggunakan 'manager_id' dari tabel users.
-        // Kita menggunakan fungsi helper getAllSubordinateUserIds yang mengecek tabel POSITIONS.
-        
         // 1. Ambil ID User Bawahan (Untuk Training, IDP, Assessment)
         $teamMemberIds = $this->getAllSubordinateUserIds($supervisor);
         
@@ -36,35 +34,42 @@ class PersetujuanController extends Controller
 
         // --- QUERY DATA ---
 
-        // A. Assessment
+        // A. Assessment (Sudah Oke)
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user.position')
             ->get()
             ->unique('user_id');
 
-        // B. Training Plan
+        // B. Training Plan (INI YANG DIPERBAIKI)
         $trainings = TrainingPlan::where('status', 'pending_supervisor')
             ->whereIn('user_id', $teamMemberIds)
-            ->with(['user', 'items.training'])
+            // 1. Filter Induk: Hanya ambil Plan yang MEMILIKI item pending
+            ->whereHas('items', function($q) {
+                $q->where('status', 'pending'); 
+            })
+            // 2. Filter Anak: Ketika diload, hanya ambil item yang pending saja
+            ->with(['user', 'items' => function($q) {
+                $q->where('status', 'pending')->with('training'); 
+            }])
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // C. Job Profile
+        // C. Job Profile (Sudah Oke)
         $jobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
             ->where('status', 'pending_verification')
             ->with('position', 'creator')
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        // D. IDP (Individual Development Plan)
+        // D. IDP (Sudah Oke)
         $pendingIdps = Idp::with('user')
             ->whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->latest()
             ->get();
 
-        // E. Sertifikat
+        // E. Sertifikat (Sudah Oke - Menggunakan whereHas)
         $pendingCertificates = TrainingPlanItem::whereHas('plan', function($q) use ($teamMemberIds) {
                 $q->whereIn('user_id', $teamMemberIds);
             })
@@ -86,7 +91,7 @@ class PersetujuanController extends Controller
     {
         $plan = TrainingPlan::with(['user', 'items.training'])->findOrFail($id);
         if (!$this->checkIfSubordinate($plan->user)) abort(403, 'Akses ditolak: Bukan bawahan Anda.');
-        return view('supervisor.persetujuan.show_training', compact('plan'));
+        return view('supervisor.persetujuan.show', compact('plan'));
     }
 
     public function approveTraining($id)
@@ -119,7 +124,7 @@ class PersetujuanController extends Controller
     {
         $idp = Idp::with(['user', 'details'])->findOrFail($id);
         if (!$this->checkIfSubordinate($idp->user)) abort(403, 'Akses Ditolak.');
-        return view('supervisor.persetujuan.show_idp', compact('idp'));
+        return view('supervisor.idp.show', compact('idp'));
     }
 
     public function approveIdp($id)
@@ -197,5 +202,164 @@ class PersetujuanController extends Controller
         $allowedPositionIds = $this->getAllSubordinatePositionIds($supervisor->position_id);
 
         return in_array($targetUser->position_id, $allowedPositionIds);
+    }
+
+    /**
+     * Menampilkan Detail Rencana Pelatihan (Training Plan)
+     * Method ini dipanggil oleh route: supervisor.rencana.show
+     */
+    public function show($id)
+    {
+        // 1. Cari Data Plan beserta Item dan User-nya
+        $plan = TrainingPlan::with(['user.position', 'items.training'])->findOrFail($id);
+
+        // 2. Cek Validasi: Apakah user ini bawahan saya?
+        // Menggunakan helper private yang sudah Anda buat di bawah
+        if (!$this->checkIfSubordinate($plan->user)) {
+            abort(403, 'Akses ditolak: Karyawan ini bukan bawahan Anda.');
+        }
+
+        // 3. Tampilkan View
+        return view('supervisor.persetujuan.show', compact('plan'));
+    }
+
+    /**
+     * Menampilkan gabungan semua draft plan milik satu user
+     */
+    public function reviewByUser($userId)
+    {
+        // LOGIKA PERBAIKAN:
+        // 1. Ambil Plan milik user yang statusnya masih 'pending_supervisor'
+        // 2. TAPI HANYA jika plan tersebut memiliki (whereHas) setidaknya satu item 'pending'
+        // 3. DAN saat meload relasi 'items', ambil yang 'pending' saja (supaya yang approved tidak ikut terload)
+        
+        $plans = TrainingPlan::where('user_id', $userId)
+            ->where('status', 'pending_supervisor')
+            ->whereHas('items', function($q) {
+                $q->where('status', 'pending'); // Syarat: Harus punya anak pending
+            })
+            ->with(['items' => function($q) {
+                $q->where('status', 'pending')->with('training'); // Load: Cuma ambil anak pending
+            }, 'user.position'])
+            ->get();
+
+        // Jika kosong (artinya semua item di semua plan user ini sudah diapprove/reject)
+        // Maka tendang balik ke dashboard
+        if($plans->isEmpty()) {
+            return redirect()->route('supervisor.persetujuan')
+                ->with('success', 'Seluruh pengajuan user ini telah selesai direview.');
+        }
+
+        $user = $plans->first()->user;
+
+        return view('supervisor.persetujuan.review-user', compact('plans', 'user'));
+    }
+
+    /**
+     * Menyetujui SEMUA plan pending milik user tersebut sekaligus
+     */
+    public function approveByUser($userId)
+    {
+        $plans = TrainingPlan::where('user_id', $userId)->where('status', 'pending_supervisor')->get();
+        
+        foreach($plans as $plan) {
+            $plan->update(['status' => 'pending_lp', 'supervisor_approved_at' => now()]);
+            // Log audit jika perlu
+        }
+
+        return redirect()->route('supervisor.persetujuan')->with('success', 'Semua pengajuan karyawan tersebut telah disetujui.');
+    }
+
+    /**
+     * Menolak SEMUA plan pending milik user tersebut
+     */
+    public function rejectByUser(Request $request, $userId)
+    {
+        $plans = TrainingPlan::where('user_id', $userId)->where('status', 'pending_supervisor')->get();
+        
+        foreach($plans as $plan) {
+            $plan->update(['status' => 'rejected', 'rejection_reason' => $request->reason]);
+        }
+
+        return redirect()->route('supervisor.persetujuan')->with('success', 'Pengajuan ditolak.');
+    }
+
+    public function approveItem($itemId)
+    {
+        $item = TrainingPlanItem::findOrFail($itemId);
+        $userId = $item->plan->user_id; // Simpan ID User sebelum diproses
+
+        // 1. Update status item ini
+        $item->update(['status' => 'approved']);
+
+        // 2. Cek status Plan (Form) induk item ini
+        $parentPlan = $item->plan;
+        $sisaPendingDiPlanIni = $parentPlan->items()->where('status', 'pending')->count();
+
+        // Jika di form ini sudah tidak ada yang pending, update status formnya
+        if ($sisaPendingDiPlanIni == 0) {
+            $parentPlan->update([
+                'status' => 'pending_lp', 
+                'supervisor_approved_at' => now(),
+                'approved_by' => Auth::id()
+            ]);
+        }
+
+        // 3. KUNCI PERBAIKAN: Cek apakah USER ini masih punya item pending di form LAIN?
+        $masihAdaItemPendingLain = TrainingPlanItem::whereHas('plan', function($q) use ($userId) {
+                $q->where('user_id', $userId)->where('status', 'pending_supervisor');
+            })
+            ->where('status', 'pending')
+            ->exists();
+
+        // Jika sudah benar-benar habis untuk user ini, baru kembali ke index
+        if (!$masihAdaItemPendingLain) {
+            return redirect()->route('supervisor.persetujuan')
+                ->with('success', 'Seluruh pengajuan user ini telah selesai diproses.');
+        }
+
+        // Jika masih ada sisa, tetap di halaman yang sama
+        return back()->with('success', 'Item disetujui. Silakan lanjut ke item berikutnya.');
+    }
+
+    public function rejectItem(Request $request, $itemId)
+    {
+        $request->validate(['reason' => 'required|string|max:255']);
+        
+        $item = TrainingPlanItem::findOrFail($itemId);
+        $userId = $item->plan->user_id;
+
+        $item->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->reason
+        ]);
+
+        $parentPlan = $item->plan;
+        $sisaPendingDiPlanIni = $parentPlan->items()->where('status', 'pending')->count();
+
+        if ($sisaPendingDiPlanIni == 0) {
+            $totalApproved = $parentPlan->items()->where('status', 'approved')->count();
+            
+            $newStatus = ($totalApproved > 0) ? 'pending_lp' : 'rejected';
+            
+            $parentPlan->update([
+                'status' => $newStatus,
+                'supervisor_approved_at' => now(),
+                'approved_by' => Auth::id()
+            ]);
+        }
+
+        $masihAdaItemPendingLain = TrainingPlanItem::whereHas('plan', function($q) use ($userId) {
+                $q->where('user_id', $userId)->where('status', 'pending_supervisor');
+            })
+            ->where('status', 'pending')
+            ->exists();
+
+        if (!$masihAdaItemPendingLain) {
+            return redirect()->route('supervisor.persetujuan')
+                ->with('success', 'Review untuk user ini selesai.');
+        }
+
+        return back()->with('success', 'Item ditolak. Silakan lanjut review sisa item.');
     }
 }

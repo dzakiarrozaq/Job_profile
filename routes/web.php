@@ -159,6 +159,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Gunakan Resource agar otomatis membuat index, create, store, edit, update, destroy
         Route::resource('job-profile', JobProfileController::class); 
+
+        // Route untuk Review Gabungan per User
+        Route::get('/review-user/{userId}', [PersetujuanController::class, 'reviewByUser'])->name('review.user');
+        
+        // Route Aksi Approve/Reject Massal
+        Route::post('/approve-user/{userId}', [PersetujuanController::class, 'approveByUser'])->name('approve.user');
+        Route::post('/reject-user/{userId}', [PersetujuanController::class, 'rejectByUser'])->name('reject.user');
+
+        Route::post('/item/{itemId}/approve', [PersetujuanController::class, 'approveItem'])->name('approve.item');
+        Route::post('/item/{itemId}/reject', [PersetujuanController::class, 'rejectItem'])->name('reject.item');
     });
 
 
@@ -224,29 +234,44 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     
     // --- Rute Learning Partner ---
-    Route::middleware(['role:Learning Partner'])->prefix('lp')->name('lp.')->group(function () {
+    Route::middleware(['auth', 'verified', 'role:Learning Partner'])->prefix('lp')->name('lp.')->group(function () {
+    
+        // --- DASHBOARD ---
         Route::get('/dashboard', [LpDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])->name('persetujuan');
-        
-        Route::get('/laporan', [LpLaporanController::class, 'index'])->name('laporan.index');
-        
-        Route::get('/laporan/export', [LpLaporanController::class, 'export'])->name('laporan.export'); 
-        
-        Route::get('/persetujuan/{id}', [LpPersetujuanController::class, 'show'])->name('persetujuan.show');
-        Route::post('/persetujuan/{id}/approve', [LpPersetujuanController::class, 'approve'])->name('persetujuan.approve');
-        Route::post('/persetujuan/{id}/reject', [LpPersetujuanController::class, 'reject'])->name('persetujuan.reject');
-        Route::resource('katalog', LpTrainingController::class);
 
+        // --- PERSETUJUAN (VERIFIKASI) ---
+        // 1. Index (Daftar User)
+        Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])
+            ->name('persetujuan.index'); 
+
+        // 2. Review Detail per User (Gunakan nama beda: review-user)
+        Route::get('/persetujuan/user/{userId}', [LpPersetujuanController::class, 'reviewByUser'])
+            ->name('persetujuan.review-user');
+
+        // 3. Review Detail per Plan (Opsional/Fallback)
+        Route::get('/persetujuan/{id}', [LpPersetujuanController::class, 'show'])
+            ->name('persetujuan.show');
+
+        // 4. Action Approve & Reject
+        Route::post('/persetujuan/{id}/approve', [LpPersetujuanController::class, 'approve'])
+            ->name('persetujuan.approve');
+        Route::post('/persetujuan/{id}/reject', [LpPersetujuanController::class, 'reject'])
+            ->name('persetujuan.reject');
+
+        // --- LAPORAN ---
+        Route::get('/laporan', [LpLaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export', [LpLaporanController::class, 'export'])->name('laporan.export');
         Route::get('/laporan/{id}', [LpLaporanController::class, 'show'])->name('laporan.show');
 
+        // --- KATALOG TRAINING ---
+        // Import diletakkan SEBELUM resource agar tidak dianggap sebagai {id}
+        Route::post('/katalog/import', [LpTrainingController::class, 'import'])->name('katalog.import');
+        Route::resource('katalog', LpTrainingController::class);
+
+        // --- PROFILE ---
         Route::get('/profile', [LpProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [LpProfileController::class, 'update'])->name('profile.update');
         Route::put('/password', [LpProfileController::class, 'updatePassword'])->name('password.update');
-
-        Route::post('/katalog/import', [TrainingController::class, 'import'])->name('katalog.import');
-    
-        // Route resource katalog yang sudah ada (Pastikan ini ada di BAWAH route import)
-        Route::resource('katalog', TrainingController::class);
     });
 
     Route::get('/notifications/mark-read', function () {
@@ -260,17 +285,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
    
 });
 
-Route::get('/cek-nama-kolom', function () {
-    // 1. Ambil 1 baris data dari Master (Sumber Pakem)
-    $master = \App\Models\MasterResponsibility::first();
-
-    // 2. Ambil 1 baris data dari Job Profile yang sudah tersimpan (Tujuan)
-    $profil = \App\Models\JobResponsibility::latest()->first();
-
-    return [
-        'SUMBER_DATA_MASTER' => $master ? $master->toArray() : 'Tabel Master Kosong!',
-        'TUJUAN_DATA_PROFIL' => $profil ? $profil->toArray() : 'Tabel Profil Kosong!',
-    ];
-});
 
 require __DIR__.'/auth.php';

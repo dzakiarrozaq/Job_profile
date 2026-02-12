@@ -77,42 +77,48 @@ class PenilaianController extends Controller
         $request->validate([
             'competencies'   => 'required|array',
             'competencies.*' => 'required|integer|min:1|max:5',
-            // TAMBAHAN: Validasi input evidence (boleh null/kosong)
+            // Validasi input evidence
             'evidence'       => 'nullable|array',
             'evidence.*'     => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            foreach ($request->competencies as $competencyId => $currentLevel) {
-                // $competencyId di sini adalah ID dari tabel 'job_competencies'
-                $masterComp = JobCompetency::find($competencyId);
+            foreach ($request->competencies as $jobCompetencyId => $currentLevel) {
+                // $jobCompetencyId adalah ID dari tabel 'job_competencies' (Pivot)
+                $jobComp = JobCompetency::find($jobCompetencyId);
                 
-                if($masterComp) {
-                    $idealLevel = $masterComp->ideal_level;
+                if($jobComp) {
+                    $idealLevel = $jobComp->ideal_level;
                     $gapValue = $currentLevel - $idealLevel;
 
-                    // Ambil text evidence dari request berdasarkan ID
-                    $evidenceText = $request->input("evidence.{$competencyId}", null);
+                    // Ambil text evidence dari request berdasarkan ID Pivot
+                    $evidenceText = $request->input("evidence.{$jobCompetencyId}", null);
 
                     // Jika level aktual <= ideal, evidence tidak wajib/bisa dikosongkan
                     if ($currentLevel <= $idealLevel) {
                         $evidenceText = null; 
                     }
 
+                    // =========================================================
+                    // PERBAIKAN UTAMA: SIMPAN competency_master_id
+                    // =========================================================
                     GapRecord::updateOrCreate(
                         [
-                            'user_id'         => $user->id,
-                            'job_profile_id'  => $jobProfile->id,
-                            'competency_name' => $masterComp->competency_name
+                            'user_id'              => $user->id,
+                            'job_profile_id'       => $jobProfile->id,
+                            // Gunakan Master ID sebagai unique key agar tidak duplikat
+                            'competency_master_id' => $jobComp->competency_master_id, 
                         ],
                         [
-                            'competency_code' => $masterComp->competency_code ?? ('ID-' . $masterComp->id),
-                            'ideal_level'     => $idealLevel,
-                            'current_level'   => $currentLevel,
-                            'gap_value'       => $gapValue,
-                            // TAMBAHAN: Simpan Evidence
-                            'evidence'        => $evidenceText 
+                            // Data pelengkap disimpan di sini
+                            'job_competency_id' => $jobComp->id, // ID Pivot (untuk referensi balik)
+                            'competency_name'   => $jobComp->competency_name,
+                            'competency_code'   => $jobComp->competency->competency_code ?? ('ID-' . $jobComp->id),
+                            'ideal_level'       => $idealLevel,
+                            'current_level'     => $currentLevel,
+                            'gap_value'         => $gapValue,
+                            'evidence'          => $evidenceText 
                         ]
                     );
                 }
@@ -132,8 +138,8 @@ class PenilaianController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            dd($e->getMessage());
+            //dd($e->getMessage()); // Uncomment untuk debug jika error 500
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-    }
+    }   
 }

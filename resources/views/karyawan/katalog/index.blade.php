@@ -264,107 +264,143 @@
 
         </div>
     </div>
-    {{-- === FLOATING GAP ANALYSIS WIDGET === --}}
+
+    {{-- === FLOATING GAP ANALYSIS WIDGET (TEKNIS ONLY - NAME MATCHING) === --}}
     @if(isset($competencyGaps) && $competencyGaps->count() > 0)
-        <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-            
-            {{-- Panel Konten (Muncul saat diklik) --}}
-            <div x-show="open" 
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                 x-transition:leave="transition ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-                 class="mb-4 w-[90vw] md:w-[600px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-                 style="display: none;">
-                
-                {{-- Header Panel --}}
-                <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
-                    <h3 class="text-white font-bold text-lg flex items-center gap-2">
-                        <ion-icon name="analytics"></ion-icon>
-                        Analisis Gap Kompetensi
-                    </h3>
-                    <button @click="open = false" class="text-white/80 hover:text-white transition-colors">
-                        <ion-icon name="close" class="text-xl"></ion-icon>
-                    </button>
-                </div>
+        @php
+            // 1. AMBIL DAFTAR NAMA KOMPETENSI TEKNIS DARI PROFIL
+            // Ini sumber kebenaran (Source of Truth)
+            $userRef = Auth::user();
+            $technicalNames = [];
 
-                {{-- Isi Tabel --}}
-                <div class="max-h-[60vh] overflow-y-auto p-0">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm">
-                            <tr>
-                                <th class="px-4 py-3">Kompetensi</th>
-                                <th class="px-4 py-3 text-center">Target</th>
-                                <th class="px-4 py-3 text-center">Aktual</th>
-                                <th class="px-4 py-3 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                            @foreach($competencyGaps as $gap)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <td class="px-4 py-3">
-                                        <div class="font-medium text-gray-900 dark:text-white line-clamp-2" title="{{ $gap->name }}">
-                                            {{ $gap->name }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-600 dark:text-gray-200">
-                                            {{ $gap->target }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-700 text-xs font-bold dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
-                                            {{ $gap->actual }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($gap->gap < 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800 whitespace-nowrap">
-                                                Gap {{ $gap->gap }}
-                                            </span>
-                                        @elseif($gap->gap == 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800">
-                                                Fit
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800 whitespace-nowrap">
-                                                +{{ $gap->gap }}
-                                            </span>
-                                        @endif
-                                    </td>
+            if ($userRef->position && $userRef->position->jobProfile) {
+                $technicalNames = $userRef->position->jobProfile->competencies->filter(function($c) {
+                    // Ambil tipe, pastikan lowercase
+                    $type = strtolower(trim($c->competency->type ?? $c->type ?? ''));
+                    // Ambil yang BUKAN Perilaku
+                    return !str_contains($type, 'perilaku');
+                })
+                // Kita ambil NAMANYA saja, lalu kecilkan hurufnya biar gampang dicocokkan
+                ->map(fn($c) => strtolower(trim($c->competency_name)))
+                ->toArray();
+            }
+
+            // 2. FILTER WIDGET BERDASARKAN KECOCOKAN NAMA
+            $technicalGaps = $competencyGaps->filter(function($gap) use ($technicalNames) {
+                // Ambil nama dari gap object (handle jika properti beda nama)
+                $gapName = strtolower(trim($gap->name ?? $gap->competency_name ?? ''));
+                
+                // Cek apakah nama ini ada di daftar teknis user
+                return in_array($gapName, $technicalNames);
+            });
+
+            // 3. HITUNG GAP NEGATIF (Badge Merah)
+            $gapCount = $technicalGaps->filter(function($item) {
+                $val = $item->gap ?? $item->gap_value ?? 0;
+                return $val < 0;
+            })->count();
+        @endphp
+
+        {{-- Tampilkan Widget HANYA jika ada data Teknis --}}
+        @if($technicalGaps->count() > 0)
+            <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                
+                {{-- Panel Konten --}}
+                <div x-show="open" 
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                    class="mb-4 w-[90vw] md:w-[600px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                    style="display: none;">
+                    
+                    {{-- Header --}}
+                    <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                        <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                            <ion-icon name="analytics"></ion-icon>
+                            Analisis Gap Teknis
+                        </h3>
+                        <button @click="open = false" class="text-white/80 hover:text-white transition-colors">
+                            <ion-icon name="close" class="text-xl"></ion-icon>
+                        </button>
+                    </div>
+
+                    {{-- Isi Tabel --}}
+                    <div class="max-h-[60vh] overflow-y-auto p-0">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-4 py-3">Kompetensi</th>
+                                    <th class="px-4 py-3 text-center">Target</th>
+                                    <th class="px-4 py-3 text-center">Aktual</th>
+                                    <th class="px-4 py-3 text-center">Status</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                @foreach($technicalGaps as $gap)
+                                    @php $gapValue = $gap->gap ?? $gap->gap_value ?? 0; @endphp
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <td class="px-4 py-3">
+                                            <div class="font-medium text-gray-900 dark:text-white line-clamp-2" title="{{ $gap->name ?? $gap->competency_name }}">
+                                                {{ $gap->name ?? $gap->competency_name }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-600 dark:text-gray-200">
+                                                {{ $gap->target ?? $gap->ideal_level }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-700 text-xs font-bold dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                                {{ $gap->actual ?? $gap->current_level }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if($gapValue < 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800 whitespace-nowrap">
+                                                    Gap {{ $gapValue }}
+                                                </span>
+                                            @elseif($gapValue == 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800">
+                                                    Fit
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800 whitespace-nowrap">
+                                                    +{{ $gapValue }}
+                                                </span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {{-- Footer --}}
+                    <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-xs text-gray-500 text-center border-t border-gray-100 dark:border-gray-700">
+                        * Menampilkan Kompetensi Teknis Saja.
+                    </div>
                 </div>
-                
-                {{-- Footer Panel --}}
-                <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-xs text-gray-500 text-center border-t border-gray-100 dark:border-gray-700">
-                    * Data diambil dari Assessment terakhir.
-                </div>
+
+                {{-- Tombol Floating (FAB) --}}
+                <button @click="open = !open" 
+                        class="group flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-5 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    <span class="font-bold text-sm hidden group-hover:block transition-all duration-300 whitespace-nowrap">
+                        Cek Gap Kompetensi
+                    </span>
+                    <div class="relative">
+                        <ion-icon name="stats-chart" class="text-xl"></ion-icon>
+                        @if($gapCount > 0)
+                            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse border-2 border-indigo-600">
+                                {{ $gapCount }}
+                            </span>
+                        @endif
+                    </div>
+                </button>
+
             </div>
-
-            {{-- Tombol Floating (FAB) --}}
-            <button @click="open = !open" 
-                    class="group flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-5 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-indigo-300">
-                <span class="font-bold text-sm hidden group-hover:block transition-all duration-300 whitespace-nowrap">
-                    Cek Gap Kompetensi
-                </span>
-                <div class="relative">
-                    <ion-icon name="stats-chart" class="text-xl"></ion-icon>
-                    @php
-                        $gapCount = $competencyGaps->where('gap', '<', 0)->count();
-                    @endphp
-                    @if($gapCount > 0)
-                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse border-2 border-indigo-600">
-                            {{ $gapCount }}
-                        </span>
-                    @endif
-                </div>
-            </button>
-
-        </div>
+        @endif
     @endif
 </x-app-layout>

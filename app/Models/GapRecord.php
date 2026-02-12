@@ -21,6 +21,7 @@ class GapRecord extends Model
     protected $fillable = [
         'user_id',
         'job_profile_id',
+        'competency_master_id',
         'competency_code',
         'competency_name',
         'ideal_level',

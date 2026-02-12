@@ -1,4 +1,5 @@
 <x-supervisor-layout>
+    
 
     <x-slot name="header">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
@@ -26,7 +27,9 @@
                 </div>
                 <div>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Rencana Pelatihan</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ $rencanaCount }} Menunggu</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                        {{ $jumlahRencanaPelatihan }} Menunggu
+                    </p>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm flex items-center">
@@ -71,21 +74,63 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+    
+                        @php
+                            $processedTrainingUsers = []; 
+                        @endphp
 
                         @forelse ($tugasMendesak as $tugas)
+                            
+                            @if ($tugas->status_sort == '2_rencana')
+                                
+                                @php 
+                                    $groupKey = $tugas->user_id ?? $tugas->karyawan; 
+                                @endphp
+
+                                @if (in_array($groupKey, $processedTrainingUsers))
+                                    @continue
+                                @endif
+
+                                @php
+                                    $trainingCount = $tugasMendesak->where('status_sort', '2_rencana')
+                                                                ->where(isset($tugas->user_id) ? 'user_id' : 'karyawan', $groupKey)
+                                                                ->count();
+                                    
+                                    $processedTrainingUsers[] = $groupKey;
+
+                                    $actionUrl = isset($tugas->user_id) ? route('supervisor.review.user', $tugas->user_id) : $tugas->url;
+                                @endphp
+
+                            @else
+                                @php 
+                                    $trainingCount = 0; 
+                                    $actionUrl = $tugas->url;
+                                @endphp
+                            @endif
+
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                                    {{ $tugas->karyawan }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-medium text-gray-900 dark:text-white">
+                                        {{ $tugas->karyawan }}
+                                    </div>
+                                    
+                                    @if($trainingCount > 1)
+                                        <div class="mt-1">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                                <ion-icon name="layers-outline" class="mr-1"></ion-icon> 
+                                                {{ $trainingCount }} Pengajuan
+                                            </span>
+                                        </div>
+                                    @endif
                                 </td>
+
                                 <td class="px-6 py-4">
                                     @if ($tugas->status_sort == '0_jobprofile')
-                                        <span
-                                            class="px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200">
                                             {{ $tugas->tipe }}
                                         </span>
                                     @elseif ($tugas->status_sort == '1_penilaian')
-                                        <span
-                                            class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                                             {{ $tugas->tipe }}
                                         </span>
                                     @elseif ($tugas->status_sort == '2_rencana')
@@ -98,14 +143,18 @@
                                         </span>
                                     @endif
                                 </td>
+
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                     {{ $tugas->tanggal ? \Carbon\Carbon::parse($tugas->tanggal)->format('d F Y') : 'N/A' }}
                                 </td>
+
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ $tugas->url }}"
-                                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Tinjau</a>
+                                    <a href="{{ $actionUrl }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
+                                        {{ $trainingCount > 1 ? 'Tinjau Semua' : 'Tinjau' }}
+                                    </a>
                                 </td>
                             </tr>
+
                         @empty
                             <tr>
                                 <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">

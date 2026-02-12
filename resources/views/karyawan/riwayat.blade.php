@@ -1,144 +1,199 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Riwayat Pelatihan Saya') }}
-        </h2>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 leading-tight">
+                {{ __('Riwayat Pelatihan Saya') }}
+            </h2>
+
+            <div class="flex gap-2">
+                {{-- 1. TOMBOL "AJUKAN SEMUA KE SPV" (Hanya jika ada draft) --}}
+                @if(isset($hasDrafts) && $hasDrafts)
+                    <form action="{{ route('rencana.submitAll') }}" method="POST" onsubmit="return confirm('Ajukan semua rencana Draft ke Supervisor?');">
+                        @csrf
+                        <button type="submit" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:-translate-y-0.5">
+                            <ion-icon name="paper-plane-outline" class="text-xl"></ion-icon>
+                            <span>Ajukan ke SPV</span>
+                        </button>
+                    </form>
+                @endif
+
+                {{-- 2. TOMBOL "TAMBAH BARU" (Ke Katalog) --}}
+                <a href="{{ route('katalog') }}" 
+                   class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:-translate-y-0.5">
+                    <ion-icon name="add-circle-outline" class="text-xl"></ion-icon>
+                    <span>Tambah Baru</span>
+                </a>
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            <div class="mb-8">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Riwayat Pelatihan Saya</h1>
-                <p class="text-gray-600 dark:text-gray-400 mt-1">Semua rencana pengembangan, pelatihan, dan sertifikat yang pernah Anda ajukan.</p>
-            </div>
+            {{-- Notifikasi Sukses --}}
+            @if(session('success'))
+                <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <ion-icon name="checkmark-circle" class="text-xl"></ion-icon>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-green-700 hover:text-green-900"><ion-icon name="close"></ion-icon></button>
+                </div>
+            @endif
 
             {{-- Filter Section --}}
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm mb-8 border border-gray-200 dark:border-gray-700">
                 <form method="GET" action="{{ route('riwayat') }}" class="flex flex-col md:flex-row gap-4 items-end">
                     <div class="w-full md:w-1/3">
-                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter berdasarkan Status</label>
-                        <select name="status" id="status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                        <select name="status" class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm">
                             <option value="all">Semua Status</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai & Terverifikasi</option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui Final</option>
-                            <option value="pending_supervisor" {{ request('status') == 'pending_supervisor' ? 'selected' : '' }}>Menunggu Supervisor</option>
-                            <option value="pending_lp" {{ request('status') == 'pending_lp' ? 'selected' : '' }}>Menunggu Learning Partner</option>
+                            <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Selesai</option>
+                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
+                            <option value="pending_supervisor" {{ request('status') == 'pending_supervisor' ? 'selected' : '' }}>Menunggu SPV</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </div>
-
                     <div class="w-full md:w-1/3">
-                        <label for="year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter berdasarkan Tahun</label>
-                        <select name="year" id="year" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tahun</label>
+                        <select name="year" class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm">
                             <option value="all">Semua Tahun</option>
                             @foreach(range(date('Y'), 2020) as $year)
                                 <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
                             @endforeach
                         </select>
                     </div>
-
                     <div class="w-full md:w-auto">
-                        <button type="submit" class="w-full px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
-                            Terapkan Filter
+                        <button type="submit" class="w-full px-6 py-2 bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-700 transition">
+                            Filter
                         </button>
                     </div>
                 </form>
             </div>
 
-            {{-- List Riwayat --}}
+            {{-- LIST RIWAYAT --}}
             <div class="space-y-4">
                 @forelse($trainingHistory as $plan)
                     @php
-                        // Ambil Item Pertama
                         $item = $plan->items->first();
-                        
-                        // Data display
                         $trainingTitle = $item ? ($item->training->title ?? $item->title ?? 'Pelatihan Kustom') : 'Rencana Pelatihan';
-                        $competency = $item ? ($item->training->skill_tags ?? '-') : '-';
-                        $type = $item ? ($item->training->type ?? 'Internal') : 'Internal';
                     @endphp
 
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-shadow">
                         
-                        {{-- Informasi Kiri --}}
+                        {{-- KIRI: INFO UTAMA --}}
                         <div class="flex-1 w-full">
-                            <div class="flex items-center gap-3 mb-2">
+                            <div class="flex items-center gap-3 mb-1">
                                 {{-- Badge Status --}}
-                                @if($plan->status == 'completed')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-white">SELESAI</span>
+                                @if($plan->status == 'draft')
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700 border border-gray-300">DRAFT</span>
+                                @elseif($plan->status == 'completed')
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-700 text-white border border-gray-600">SELESAI</span>
                                 @elseif($plan->status == 'approved')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">DISETUJUI FINAL</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">DISETUJUI</span>
                                 @elseif($plan->status == 'pending_lp')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">VERIFIKASI LP</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">VERIFIKASI LP</span>
                                 @elseif($plan->status == 'pending_supervisor')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">MENUNGGU ATASAN</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">MENUNGGU SPV</span>
                                 @elseif($plan->status == 'rejected')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">DITOLAK</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-200">DITOLAK</span>
                                 @else
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">{{ strtoupper($plan->status) }}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{{ strtoupper($plan->status) }}</span>
                                 @endif
 
-                                <span class="text-xs text-gray-400">Diajukan: {{ $plan->created_at->format('d F Y') }}</span>
+                                <span class="text-xs text-gray-400 flex items-center">
+                                    <ion-icon name="calendar-outline" class="mr-1"></ion-icon>
+                                    {{ $plan->created_at->format('d M Y') }}
+                                </span>
                             </div>
 
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">{{ $trainingTitle }}</h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                                @if($item && $item->training_id)
+                                    <a href="{{ route('training.show', $item->training_id) }}" class="hover:text-indigo-600 transition">
+                                        {{ $trainingTitle }}
+                                    </a>
+                                @else
+                                    {{ $trainingTitle }}
+                                @endif
+                            </h3>
                             
-                            <div class="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-4">
-                                <span>Provider: {{ $item->provider ?? '-' }}</span>
-                                <span class="hidden md:inline">•</span>
-                                <span>Metode: {{ $item->method ?? '-' }}</span>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex gap-3">
+                                <span><ion-icon name="business-outline" class="align-middle mr-1"></ion-icon>{{ $item->provider ?? '-' }}</span>
+                                <span><ion-icon name="laptop-outline" class="align-middle mr-1"></ion-icon>{{ $item->method ?? '-' }}</span>
                             </div>
                         </div>
 
-                        {{-- Tombol Aksi Kanan (UPDATED) --}}
-                        <div class="flex-shrink-0 w-full md:w-auto flex flex-col gap-2">
+                        {{-- KANAN: TOMBOL AKSI --}}
+                        <div class="flex-shrink-0 w-full md:w-auto flex items-center justify-end gap-2">
                             
-                            {{-- LOGIKA 1: Jika Sertifikat SUDAH Diupload (Tampilkan Tombol Lihat) --}}
-                            @if($item && $item->certificate_path)
-                                <a href="{{ asset('storage/' . $item->certificate_path) }}" target="_blank" class="inline-flex justify-center items-center w-full px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition shadow-sm">
-                                    <ion-icon name="document-text-outline" class="mr-2 text-lg"></ion-icon>
-                                    Lihat Sertifikat
-                                </a>
-                                
-                                {{-- Jika status masih 'approved' (belum dikunci admin jadi 'completed'), boleh ganti sertifikat --}}
-                                @if($plan->status == 'approved')
-                                    <a href="{{ route('rencana.sertifikat', $item->id) }}" class="text-xs text-center text-indigo-600 hover:underline">
-                                        Ganti File
+                            {{-- 1. HAPUS (Draft/Pending/Rejected) --}}
+                            @if(in_array($plan->status, ['draft', 'pending_supervisor', 'rejected']))
+                                <form action="{{ route('rencana.destroy', $plan->id) }}" method="POST" onsubmit="return confirm('Hapus rencana ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition border border-red-100 flex items-center gap-1" title="Hapus">
+                                        <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                        <span class="text-xs font-bold md:hidden">Hapus</span>
+                                    </button>
+                                </form>
+
+                            {{-- 2. DISETUJUI (Upload/Lihat) --}}
+                            @elseif($plan->status == 'approved' && $item)
+                                @if($item->certificate_path)
+                                    <a href="{{ asset('storage/' . $item->certificate_path) }}" target="_blank" 
+                                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition border border-green-200">
+                                        <ion-icon name="document-text-outline" class="text-lg"></ion-icon>
+                                        <span class="text-xs font-bold">Lihat</span>
+                                    </a>
+                                    <a href="{{ route('rencana.sertifikat', $item->id) }}" class="text-gray-400 hover:text-indigo-600 p-1" title="Ganti File">
+                                        <ion-icon name="create-outline" class="text-xl"></ion-icon>
+                                    </a>
+                                @else
+                                    <a href="{{ route('rencana.sertifikat', $item->id) }}" 
+                                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition border border-indigo-100 animate-pulse">
+                                        <ion-icon name="cloud-upload-outline" class="text-lg"></ion-icon>
+                                        <span class="text-xs font-bold">Upload</span>
                                     </a>
                                 @endif
 
-                            {{-- LOGIKA 2: Jika Disetujui tapi BELUM Upload (Tampilkan Tombol Upload) --}}
-                            @elseif($plan->status == 'approved' && $item)
-                                <a href="{{ route('rencana.sertifikat', $item->id) }}" class="inline-flex justify-center items-center w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm animate-pulse">
-                                    <ion-icon name="cloud-upload-outline" class="mr-2 text-lg"></ion-icon>
-                                    Unggah Sertifikat
+                            {{-- 3. SELESAI --}}
+                            @elseif($plan->status == 'completed' && $item && $item->certificate_path)
+                                <a href="{{ asset('storage/' . $item->certificate_path) }}" target="_blank" 
+                                   class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition border border-gray-200">
+                                    <ion-icon name="ribbon-outline" class="text-lg"></ion-icon>
+                                    <span class="text-xs font-bold">Sertifikat</span>
                                 </a>
 
-                            {{-- LOGIKA 3: Ditolak --}}
+                            {{-- 4. DITOLAK --}}
                             @elseif($plan->status == 'rejected')
-                                <button type="button" onclick="alert('Alasan Penolakan: {{ $plan->rejection_reason ?? 'Tidak ada catatan.' }}')" class="inline-flex justify-center items-center w-full px-4 py-2 bg-red-50 text-red-700 font-medium rounded-lg hover:bg-red-100 transition border border-red-200">
-                                    Lihat Alasan
+                                <button type="button" onclick="alert('Alasan Penolakan: {{ $plan->rejection_reason ?? 'Tidak ada catatan.' }}')" 
+                                        class="text-gray-400 hover:text-gray-600 p-1" title="Lihat Alasan">
+                                    <ion-icon name="information-circle-outline" class="text-xl"></ion-icon>
                                 </button>
-
-                            {{-- LOGIKA 4: Menunggu --}}
-                            @else
-                                <span class="inline-flex justify-center items-center w-full px-4 py-2 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed">
-                                    <ion-icon name="time-outline" class="mr-2"></ion-icon>
-                                    Dalam Proses
-                                </span>
                             @endif
 
                         </div>
-
                     </div>
                 @empty
-                    <div class="text-center py-12">
-                        <ion-icon name="document-text-outline" class="text-6xl text-gray-300 mb-4"></ion-icon>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Belum ada riwayat pelatihan</h3>
-                        <p class="text-gray-500 dark:text-gray-400 mt-1">Anda belum mengajukan atau menyelesaikan pelatihan apa pun.</p>
+                    {{-- EMPTY STATE --}}
+                    <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 dark:bg-gray-700 mb-4">
+                            <ion-icon name="document-text-outline" class="text-3xl text-indigo-500"></ion-icon>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Belum ada riwayat</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-1 mb-6">Mulai ajukan pelatihan baru Anda.</p>
+                        
+                        <a href="{{ route('katalog') }}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 border border-transparent rounded-lg font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-700 transition shadow-sm">
+                            <ion-icon name="add-outline" class="mr-2 text-lg"></ion-icon>
+                            Ajukan Sekarang
+                        </a>
                     </div>
                 @endforelse
+            </div>
+
+            <div class="mt-6">
+                {{ $trainingHistory->withQueryString()->links() }}
             </div>
 
         </div>

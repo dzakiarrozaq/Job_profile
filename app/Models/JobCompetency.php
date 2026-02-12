@@ -16,6 +16,7 @@ class JobCompetency extends Model
     protected $fillable = [
         'job_profile_id',
         'competency_master_id',
+        'type',
         'competency_name',
         'competency_code',      
         'ideal_level',          

@@ -19,7 +19,7 @@ use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\BandResponsibility;
 use App\Models\MasterResponsibility; 
-Use App\Imports\MasterResponsibilityImport; // Pastikan ini di-use di atas
+Use App\Imports\MasterResponsibilityImport; 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\MasterResponsibilityAllImport;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -36,23 +36,19 @@ class JobProfileController extends Controller
     {
         $user = Auth::user();
         
-        // Tentukan role aktif (dari session atau default)
         $activeRoleName = $request->session()->get('active_role_name') 
                         ?? ($user->hasRole('Admin') ? 'Admin' : 'Supervisor');
 
-        // 1. LOGIKA UNTUK ADMIN
         if ($activeRoleName === 'Admin') {
             $query = JobProfile::with(['position.organization', 'creator'])
                 ->latest();
 
-            // Filter Pencarian berdasarkan Nama Jabatan
             if ($request->filled('search')) {
                 $query->whereHas('position', function($q) use ($request) {
                     $q->where('title', 'like', "%{$request->search}%");
                 });
             }
 
-            // Filter Status
             if ($request->filled('status') && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }
@@ -63,7 +59,6 @@ class JobProfileController extends Controller
             ]);
         }
 
-        // 2. LOGIKA UNTUK SUPERVISOR (GM/SM/Manager)
         $supervisorPosition = $user->position;
 
         if (!$supervisorPosition) {
@@ -73,10 +68,8 @@ class JobProfileController extends Controller
             ]);
         }
 
-        // Ambil semua ID posisi di bawah hirarki (Recursive)
         $allSubordinatePositionIds = $supervisorPosition->getAllSubordinateIds();
 
-        // Query Job Profile yang posisi-nya ada dalam hirarki bawahan
         $query = JobProfile::whereIn('position_id', $allSubordinatePositionIds)
             ->with(['position.organization', 'creator'])
             ->latest();
@@ -102,18 +95,15 @@ class JobProfileController extends Controller
     {
         $user = Auth::user();
         
-        // 1. Tentukan Role Aktif (Gunakan method hasRole yang baru kita buat di Model User)
         $activeRoleName = $request->session()->get('active_role_name');
         if (!$activeRoleName) {
             $activeRoleName = $user->hasRole('Admin') ? 'Admin' : 'Supervisor';
         }
 
-        // 2. Query Dasar Posisi yang Belum Punya Job Profile
         $query = Position::whereDoesntHave('jobProfile')
                         ->with(['organization.parent.parent'])
                         ->orderBy('title', 'asc');
 
-        // 3. Jika Supervisor, Batasi Hanya Posisi Bawahan (Recursive)
         if ($activeRoleName === 'Supervisor') {
             if (!$user->position) {
                 return redirect()->back()->with('error', 'Akses Ditolak: Posisi Anda tidak terdaftar.');
@@ -136,7 +126,6 @@ class JobProfileController extends Controller
         $selectedPositionId = $request->query('position_id');
 
         if ($selectedPositionId) {
-            // Ambil standar kompetensi teknis dari tabel jembatan (asumsi nama tabel: position_technical_standards)
             $standards = \DB::table('position_technical_standards')
                 ->join('competencies_master', 'position_technical_standards.competency_master_id', '=', 'competencies_master.id')
                 ->where('position_id', $selectedPositionId)
@@ -144,7 +133,6 @@ class JobProfileController extends Controller
                 ->get();
 
             $pakemTechnicals = $standards->map(function($std) {
-                // Tarik behavior level 1-5 untuk kamus di tabel
                 $behaviors = \DB::table('competency_key_behaviors')
                     ->where('competency_master_id', $std->id)
                     ->whereIn('level', [1,2,3,4,5])
@@ -153,7 +141,7 @@ class JobProfileController extends Controller
 
                 return [
                     'key' => 'pakem_' . $std->id,
-                    'id' => null, // null karena belum masuk ke job_competencies
+                    'id' => null, 
                     'competency_master_id' => $std->id,
                     'competency_name' => $std->competency_name,
                     'type' => 'Teknis',
@@ -163,12 +151,11 @@ class JobProfileController extends Controller
             });
         }
 
-        // 5. Tentukan View Berdasarkan Role
         $viewPath = ($activeRoleName === 'Admin') ? 'admin.job-profile.create' : 'supervisor.job-profile.create';
 
         return view($viewPath, [
             'positions' => $positions,
-            'pakemTechnicals' => $pakemTechnicals, // Kirim data pakem ke Blade
+            'pakemTechnicals' => $pakemTechnicals, 
             'selectedPositionId' => $selectedPositionId
         ]);
     }
@@ -178,30 +165,25 @@ class JobProfileController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validasi Input Dasar
         $validated = $request->validate([
             'position_id' => 'required|integer|exists:positions,id', 
         ]);
 
         $user = Auth::user();
         
-        // Tentukan Role Aktif untuk penentuan prefix route nantinya
         $activeRoleName = $request->session()->get('active_role_name');
         if (!$activeRoleName) {
             $activeRoleName = $user->hasRole('Admin') ? 'Admin' : 'Supervisor';
         }
 
-        // Load Position beserta data pendukungnya
         $targetPosition = Position::with(['organization', 'jobGrade'])->find($validated['position_id']);
 
-        // Validasi Duplikasi
         if (JobProfile::where('position_id', $validated['position_id'])->exists()) {
             return redirect()->back()->with('error', 'Job Profile untuk posisi ini sudah ada.')->withInput();
         }
 
         DB::beginTransaction();
         try {
-            // 1. Buat Header Job Profile
             $jobProfile = JobProfile::create([
                 'position_id' => $validated['position_id'],
                 'created_by'  => $user->id,
@@ -211,19 +193,17 @@ class JobProfileController extends Controller
 
             $position = $targetPosition;
 
-            // PENTING: Cek Job Grade
             if (!$position->job_grade_id) {
                 throw new \Exception("Posisi ini belum memiliki Job Grade (Band). Silakan atur Master Posisi terlebih dahulu.");
             }
 
-            // Tentukan Tipe (structural / functional)
             $familyRaw = strtoupper($position->job_family ?? '');
             $type = str_contains($familyRaw, 'STRUKTURAL') ? 'structural' : 'functional';
 
             // =================================================================
             // 2. AUTO-POPULATE TANGGUNG JAWAB (Master)
             // =================================================================
-            $masters = \App\Models\MasterResponsibility::where('job_grade_id', $position->job_grade_id)
+            $masters = MasterResponsibility::where('job_grade_id', $position->job_grade_id)
                 ->where(function($q) use ($type) {
                     $q->where('type', $type)->orWhere('type', 'general');
                 })->get();
@@ -245,13 +225,13 @@ class JobProfileController extends Controller
 
             if ($matrixCompetencies->isNotEmpty()) {
                 foreach ($matrixCompetencies as $matrix) {
-                    $masterComp = \App\Models\CompetenciesMaster::find($matrix->competency_master_id);
+                    $masterComp = CompetenciesMaster::find($matrix->competency_master_id);
                     if ($masterComp) {
                         $jobProfile->competencies()->create([
                             'competency_master_id' => $masterComp->id,
                             'competency_name'      => $masterComp->competency_name,
                             'type'                 => 'Perilaku', 
-                            'ideal_level'          => 1, // Default, nantinya diupdate di halaman edit
+                            'ideal_level'          => 1, 
                             'weight'               => 1,
                         ]);
                     }
@@ -261,19 +241,18 @@ class JobProfileController extends Controller
             // =================================================================
             // 4. AUTO-POPULATE KOMPETENSI TEKNIS (Sesuai Recap Excel)
             // =================================================================
-            // Kita tarik data dari tabel jembatan yang menyimpan 'pakem' teknis per posisi
             $technicalStandards = DB::table('position_technical_standards')
                 ->where('position_id', $position->id)
                 ->get();
 
             foreach ($technicalStandards as $std) {
-                $masterTech = \App\Models\CompetenciesMaster::find($std->competency_master_id);
+                $masterTech = CompetenciesMaster::find($std->competency_master_id);
                 if ($masterTech) {
                     $jobProfile->competencies()->create([
                         'competency_master_id' => $masterTech->id,
                         'competency_name'      => $masterTech->competency_name,
                         'type'                 => 'Teknis',
-                        'ideal_level'          => $std->ideal_level, // Gunakan level standar dari Recap
+                        'ideal_level'          => $std->ideal_level, 
                         'weight'               => 1,
                     ]);
                 }
@@ -281,7 +260,6 @@ class JobProfileController extends Controller
 
             DB::commit();
 
-            // 5. Dynamic Redirect berdasarkan Role
             $routePrefix = ($activeRoleName === 'Admin') ? 'admin' : 'supervisor';
 
             return redirect()
@@ -301,13 +279,11 @@ class JobProfileController extends Controller
     {
         $user = Auth::user();
         
-        // 1. Tentukan Role Aktif (Gunakan fallback hasRole jika session kosong)
         $activeRoleName = $request->session()->get('active_role_name');
         if (!$activeRoleName) {
             $activeRoleName = $user->hasRole('Admin') ? 'Admin' : 'Supervisor';
         }
 
-        // 2. SECURITY CHECK: Jika Supervisor, pastikan hanya bisa edit profil bawahannya
         if ($activeRoleName === 'Supervisor') {
             if (!$user->position) {
                 abort(403, 'Akses Ditolak: Posisi Anda tidak terdaftar.');
@@ -315,13 +291,11 @@ class JobProfileController extends Controller
 
             $subordinateIds = $user->position->getAllSubordinateIds();
             
-            // Cek apakah position_id dari Job Profile ini ada dalam hirarki bawahan
             if (!in_array($jobProfile->position_id, $subordinateIds)) {
                 abort(403, 'Anda tidak memiliki otoritas untuk mengubah Job Profile di luar hirarki tim Anda.');
             }
         }
 
-        // 3. Eager Load Relations (Sama seperti kode Anda, dioptimasi)
         $jobProfile->load([
             'responsibilities', 
             'competencies.competency.keyBehaviors', 
@@ -333,7 +307,6 @@ class JobProfileController extends Controller
 
         $allJobCompetencies = $jobProfile->competencies;
 
-        // 4. Mapping Data Kompetensi TEKNIS
         $technicalsData = $allJobCompetencies
             ->filter(function($c) {
                 $masterType = strtolower(trim(optional($c->competency)->type ?? ''));
@@ -349,7 +322,6 @@ class JobProfileController extends Controller
                 'behaviors' => optional($comp->competency)->keyBehaviors->whereIn('level', [1,2,3,4,5])->values() ?? []
             ])->values()->toArray();
 
-        // 5. Mapping Data Kompetensi PERILAKU
         $behavioralsData = $allJobCompetencies
             ->filter(function($c) {
                 $masterType = strtolower(trim(optional($c->competency)->type ?? ''));
@@ -365,7 +337,6 @@ class JobProfileController extends Controller
                 'behaviors' => optional($comp->competency)->keyBehaviors->where('level', 0)->values() ?? []
             ])->values()->toArray();
 
-        // 6. Mapping Data Pendukung (Responsibilities, Specs, WorkRelations)
         $responsibilitiesData = $jobProfile->responsibilities->map(fn($r) => [
             'key' => 'db_'.$r->id, 'id' => $r->id, 'description' => $r->description, 'expected_result' => $r->expected_result
         ])->toArray();
@@ -378,14 +349,12 @@ class JobProfileController extends Controller
             'key' => 'db_'.$w->id, 'id' => $w->id, 'type' => $w->type, 'unit_instansi' => $w->unit_instansi, 'purpose' => $w->purpose
         ])->toArray();
 
-        // 7. Ambil daftar posisi sesuai otoritas untuk dropdown ganti posisi (jika diperlukan)
         $positionsQuery = Position::orderBy('title', 'asc');
         if ($activeRoleName === 'Supervisor') {
             $positionsQuery->whereIn('id', $user->position->getAllSubordinateIds());
         }
         $positions = $positionsQuery->get();
 
-        // 8. Tentukan View
         $viewPath = ($activeRoleName === 'Admin') ? 'admin.job-profile.edit' : 'supervisor.job-profile.edit';
 
         return view($viewPath, compact(
@@ -401,7 +370,6 @@ class JobProfileController extends Controller
     {
         $input = $request->all();
 
-        // 1. Tentukan Status Baru
         $action = $request->input('action');
         $newStatus = $jobProfile->status; 
 
@@ -417,7 +385,6 @@ class JobProfileController extends Controller
 
         DB::beginTransaction();
         try {
-            // 2. Update Header
             $jobProfile->update([
                 'tujuan_jabatan'       => $input['tujuan_jabatan'] ?? null,
                 'wewenang'             => $input['wewenang'] ?? null,
@@ -439,12 +406,9 @@ class JobProfileController extends Controller
             foreach ($inputTechnicals as $tech) {
                 if (empty($tech['competency_master_id'])) continue;
 
-                // Ambil data dari Master untuk memastikan nama kompetensi ikut tersimpan
-                $master = \App\Models\CompetenciesMaster::find($tech['competency_master_id']);
+                $master = CompetenciesMaster::find($tech['competency_master_id']);
                 if (!$master) continue;
 
-                // Pastikan ID hanya dikirim jika memang angka (data dari DB)
-                // Jika isinya 'tech_...' atau null, kita anggap data baru
                 $existingId = (isset($tech['id']) && is_numeric($tech['id'])) ? $tech['id'] : null;
 
                 $comp = $jobProfile->competencies()->updateOrCreate(
@@ -462,42 +426,44 @@ class JobProfileController extends Controller
                 $techIdsToKeep[] = $comp->id;
             }
 
-            // Hapus yang tidak ada di form (kecuali Perilaku)
             $jobProfile->competencies()
                 ->where('type', '!=', 'Perilaku') 
                 ->whereNotIn('id', $techIdsToKeep)
                 ->delete();
-
+            
 
             // B. KOMPETENSI PERILAKU (Pakem)
             // -----------------------------------------------------------------
             $inputBehaviorals = $request->input('behaviorals', []);
             
             foreach ($inputBehaviorals as $beh) {
-                // Perilaku biasanya sudah ada sejak awal (dibuat saat 'store')
-                // Jadi kita cukup update level-nya saja berdasarkan ID pivot-nya
-                if (!empty($beh['id']) && is_numeric($beh['id'])) {
-                    $jobProfile->competencies()
-                        ->where('id', $beh['id'])
-                        ->where('type', 'Perilaku')
-                        ->update([
-                            'ideal_level' => (int)($beh['ideal_level'] ?? 1)
-                        ]);
-                }
+                // Skip jika tidak ada Master ID
+                if (empty($beh['competency_master_id'])) continue;
+
+                // CARA KUAT: Update atau Buat Baru berdasarkan Master ID
+                // Ini mengatasi masalah jika ID pivot salah, terhapus, atau tipe tidak cocok.
+                $jobProfile->competencies()->updateOrCreate(
+                    [
+                        // KUNCI PENCARIAN (WHERE)
+                        'job_profile_id'       => $jobProfile->id,
+                        'competency_master_id' => $beh['competency_master_id'],
+                    ],
+                    [
+                        // DATA YANG DISIMPAN/DIUPDATE
+                        'ideal_level'     => (int) $beh['ideal_level'], // Paksa jadi angka
+                        'type'            => 'Perilaku', // Kita paksa set 'Perilaku' biar seragam
+                        'competency_name' => CompetenciesMaster::find($beh['competency_master_id'])?->competency_name ?? 'Unknown',
+                        'weight'          => 1
+                    ]
+                );
             }
 
-
-            // 4. Update Tabel Lain (Responsibilities, Specs, WorkRelations)
-            // Menggunakan delete -> createMany (Simple approach)
-            
-            // Responsibilities
             $jobProfile->responsibilities()->delete();
             if (!empty($input['responsibilities'])) {
                 $validResps = array_filter($input['responsibilities'], fn($r) => !empty($r['description']));
                 $jobProfile->responsibilities()->createMany(array_values($validResps));
             }
 
-            // Specifications (Gabungan 6 Array)
             $rawSpecifications = array_merge(
                 $request->input('educations', []),
                 $request->input('experiences', []),
@@ -513,7 +479,6 @@ class JobProfileController extends Controller
                 $jobProfile->specifications()->createMany(array_values($cleanSpecifications));
             }
 
-            // Work Relations
             $jobProfile->workRelations()->delete();
             if (!empty($input['workRelations'])) {
                 $validRelations = array_filter($input['workRelations'], fn($w) => !empty($w['unit_instansi']));
@@ -522,7 +487,6 @@ class JobProfileController extends Controller
 
             DB::commit();
 
-            // Redirect Logic
             $activeRoleName = $request->session()->get('active_role_name');
             $routePrefix = ($activeRoleName === 'Admin') ? 'admin' : 'supervisor';
 
@@ -536,7 +500,6 @@ class JobProfileController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Kembalikan ke form edit dengan pesan error (Jangan dd() di production)
             return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage())->withInput();
         }
     }
@@ -664,8 +627,7 @@ class JobProfileController extends Controller
     {
         $query = $request->get('q');
         
-        // Pastikan load 'keyBehaviors' agar deskripsinya terbawa ke frontend
-        $competencies = \App\Models\CompetenciesMaster::with(['keyBehaviors' => function($q) {
+        $competencies = CompetenciesMaster::with(['keyBehaviors' => function($q) {
                             $q->orderBy('level', 'asc');
                         }])
                         ->where('competency_name', 'LIKE', "%{$query}%")
@@ -697,7 +659,6 @@ class JobProfileController extends Controller
     {
         $band = $request->query('band');
         
-        // Cari data berdasarkan band
         $data = BandResponsibility::where('band', $band)->first();
 
         if ($data) {
@@ -719,18 +680,14 @@ class JobProfileController extends Controller
         try {
             $file = $request->file('file');
             
-            // 1. SCAN NAMA SHEET
             $spreadsheet = IOFactory::load($file->getPathname());
             $sheetNames = $spreadsheet->getSheetNames();
 
-            // 2. FILTER SHEET YANG COCOK
             $sheetMap = [];
             foreach ($sheetNames as $sheetName) {
-                // Cari sheet yang namanya mengandung "BAND" dan Angka
                 if (preg_match('/BAND\s*(\d+)/i', $sheetName, $matches)) {
                     $band = $matches[1]; 
                     
-                    // Tentukan Tipe
                     $type = 'general';
                     if (stripos($sheetName, 'STR') !== false || stripos($sheetName, 'STRUKTURAL') !== false) {
                         $type = 'structural';
@@ -746,9 +703,7 @@ class JobProfileController extends Controller
                 return back()->with('error', 'Gagal: Tidak ada sheet yang cocok (harus mengandung kata "BAND" dan Angka).');
             }
 
-            // 3. EKSEKUSI IMPORT
-            // Kita kirim $sheetMap ke class Import
-            \Maatwebsite\Excel\Facades\Excel::import(new MasterResponsibilityAllImport($sheetMap), $file);
+            Excel::import(new MasterResponsibilityAllImport($sheetMap), $file);
 
             return back()->with('success', "Sukses! Berhasil mengimport " . count($sheetMap) . " sheet.");
 
@@ -764,7 +719,6 @@ class JobProfileController extends Controller
         ]);
 
         try {
-            // Eksekusi import
             Excel::import(new TechnicalStandardImport, $request->file('file'));
 
             return back()->with('success', 'Standar Kompetensi Teknis per Posisi berhasil diimport.');

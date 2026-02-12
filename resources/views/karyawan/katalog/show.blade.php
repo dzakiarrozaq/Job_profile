@@ -19,7 +19,7 @@
                     <div class="relative z-10">
                         <div class="flex flex-wrap gap-3 mb-4">
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
-                                {{ $training->difficulty }}
+                                {{ $training->level }}
                             </span>
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
                                 {{ $training->method ?? 'Online' }}

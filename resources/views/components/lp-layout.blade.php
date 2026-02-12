@@ -68,7 +68,7 @@
                             Katalog Pelatihan
                         </a>
 
-                        <a href="{{ route('lp.persetujuan') }}" class="sidebar-link {{ request()->routeIs('lp.persetujuan') ? 'active' : '' }}">
+                        <a href="{{ route('lp.persetujuan.index') }}" class="sidebar-link {{ request()->routeIs('lp.persetujuan') ? 'active' : '' }}">
                             <div class="flex items-center w-full justify-between">
                                 <div class="flex items-center">
                                     <ion-icon name="checkmark-done-circle-outline"></ion-icon>

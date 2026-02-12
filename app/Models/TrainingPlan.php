@@ -17,6 +17,7 @@ class TrainingPlan extends Model
         'submitted_at' => 'datetime',
         'supervisor_approved_at' => 'datetime',
         'lp_approved_at' => 'datetime',
+        'approved_by',
     ];
 
     public function user(): BelongsTo
@@ -27,5 +28,13 @@ class TrainingPlan extends Model
     public function items(): HasMany
     {
         return $this->hasMany(TrainingPlanItem::class);
+    }
+
+    // --- TAMBAHKAN INI ---
+    // Relasi untuk mengambil Data Supervisor yang melakukan Approval
+    public function approver(): BelongsTo
+    {
+        // Pastikan Anda sudah membuat kolom 'approved_by' di database
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

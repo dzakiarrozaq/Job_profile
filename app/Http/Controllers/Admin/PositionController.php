@@ -15,13 +15,26 @@ class PositionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Position::with(['organization', 'atasan']);
+        // Mulai Query
+        $query = Position::query();
 
-        if ($request->has('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+        // 1. Lakukan JOIN ke tabel organizations agar bisa sort berdasarkan nama unit
+        $query->join('organizations', 'positions.organization_id', '=', 'organizations.id')
+            ->select('positions.*') // PENTING: Ambil data posisi saja agar ID tidak bentrok
+            ->orderBy('organizations.name', 'asc') // Urutkan A-Z berdasarkan Nama Unit
+            ->orderBy('positions.title', 'asc');   // Opsi tambahan: Urutkan nama jabatan setelah unit
+
+        // 2. Logika Pencarian (Jika ada search)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('positions.title', 'like', "%{$search}%")
+                ->orWhere('organizations.name', 'like', "%{$search}%");
+            });
         }
 
-        $positions = $query->orderBy('created_at', 'desc')->paginate(10);
+        // 3. Eager Load relasi (agar tidak N+1 query di view) & Paginate
+        $positions = $query->with(['organization', 'atasan'])->paginate(10);
 
         return view('admin.positions.index', compact('positions'));
     }
@@ -31,8 +44,8 @@ class PositionController extends Controller
      */
     public function create()
     {
-        $organizations = Organization::all(); // Data untuk dropdown Organization
-        $parents = Position::all(); // Data untuk dropdown Atasan
+        $organizations = Organization::all(); 
+        $parents = Position::all(); 
 
         return view('admin.positions.create', compact('organizations', 'parents'));
     }
@@ -44,13 +57,12 @@ class PositionController extends Controller
     {
         $validated = $request->validate([
             'title'           => 'required|string|max:255',
-            'organization_id' => 'required|exists:organizations,id', // Wajib pilih organization
-            'atasan_id'       => 'nullable|exists:positions,id', // Opsional (bisa null)
-            'tipe'            => 'required|in:organik,outsourcing', // Validasi Tipe
+            'organization_id' => 'required|exists:organizations,id', 
+            'atasan_id'       => 'nullable|exists:positions,id', 
+            'tipe'            => 'required|in:organik,outsourcing', 
         ]);
 
         if ($validated['tipe'] === 'outsourcing') {
-            // Str::finish akan menambahkan ' (OS)' di akhir HANYA jika belum ada
             $validated['title'] = Str::finish($validated['title'], ' (OS)');
         }
 
@@ -69,8 +81,6 @@ class PositionController extends Controller
         $position = Position::findOrFail($id);
         $organizations = Organization::all();
         
-        // Ambil semua posisi KECUALI dirinya sendiri (untuk dropdown atasan)
-        // Supaya tidak bisa memilih diri sendiri sebagai atasan (error loop)
         $parents = Position::where('id', '!=', $id)->get();
 
         return view('admin.positions.edit', compact('position', 'organizations', 'parents'));
@@ -83,7 +93,6 @@ class PositionController extends Controller
     {
         $position = Position::findOrFail($id);
 
-        // 1. Validasi
         $validated = $request->validate([
             'title'           => 'required|string|max:255',
             'organization_id' => 'required|exists:organizations,id',
@@ -91,16 +100,12 @@ class PositionController extends Controller
             'tipe'            => 'required|in:organik,outsourcing',
         ]);
 
-        // 2. LOGIKA OTOMATIS SAAT UPDATE
         if ($validated['tipe'] === 'outsourcing') {
-            // Pastikan ada (OS)
             $validated['title'] = Str::finish($validated['title'], ' (OS)');
         } else {
-            // Jika diubah jadi Organik, hapus tulisan (OS) supaya bersih
             $validated['title'] = str_replace(' (OS)', '', $validated['title']);
         }
 
-        // 3. Update
         $position->update($validated);
 
         return redirect()->route('admin.positions.index')

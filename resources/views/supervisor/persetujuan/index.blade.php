@@ -107,7 +107,11 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border-l-4 border-indigo-500 hover:shadow-md transition-shadow">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex items-center gap-4 w-full md:w-auto">
-                            <img class="h-12 w-12 rounded-full object-cover ring-2 ring-indigo-50" src="https://i.pravatar.cc/150?u={{ $item->user->email }}" alt="Foto">
+                            {{-- FOTO PROFIL DARI DATABASE --}}
+                            <img class="h-12 w-12 rounded-full object-cover ring-2 ring-indigo-50" 
+                                 src="{{ $item->user->profile_photo_path ? asset('storage/' . $item->user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($item->user->name) . '&color=7F9CF5&background=EBF4FF' }}" 
+                                 alt="Foto {{ $item->user->name }}">
+                            
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $item->user->name }}</h3>
                                 <p class="text-sm text-gray-500">{{ $item->user->position->title ?? 'Posisi tidak diketahui' }}</p>
@@ -136,65 +140,110 @@
             @endforelse
         </div>
 
-        {{-- CONTENT 2: TRAINING CATALOG --}}
+        {{-- CONTENT 2: TRAINING CATALOG (MERGED PER USER) --}}
         <div x-show="activeTab === 'catalog'" class="space-y-4" style="display: none;"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform scale-95"
-             x-transition:enter-end="opacity-100 transform scale-100">
-             
-            @forelse($trainings as $plan)
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-95"
+            x-transition:enter-end="opacity-100 transform scale-100">
+            
+            @php
+                $groupedTrainings = $trainings->groupBy('user_id');
+            @endphp
+
+            @forelse($groupedTrainings as $userId => $userPlans)
                 @php
-                    $item = $plan->items->first(); 
-                    if (!$item) { continue; }
+                    $user = $userPlans->first()->user;
+                    
+                    // Gabungkan item dari semua plan user ini menjadi satu list
+                    $allItems = $userPlans->flatMap->items; 
                 @endphp
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow mb-4 border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-                    <div class="flex flex-col md:flex-row justify-between items-start gap-4">
-                        <div class="flex items-start gap-4 w-full md:w-auto">
-                            <img class="h-12 w-12 rounded-full object-cover" 
-                                 src="{{ $plan->user->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode($plan->user->name ?? 'Unknown') }}" 
-                                 alt="Foto">
-                            <div>
-                                <h4 class="font-bold text-gray-900 dark:text-white text-lg">
-                                    {{ $plan->user->name ?? 'User Tidak Dikenal' }}
+                {{-- CARD PER USER --}}
+                <div x-data="{ expanded: false }" class="bg-white dark:bg-gray-800 rounded-lg shadow mb-4 border-l-4 border-indigo-500 hover:shadow-md transition-all">
+                    
+                    {{-- HEADER: Info User & Ringkasan --}}
+                    <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 cursor-pointer" @click="expanded = !expanded">
+                        <div class="flex items-center gap-4 w-full">
+                            {{-- Foto --}}
+                            <img class="h-14 w-14 rounded-full object-cover ring-2 ring-indigo-50" 
+                                src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" 
+                                alt="{{ $user->name }}">
+
+                            <div class="flex-1">
+                                <h4 class="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
+                                    {{ $user->name }}
+                                    {{-- Badge Jumlah Item --}}
+                                    <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full border border-indigo-200">
+                                        {{ $allItems->count() }} Pelatihan Diajukan
+                                    </span>
                                 </h4>
-                                <p class="text-sm text-blue-600 font-semibold mt-1">
-                                    {{ $item->title ?? 'Judul Kosong' }}
-                                </p>
-                                <div class="text-xs text-gray-500 mt-2 flex items-center gap-3">
-                                    <span class="flex items-center bg-gray-100 px-2 py-1 rounded">
-                                        <ion-icon name="business-outline" class="mr-1"></ion-icon>
-                                        {{ $item->provider ?? '-' }}
-                                    </span>
-                                    <span class="flex items-center bg-gray-100 px-2 py-1 rounded">
-                                        <ion-icon name="laptop-outline" class="mr-1"></ion-icon>
-                                        {{ $item->method ?? 'Offline' }}
-                                    </span>
+                                <p class="text-sm text-gray-500 mb-1">{{ $user->position->title ?? 'Posisi Staff' }}</p>
+                                
+                                {{-- Ringkasan Status --}}
+                                <div class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                    <ion-icon name="time-outline"></ion-icon> 
+                                    Menunggu persetujuan Anda
                                 </div>
                             </div>
+
+                            {{-- Icon Toggle --}}
+                            <div class="text-gray-400">
+                                <ion-icon :name="expanded ? 'chevron-up-circle' : 'chevron-down-circle'" class="text-2xl transition-transform text-indigo-500"></ion-icon>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- BODY: Daftar Gabungan Pelatihan --}}
+                    <div x-show="expanded" x-collapse class="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+                        
+                        {{-- List Item --}}
+                        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                            @foreach($allItems as $item)
+                                <div class="p-4 hover:bg-white dark:hover:bg-gray-800 transition">
+                                    
+                                    <h5 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1">
+                                        {{ $item->title ?? ($item->training->title ?? 'Custom Training') }}
+                                    </h5>
+                                    
+                                    <div class="flex flex-wrap gap-4 text-xs text-gray-500 mt-1">
+                                        <span class="flex items-center">
+                                            <ion-icon name="business-outline" class="mr-1 text-indigo-500"></ion-icon> 
+                                            {{ $item->provider ?? '-' }}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <ion-icon name="laptop-outline" class="mr-1 text-indigo-500"></ion-icon> 
+                                            {{ $item->method ?? '-' }}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            @endforeach
                         </div>
 
-                        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-                            <form action="{{ route('supervisor.reject', $plan->id) }}" method="POST" onsubmit="return confirm('Tolak rencana ini?');">
-                                @csrf
-                                <button type="submit" class="px-4 py-2 border border-red-500 text-red-500 hover:bg-red-50 rounded-lg text-sm font-bold transition">
-                                    Tolak
-                                </button>
-                            </form>
-                            <a href="{{ route('supervisor.rencana.show', $plan->id) }}" 
-                               class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition">
-                                Review & Setujui
+                        {{-- FOOTER AKSI --}}
+                        <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 flex justify-end items-center gap-3 border-t border-indigo-100">
+                            <span class="text-xs text-gray-500 italic mr-auto hidden sm:block">
+                                Menggabungkan {{ $userPlans->count() }} form pengajuan.
+                            </span>
+
+                            <a href="{{ route('supervisor.review.user', $user->id) }}" 
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+                                <ion-icon name="create-outline" class="mr-2 text-lg"></ion-icon>
+                                Review & Verifikasi
                             </a>
                         </div>
+
                     </div>
                 </div>
+
             @empty
+                {{-- Empty State --}}
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4">
-                        <ion-icon name="library-outline" class="text-4xl text-blue-400"></ion-icon>
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 mb-4">
+                        <ion-icon name="library-outline" class="text-4xl text-indigo-400"></ion-icon>
                     </div>
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white">Semua Bersih!</h3>
-                    <p class="text-gray-500">Tidak ada usulan pelatihan baru.</p>
+                    <p class="text-gray-500">Tidak ada usulan pelatihan baru dari tim Anda.</p>
                 </div>
             @endforelse
         </div>

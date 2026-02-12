@@ -80,7 +80,11 @@
                 'competency_master_id' => $comp->competency_master_id,
                 'competency_name' => $comp->competency_name,
                 'description' => optional($comp->competency)->description ?? '-', 
-                'ideal_level' => $comp->ideal_level,
+                
+                // === UBAH BARIS INI ===
+                // Paksa jadi integer. Jika null, default ke 1.
+                'ideal_level' => (int) ($comp->ideal_level ?? 1), 
+                
                 'behaviors' => optional($comp->competency)->keyBehaviors->where('level', 0)->values() ?? []
             ])->values()->toArray());
     @endphp
@@ -598,9 +602,16 @@
                                         </div>
                                         <div class="flex-shrink-0 text-center">
                                             <label class="text-[9px] text-gray-400 block uppercase font-bold mb-1">Target</label>
-                                            <select :name="'behaviorals['+index+'][ideal_level]'" x-model="row.ideal_level" 
+                                            
+                                            {{-- PERBAIKAN: Tambahkan .number pada x-model dan :value pada option --}}
+                                            <select :name="'behaviorals['+index+'][ideal_level]'" 
+                                                    x-model.number="row.ideal_level" 
                                                     class="w-16 rounded-lg border-indigo-200 text-xs text-center font-black text-indigo-700 focus:ring-indigo-500 py-1">
-                                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                                <option :value="1">1</option>
+                                                <option :value="2">2</option>
+                                                <option :value="3">3</option>
+                                                <option :value="4">4</option>
+                                                <option :value="5">5</option>
                                             </select>
                                         </div>
                                     </div>
