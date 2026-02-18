@@ -56,7 +56,8 @@
                             <ion-icon name="home-outline"></ion-icon>
                             Dashboard Tim
                         </a>
-                        <a href="{{ route('supervisor.persetujuan') }}" class="sidebar-link {{ request()->routeIs('supervisor.persetujuan') ? 'active' : '' }} relative">
+                        <a href="{{ route('supervisor.persetujuan') }}" 
+                            class="sidebar-link {{ (request()->routeIs('supervisor.persetujuan*') || request()->routeIs('supervisor.idp.show')) ? 'active' : '' }} relative">
                             <ion-icon name="checkbox-outline"></ion-icon>
                             Persetujuan
                         </a>

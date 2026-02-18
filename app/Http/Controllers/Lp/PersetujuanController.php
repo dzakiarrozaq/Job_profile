@@ -6,8 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\TrainingPlan;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\StatusDiperbarui; 
-use App\Models\AuditLog; 
+use App\Models\AuditLog;
 
 class PersetujuanController extends Controller
 {
@@ -17,117 +16,87 @@ class PersetujuanController extends Controller
      */
     public function index()
     {
-        // 1. Ambil data dengan Eager Loading yang tepat
-        // Hanya ambil Plan yang statusnya 'pending_lp' DAN punya item yang 'approved' (lolos SPV)
-        $usersWithPlans = TrainingPlan::where('status', 'pending_lp')
-            ->whereHas('items', function($q) {
-                $q->where('status', 'approved'); 
-            })
-            ->with(['user.position', 'approver', 'items' => function($q) {
-                 $q->where('status', 'approved'); // Hitung item yang valid saja
-            }])
-            ->get()
-            ->groupBy('user_id'); // 2. Grouping berdasarkan User ID
+        // 1. AMBIL DATA LEBIH LOOSE (LONGGAR)
+        // Cukup ambil yang status Plan-nya 'pending_lp'.
+        // Kita load relasi items agar bisa dihitung nanti, tapi TIDAK memfilter query utama berdasarkan item.
+        $plans = TrainingPlan::with(['user.position', 'items', 'approver']) 
+            ->where('status', 'pending_lp')
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        // 3. Mapping data agar mudah dipakai di View Index
-        $groupedPlans = $usersWithPlans->map(function ($plans) {
-            $firstPlan = $plans->first();
+        // 2. GROUPING MANUAL
+        // Kita kelompokkan data berdasarkan User ID
+        $groupedPlans = $plans->groupBy('user_id')->map(function ($userPlans) {
+            $firstPlan = $userPlans->first();
+            
             return (object) [
                 'user'          => $firstPlan->user,
                 'user_id'       => $firstPlan->user_id,
-                'total_plans'   => $plans->count(),
-                'total_items'   => $plans->sum(fn($p) => $p->items->count()),
-                'latest_update' => $plans->max('updated_at'),
-                // Ambil nama supervisor dari relasi approver (yang kita buat di Model tadi)
-                'approver_name' => $firstPlan->approver->name ?? 'Supervisor', 
+                'total_plans'   => $userPlans->count(),
+                // Hitung total item dari collection yang sudah ditarik
+                'total_items'   => $userPlans->sum(function($p) {
+                                        return $p->items->count();
+                                   }),
+                'latest_update' => $userPlans->max('updated_at'),
+                // Pastikan relasi approver aman (cegah error jika null)
+                'approver_name' => $firstPlan->approver ? $firstPlan->approver->name : 'Data Kosong (Cek DB)',
             ];
         });
 
-        return view('lp.persetujuan.index', compact('groupedPlans'));
+        // 3. Kirim ke View (Gunakan values() untuk reset key array agar urut 0,1,2...)
+        return view('lp.persetujuan.index', [
+            'groupedPlans' => $groupedPlans->values() 
+        ]);
     }
 
     /**
-     * METHOD BARU: Menampilkan semua plan milik satu user
+     * Menampilkan semua plan milik satu user
      * Dipanggil saat LP klik "Review Semua" di halaman index
+     * Route: /lp/persetujuan/user/{userId}
      */
     public function reviewByUser($userId)
     {
         // Ambil semua plan milik user ini yang statusnya pending_lp
+        // Di sini kita load items agar tampil di view detail
         $plans = TrainingPlan::where('user_id', $userId)
             ->where('status', 'pending_lp')
-            ->whereHas('items', function($q) {
-                 $q->where('status', 'approved'); 
-            })
-            ->with(['items' => function($q) {
-                 $q->where('status', 'approved')->with('training');
-            }, 'user.position', 'approver']) // Load approver (Supervisor)
+            ->with(['items.training', 'user.position', 'approver']) // Eager load lengkap
             ->get();
 
-        // Jika data kosong (misal sudah diapprove semua barusan), balik ke index
+        // Jika data kosong (misal sudah diapprove semua barusan atau ID salah), balik ke index
         if ($plans->isEmpty()) {
             return redirect()->route('lp.persetujuan.index')
-                ->with('success', 'Seluruh pengajuan user ini telah selesai diproses.');
+                ->with('success', 'Seluruh pengajuan user ini telah selesai diproses atau tidak ditemukan.');
         }
 
         $user = $plans->first()->user;
 
-        // Pastikan Anda membuat view baru: resources/views/lp/persetujuan/review-user.blade.php
-        // (Isinya mirip dengan review-user milik Supervisor, tapi tombol aksinya mengarah ke route LP)
+        // Tampilkan view detail (pastikan file view-nya ada)
         return view('lp.persetujuan.show', compact('plans', 'user'));
     }
 
     /**
-     * Menampilkan Halaman Review untuk User tertentu
-     * URL: /lp/persetujuan/{user_id}
+     * Method show() dihapus karena fungsinya sudah digantikan oleh reviewByUser()
+     * untuk menghindari kebingungan logic. 
+     * Pastikan route di web.php mengarah ke reviewByUser untuk detail.
      */
-    public function show($id) // <--- JANGAN pakai (TrainingPlan $plan), pakai ($id) saja
-    {
-        $userId = $id; 
-
-        // 1. Ambil plan berdasarkan USER_ID, bukan ID Plan
-        $plans = TrainingPlan::where('user_id', $userId)
-            ->where('status', 'pending_lp')
-            ->whereHas('items', function($q) {
-                 $q->where('status', 'approved'); 
-            })
-            ->with(['items' => function($q) {
-                 $q->where('status', 'approved')->with('training');
-            }, 'user.position', 'approver']) 
-            ->get();
-
-        // 2. Jika kosong, kembalikan ke index (bukan error 404)
-        if ($plans->isEmpty()) {
-            return redirect()->route('lp.persetujuan.index')
-                ->with('success', 'Data tidak ditemukan atau sudah diproses.');
-        }
-
-        $user = $plans->first()->user;
-
-        return view('lp.persetujuan.show', compact('plans', 'user'));
-    }
 
     /**
-     * Aksi Verifikasi (Final Approve)
+     * Aksi Verifikasi (Final Approve) per Plan
      */
     public function approve($id)
     {
         $plan = TrainingPlan::with('user')->findOrFail($id);
         
+        // Update status Plan
         $plan->update([
             'status' => 'approved', 
-            'lp_approved_at' => now(), // Tambahkan timestamp
-            // 'approved_by_lp' => Auth::id() // Opsional: jika ada kolom ini
+            'lp_approved_at' => now(), 
+            // 'approved_by_lp' => Auth::id() // Uncomment jika ada kolom ini
         ]);
 
-        // Kirim Notifikasi
-        // try {
-        //     $plan->user->notify(new StatusDiperbarui(
-        //         'Disetujui Final (LP)', 
-        //         'Selamat! Rencana pelatihan Anda telah disetujui Learning Partner.',
-        //         route('riwayat'), 
-        //         'success' 
-        //     ));
-        // } catch (\Exception $e) { /* Abaikan error mail */ }
+        // Opsional: Update status item-item di dalamnya menjadi 'approved' juga (jika belum)
+        // $plan->items()->update(['status' => 'approved']);
 
         AuditLog::record('APPROVE PLAN (LP)', 'Memverifikasi final rencana pelatihan milik: ' . $plan->user->name, $plan);
 
@@ -135,27 +104,21 @@ class PersetujuanController extends Controller
     }
 
     /**
-     * Aksi Tolak (Reject)
+     * Aksi Tolak (Reject) per Plan
      */
     public function reject(Request $request, $id)
     {
         $plan = TrainingPlan::with('user')->findOrFail($id);
         $alasan = $request->input('reason', 'Tidak ada alasan spesifik.');
 
+        // Update status Plan
         $plan->update([
             'status' => 'rejected',
             'rejection_reason' => $alasan            
         ]);
 
-        // Kirim Notifikasi
-        // try {
-        //     $plan->user->notify(new StatusDiperbarui(
-        //         'Ditolak Learning Partner', 
-        //         'Maaf, rencana pelatihan Anda ditolak oleh LP. Alasan: ' . $alasan,
-        //         route('riwayat'), 
-        //         'error' 
-        //     ));
-        // } catch (\Exception $e) { /* Abaikan error mail */ }
+        // Opsional: Update status item-item menjadi 'rejected'
+        // $plan->items()->update(['status' => 'rejected']);
 
         AuditLog::record('REJECT PLAN (LP)', 'Menolak rencana pelatihan milik: ' . $plan->user->name . '. Alasan: ' . $alasan, $plan);
 

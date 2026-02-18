@@ -34,7 +34,6 @@ class TrainingPlan extends Model
     // Relasi untuk mengambil Data Supervisor yang melakukan Approval
     public function approver(): BelongsTo
     {
-        // Pastikan Anda sudah membuat kolom 'approved_by' di database
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by'); 
     }
 }

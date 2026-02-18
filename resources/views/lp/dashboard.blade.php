@@ -45,7 +45,7 @@
                         <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ $pendingApprovals }}</p>
                         <ion-icon name="time" class="text-3xl text-yellow-400 opacity-50"></ion-icon>
                     </div>
-                    <a href="{{ route('lp.persetujuan') }}" class="text-xs text-yellow-600 hover:underline mt-2 block font-semibold">
+                    <a href="{{ route('lp.persetujuan.index') }}" class="text-xs text-yellow-600 hover:underline mt-2 block font-semibold">
                         Lihat Antrean &rarr;
                     </a>
                 </div>
@@ -105,7 +105,7 @@
                     </div>
                     
                     <div class="p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 text-center">
-                        <a href="{{ route('lp.persetujuan') }}" class="text-sm text-indigo-600 font-medium hover:underline">
+                        <a href="{{ route('lp.persetujuan.index') }}" class="text-sm text-indigo-600 font-medium hover:underline">
                             Lihat Semua Permintaan
                         </a>
                     </div>

@@ -48,11 +48,6 @@
                                         <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
                                             {{ $group->total_items }} Item Pelatihan
                                         </span>
-                                        @if($group->total_plans > 1)
-                                            <span class="ml-2 text-xs text-gray-400">
-                                                (dari {{ $group->total_plans }} Form)
-                                            </span>
-                                        @endif
                                     </div>
                                 </td>
 

@@ -169,6 +169,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('/item/{itemId}/approve', [PersetujuanController::class, 'approveItem'])->name('approve.item');
         Route::post('/item/{itemId}/reject', [PersetujuanController::class, 'rejectItem'])->name('reject.item');
+
+        Route::post('/sertifikat/{id}/reject', [PersetujuanController::class, 'rejectSertifikat'])
+        ->name('supervisor.sertifikat.reject');
     });
 
 

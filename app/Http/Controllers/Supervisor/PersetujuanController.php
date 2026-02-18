@@ -32,8 +32,6 @@ class PersetujuanController extends Controller
         // 2. Ambil ID Posisi Bawahan (Untuk Job Profile)
         $childPositionIds = $supervisor->position_id ? $this->getAllSubordinatePositionIds($supervisor->position_id) : [];
 
-        // --- QUERY DATA ---
-
         // A. Assessment (Sudah Oke)
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
@@ -76,7 +74,10 @@ class PersetujuanController extends Controller
             ->where('certificate_status', 'pending_approval')
             ->with(['plan.user']) 
             ->latest()
-            ->get();
+            ->get()
+            ->groupBy(function($item) {
+                return $item->plan->user->id; // Grouping berdasarkan ID User
+            });
 
         return view('supervisor.persetujuan.index', compact(
             'assessments', 'trainings', 'jobProfiles', 'pendingIdps', 'pendingCertificates'
@@ -228,10 +229,6 @@ class PersetujuanController extends Controller
      */
     public function reviewByUser($userId)
     {
-        // LOGIKA PERBAIKAN:
-        // 1. Ambil Plan milik user yang statusnya masih 'pending_supervisor'
-        // 2. TAPI HANYA jika plan tersebut memiliki (whereHas) setidaknya satu item 'pending'
-        // 3. DAN saat meload relasi 'items', ambil yang 'pending' saja (supaya yang approved tidak ikut terload)
         
         $plans = TrainingPlan::where('user_id', $userId)
             ->where('status', 'pending_supervisor')
@@ -362,4 +359,17 @@ class PersetujuanController extends Controller
 
         return back()->with('success', 'Item ditolak. Silakan lanjut review sisa item.');
     }
+
+    public function rejectSertifikat(Request $request, $id)
+    {
+        $item = TrainingPlanItem::findOrFail($id);
+        
+        $item->update([
+            'certificate_status' => 'rejected', // Atau status yang sesuai di DB Anda
+            'rejection_reason'   => $request->reason // Pastikan kolom ini ada di DB
+        ]);
+
+        return back()->with('error', 'Sertifikat berhasil ditolak.');
+    }
 }
+
