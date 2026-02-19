@@ -240,8 +240,6 @@
         </div>
     </div>
 
-    {{-- ================= MODALS (Keep Existing Logic, Better UI) ================= --}}
-
     {{-- MODAL 1: IMPORT BIASA --}}
     <x-modal name="import-competency-modal" focusable>
         <form method="post" action="{{ route('admin.competencies.import') }}" enctype="multipart/form-data" class="p-6">
@@ -316,7 +314,7 @@
         <form method="post" action="{{ route('admin.competencies.import.technical-standard') }}" enctype="multipart/form-data" class="p-6">
             @csrf
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Import Pakem Teknis</h2>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Import Relasi Teknis</h2>
                 <button type="button" x-on:click="$dispatch('close')" class="text-gray-400 hover:text-gray-500"><ion-icon name="close" class="text-xl"></ion-icon></button>
             </div>
             
@@ -331,7 +329,7 @@
 
             <div class="flex justify-end gap-2">
                 <x-secondary-button x-on:click="$dispatch('close')">Batal</x-secondary-button>
-                <x-primary-button class="bg-orange-600 hover:bg-orange-700">Proses Pakem</x-primary-button>
+                <x-primary-button class="bg-orange-600 hover:bg-orange-700">Import</x-primary-button>
             </div>
         </form>
     </x-modal>

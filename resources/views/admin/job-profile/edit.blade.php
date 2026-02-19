@@ -47,9 +47,7 @@
             'is_standard' => true 
         ]);
 
-        // C. GABUNGKAN (MERGE)
-        // Logika: Tampilkan yang Saved. Jika Pakem belum ada di Saved, tambahkan Pakem.
-        
+        // C. GABUNGKAN (MERGE)        
         $existingMasterIds = $savedTechnicals->pluck('competency_master_id')->toArray();
 
         $newStandards = $pakemTechnicals->filter(function($item) use ($existingMasterIds) {
@@ -59,7 +57,6 @@
         $finalTechnicals = $savedTechnicals->merge($newStandards)->values()->toArray();
 
         // D. FINALISASI DATA UNTUK VIEW
-        // Gunakan old() jika ada validasi error, jika tidak gunakan hasil merge di atas
         $technicals = old('technicals', $finalTechnicals);
 
         $behaviorals = old('behaviorals', $allComps
@@ -484,7 +481,7 @@
                                                     
                                                     <div class="absolute left-2 top-2.5 text-gray-400">
                                                         <template x-if="row.is_standard">
-                                                            <ion-icon name="lock-closed" class="text-orange-500" title="Standar Pakem Posisi"></ion-icon>
+                                                            <ion-icon name="lock-closed" class="text-orange-500" title="Standar Posisi"></ion-icon>
                                                         </template>
                                                         <template x-if="!row.is_standard">
                                                             <ion-icon name="search"></ion-icon>

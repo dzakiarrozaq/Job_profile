@@ -498,7 +498,7 @@
                                                     <div class="absolute left-2 top-2.5 text-gray-400">
                                                         {{-- Jika ini Pakem, tampilkan ikon Kunci/Lock --}}
                                                         <template x-if="row.is_standard">
-                                                            <ion-icon name="lock-closed" class="text-orange-500" title="Standar Pakem Posisi"></ion-icon>
+                                                            <ion-icon name="lock-closed" class="text-orange-500" title="Standar Posisi"></ion-icon>
                                                         </template>
                                                         {{-- Jika Manual, tampilkan ikon Search --}}
                                                         <template x-if="!row.is_standard">

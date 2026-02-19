@@ -69,11 +69,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile/education/{id}', [ProfileController::class, 'destroyEducation'])->name('profile.education.destroy');
 
     Route::post('/profile/trigger-reset-password', [ProfileController::class, 'triggerResetPassword'])
-         ->name('profile.trigger-reset');
+         ->name('profile.trigger-reset')
+         ->middleware('throttle:3,1');
     
 
-    Route::get('/notifikasi/{id}/baca', [App\Http\Controllers\NotificationController::class, 'markAsReadAndRedirect'])->name('notifikasi.baca');
-    Route::post('/notifikasi/baca-semua', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifikasi.bacaSemua');
+    // Ubah dari GET ke POST (atau PATCH)
+    Route::post('/notifikasi/{id}/baca', [App\Http\Controllers\NotificationController::class, 'markAsReadAndRedirect'])
+        ->name('notifikasi.baca');
+
+    // Ini sudah benar pakai POST
+    Route::post('/notifikasi/baca-semua', [App\Http\Controllers\NotificationController::class, 'markAllRead'])
+        ->name('notifikasi.bacaSemua');
     
     // --- Rute Karyawan ---
     Route::middleware(['role:Karyawan Organik,Supervisor,Karyawan Outsourcing'])->group(function () {
@@ -188,13 +194,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('positions', PositionController::class);
 
         // Training
-        Route::post('/trainings/import', [AdminTrainingController::class, 'import'])->name('trainings.import');
+        Route::post('/trainings/import', [AdminTrainingController::class, 'import'])
+            ->name('trainings.import')
+            ->middleware('throttle:5,1');
+
         Route::resource('trainings', AdminTrainingController::class);
 
         // User Management
         Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
         Route::resource('users', AdminUserController::class);
-        Route::post('/users/import', [AdminUserController::class, 'import'])->name('users.import');
+        Route::post('/users/import', [AdminUserController::class, 'import'])
+            ->name('users.import')
+            ->middleware('throttle:5,1');
         Route::get('/users/template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
         
 

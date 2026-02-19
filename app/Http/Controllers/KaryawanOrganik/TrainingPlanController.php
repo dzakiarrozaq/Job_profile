@@ -21,8 +21,6 @@ class TrainingPlanController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Hitung apakah ada item di keranjang (status draft)
-        // Ini untuk memunculkan tombol "Ajukan Semua" di view
         $hasDrafts = TrainingPlan::where('user_id', $userId)
                         ->where('status', 'draft')
                         ->exists();
@@ -38,7 +36,6 @@ class TrainingPlanController extends Controller
 
         $training = Training::find($request->training_id);
 
-        // 1. UBAH DI SINI: Status jadi 'draft'
         $plan = TrainingPlan::create([
             'user_id' => Auth::id(),
             'status' => 'draft',
@@ -65,7 +62,6 @@ class TrainingPlanController extends Controller
      */
     public function submitAll()
     {
-        // Update semua rencana milik user yg statusnya 'draft' menjadi 'pending_supervisor'
         $affected = TrainingPlan::where('user_id', Auth::id())
             ->where('status', 'draft')
             ->update([
@@ -84,7 +80,6 @@ class TrainingPlanController extends Controller
 
     public function formSertifikat($itemId)
     {
-        // Cari item berdasarkan ID, pastikan user yang punya
         $item = TrainingPlanItem::whereHas('plan', function($q) {
             $q->where('user_id', Auth::id());
         })->findOrFail($itemId);
@@ -93,40 +88,41 @@ class TrainingPlanController extends Controller
     }
 
     /**
-     * Proses Simpan Sertifikat
+     * Proses Simpan Sertifikat (SECURE VERSION)
      */
     public function storeSertifikat(Request $request, $itemId)
     {
         $request->validate([
-            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:2048',
+            'file' => [
+                'required',                 
+                'file',                    
+                'mimes:pdf,jpg,jpeg,png',   
+                'max:2048',                 
+            ],
         ]);
 
-        // Cari item pelatihan
         $item = TrainingPlanItem::whereHas('plan', function($q) {
             $q->where('user_id', Auth::id());
         })->findOrFail($itemId);
 
         if ($request->hasFile('file')) {
-            
-            // Hapus file lama jika ada (untuk hemat storage)
-            if ($item->certificate_path && Storage::disk('public')->exists($item->certificate_path)) {
-                Storage::disk('public')->delete($item->certificate_path);
-            }
+            try {
+                if ($item->certificate_path && Storage::disk('public')->exists($item->certificate_path)) {
+                    Storage::disk('public')->delete($item->certificate_path);
+                }
 
-            // Simpan file baru
-            $path = $request->file('file')->store('certificates', 'public');
-            
-            // UPDATE DATABASE
-            $item->update([
-                'certificate_path' => $path,
+                $path = $request->file('file')->store('certificates', 'public');
                 
-                // PENTING: Jangan 'uploaded' atau 'verified'.
-                // Harus 'pending_approval' agar masuk ke dashboard Supervisor.
-                'certificate_status' => 'pending_approval' 
-            ]);
+                $item->update([
+                    'certificate_path' => $path,
+                    'certificate_status' => 'pending_approval' 
+                ]);
 
-            // LOGGING (Opsional tapi bagus)
-            // AuditLog::record('UPLOAD CERTIFICATE', 'Mengunggah sertifikat untuk verifikasi', $item->plan);
+                AuditLog::record('UPLOAD CERTIFICATE', 'Mengunggah sertifikat baru', $item->plan);
+
+            } catch (\Exception $e) {
+                return back()->with('error', 'Terjadi kesalahan saat mengunggah file. Silakan coba lagi.');
+            }
         }
 
         return back()->with('success', 'Sertifikat berhasil diunggah. Mohon tunggu verifikasi Supervisor.');

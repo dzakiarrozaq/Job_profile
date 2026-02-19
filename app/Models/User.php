@@ -25,23 +25,22 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         
         // --- STRUKTUR & DATA UTAMA ---
-        'nik',           // Penting untuk Password Default
-        'position_id',   // Penting untuk Struktur Organisasi
+        'nik',           
+        'position_id',  
         'status',
         'hiring_date',
         
         // --- DATA PRIBADI ---
         'gender',
         'place_of_birth',
-        'date_of_birth',    // <--- PASTIKAN INI SAMA DENGAN DATABASE (birth_date vs date_of_birth)
+        'date_of_birth',    
         'domicile',
         'phone_number',
         'profile_photo_path',
         'company_name',
 
         // --- AUTH ---
-        'email_verified_at', // <--- WAJIB ADA agar fitur auto-verified jalan
-        // 'role_id',        // <--- HAPUS INI (Karena kita pakai tabel pivot role_user)
+        'email_verified_at', 
     ];
 
     protected $hidden = [
@@ -54,7 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
-            // Tambahkan ini agar enak dipanggil di Blade ($user->hiring_date->format('d M Y'))
+            'nik' => 'encrypted',
             'hiring_date'       => 'date', 
             'birth_date'        => 'date',
         ];
@@ -66,7 +65,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function roles()
     {
-        // Relasi Many-to-Many via tabel pivot 'role_user'
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
@@ -131,7 +129,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasRole($roleName)
     {
-        // Cek apakah koleksi roles milik user mengandung nama role yang dicari
         return $this->roles->contains('name', $roleName);
     }
 
@@ -141,16 +138,24 @@ class User extends Authenticatable implements MustVerifyEmail
         // return $this->belongsTo(User::class, 'manager_id');
 
         // Opsi B: Jika struktur Anda menggunakan Position (User -> Position -> Parent Position -> User)
-        // Ini lebih kompleks, biasanya kita ambil via position
         return $this->hasOneThrough(
             User::class,
             Position::class,
-            'id', // Foreign key on positions table...
-            'position_id', // Foreign key on users table...
-            'position_id', // Local key on users table...
-            'atasan_id' // Local key on positions table...
+            'id', 
+            'position_id', 
+            'position_id', 
+            'atasan_id' 
         );
-        // CATATAN: Opsi B seringkali ribet. 
-        // Jika Anda hanya ingin NAMA manager, lebih aman pakai helper atau relasi manual di controller.
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($user) {
+            if ($user->isDirty('nik') && $user->nik) {
+                $user->nik_hash = hash_hmac('sha256', $user->nik, config('app.key'));
+            }
+        });
     }
 }

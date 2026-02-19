@@ -20,20 +20,22 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        // Eager load 'roles' (jamak)
         $query = User::with(['roles', 'position.organization']);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            // Di dalam closure pencarian method index()
+
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('nik', 'like', "%{$search}%")
-                // Tambahan: Cari berdasarkan Nama Jabatan
+                
                 ->orWhereHas('position', function($pos) use ($search) {
                     $pos->where('title', 'like', "%{$search}%");
                 });
+
+                $searchHash = hash_hmac('sha256', $search, config('app.key'));
+                
+                $q->orWhere('nik_hash', $searchHash);
             });
         }
 
@@ -73,7 +75,6 @@ class UserController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
         ]);
 
-        // 1. Buat User
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -82,7 +83,6 @@ class UserController extends Controller
             'status' => 'active',
         ]);
 
-        // 2. Simpan Role
         $user->roles()->sync($request->role_ids);
 
         AuditLog::record('Create User', "Menambahkan pengguna baru: {$user->name} ({$user->email})", $user);
@@ -142,23 +142,16 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus.');
     }
 
-    // --- BARU: Method Import Excel ---
-    // --- UPDATE METHOD IMPORT ---
     public function import(Request $request) 
     {
         $request->validate([
-            // Wajib xlsx karena script kita membaca Sheet ('5000' dan 'Atasan')
-            // CSV tidak mendukung multiple sheet.
             'file' => 'required|mimes:xlsx', 
         ]);
 
-        // Set unlimited time & memory (Penting untuk file besar)
         set_time_limit(0); 
-        ini_set('memory_limit', '512M'); // Tambah memori jika perlu
+        ini_set('memory_limit', '512M'); 
 
         try {
-            // Kita bungkus import dalam DB Transaction agar aman
-            // (Opsional, tapi recommended untuk integritas data)
             \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
                 Excel::import(new UsersImport, $request->file('file'));
             });
@@ -167,7 +160,6 @@ class UserController extends Controller
 
             return back()->with('success', 'Data pengguna, jabatan, dan struktur atasan berhasil diimport!');
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-             // Menangkap error validasi baris Excel (jika pakai WithValidation)
              $failures = $e->failures();
              $errorMsg = "Gagal pada baris: " . $failures[0]->row() . ". Error: " . implode(', ', $failures[0]->errors());
              return back()->with('error', $errorMsg);
@@ -176,12 +168,8 @@ class UserController extends Controller
         }
     }
 
-    // --- BARU: Method Download Template ---
     public function downloadTemplate()
     {
-        // Ubah nama file template agar sesuai konteks
-        // Pastikan Anda menaruh file 'Maskar Database_ok.xlsx' (yang kosong/contoh) 
-        // di folder 'public/templates/template_user_hierarki.xlsx'
         $path = public_path('templates/template_user_hierarki.xlsx');
         
         if (!file_exists($path)) {

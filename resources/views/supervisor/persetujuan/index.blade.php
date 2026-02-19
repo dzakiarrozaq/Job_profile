@@ -516,9 +516,6 @@
                 </div>
             @endforelse
 
-            {{-- ========================================== --}}
-            {{-- MODAL POPUP PREVIEW FILE --}}
-            {{-- ========================================== --}}
             <div x-show="fileModalOpen" 
                 class="fixed inset-0 z-50 overflow-y-auto" 
                 aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
@@ -576,7 +573,7 @@
         </div>
 
     </div>
-    
+
 <script>
 function rejectCertificate(btn, inputId) {
     // 1. Minta alasan penolakan

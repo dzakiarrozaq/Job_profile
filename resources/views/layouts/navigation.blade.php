@@ -62,36 +62,50 @@
                         
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                             <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Notifikasi</span>
+                            
                             @if(Auth::user()->unreadNotifications->count() > 0)
+                                {{-- Tombol "Tandai Semua Dibaca" (Sudah Benar pakai Form) --}}
                                 <form action="{{ route('notifikasi.bacaSemua') }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Tandai semua dibaca</button>
+                                    <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-medium transition">
+                                        Tandai semua dibaca
+                                    </button>
                                 </form>
                             @endif
                         </div>
 
                         <div class="max-h-64 overflow-y-auto">
                             @forelse(Auth::user()->unreadNotifications as $notification)
-                                <a href="{{ route('notifikasi.baca', $notification->id) }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                    <div class="flex items-start">
+                                
+                                {{-- UBAH DARI <a> MENJADI <FORM> --}}
+                                <form action="{{ route('notifikasi.baca', $notification->id) }}" method="POST" class="block w-full border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                    @csrf
+                                    
+                                    {{-- BUTTON YANG DISAMARKAN MENJADI LIST ITEM --}}
+                                    <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-start focus:outline-none focus:bg-gray-50">
+                                        
+                                        {{-- Icon --}}
                                         <div class="flex-shrink-0">
-                                            {{-- Ikon berdasarkan tipe notifikasi (Opsional) --}}
                                             <ion-icon name="information-circle" class="text-indigo-500 text-lg"></ion-icon>
                                         </div>
+
+                                        {{-- Text Content --}}
                                         <div class="ml-3 w-0 flex-1">
                                             <p class="text-sm font-medium text-gray-900 dark:text-white">
                                                 {{ $notification->data['title'] ?? 'Pemberitahuan' }}
                                             </p>
-                                            <p class="text-xs text-gray-500 mt-0.5">
+                                            <p class="text-xs text-gray-500 mt-0.5 text-left">
                                                 {{ $notification->data['message'] ?? '' }}
                                             </p>
                                             <p class="text-[10px] text-gray-400 mt-1">
                                                 {{ $notification->created_at->diffForHumans() }}
                                             </p>
                                         </div>
-                                    </div>
-                                </a>
+                                    </button>
+                                </form>
+
                             @empty
+                                {{-- Empty State --}}
                                 <div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                     <ion-icon name="notifications-off-outline" class="text-2xl mb-1"></ion-icon>
                                     <p>Tidak ada notifikasi baru</p>
