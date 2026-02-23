@@ -41,38 +41,30 @@ class SystemReportController extends Controller
         // 2. FILTER & QUERY DATA (UNTUK GRAFIK & TABEL)
         // =====================================================================
         
-        // PENTING: User terhubung ke Posisi, Posisi terhubung ke Organisasi (Department)
-        // Jadi relasinya: GapRecord -> User -> Position -> Organization
-        
         $queryGap = GapRecord::with(['user.position.organization']);
         
-        // Filter Organisasi (Department)
         if ($request->department_id && $request->department_id != 'all') {
             $queryGap->whereHas('user.position', fn($q) => 
                 $q->where('organization_id', $request->department_id)
             );
         }
 
-        // Filter Posisi
         if ($request->position_id && $request->position_id != 'all') {
             $queryGap->whereHas('user', fn($q) => 
                 $q->where('position_id', $request->position_id)
             );
         }
 
-        // Grafik: Kompetensi Paling Kritis (Gap Terbesar / Nilai Minus Paling Besar)
-        // Pastikan tabel gap_records ada sebelum query
         $criticalCompetencies = collect();
         if (Schema::hasTable('gap_records')) {
             $criticalCompetencies = (clone $queryGap)
                 ->select('competency_name', DB::raw('AVG(gap_value) as avg_gap'))
                 ->groupBy('competency_name')
-                ->orderBy('avg_gap', 'asc') // Gap minus (-) berarti butuh training
+                ->orderBy('avg_gap', 'asc') 
                 ->take(5)
                 ->get();
         }
 
-        // Grafik: Pelatihan Populer
         $popularTrainings = collect();
         if (Schema::hasTable('training_plan_items')) {
             $popularTrainings = DB::table('training_plan_items')
@@ -93,7 +85,6 @@ class SystemReportController extends Controller
             }]);
 
         if ($request->department_id && $request->department_id != 'all') {
-            // Filter user yang posisinya ada di organisasi tertentu
             $employeesQuery->whereHas('position', fn($q) => 
                 $q->where('organization_id', $request->department_id)
             );
@@ -109,7 +100,6 @@ class SystemReportController extends Controller
         // 4. DATA MASTER UNTUK DROPDOWN FILTER
         // =====================================================================
         
-        // AMBIL DEPARTEMEN DARI TABEL ORGANIZATIONS
         $departments = Organization::where('type', 'department')
                         ->orderBy('name')
                         ->get();
@@ -118,7 +108,6 @@ class SystemReportController extends Controller
         $roles = Role::all();
 
         return view('admin.laporan.index', [
-            // Statistik
             'totalUsers' => $totalUsers,
             'activeUsers' => $activeUsers,
             'usersByRole' => $usersByRole,
@@ -127,14 +116,11 @@ class SystemReportController extends Controller
             'draftProfiles' => $draftProfiles,
             'coverageRatio' => $coverageRatio,
             
-            // Grafik
             'criticalCompetencies' => $criticalCompetencies,
             'popularTrainings' => $popularTrainings,
             
-            // Tabel Data Utama
             'employees' => $employees, 
             
-            // Filter Options
             'departments' => $departments,
             'positions' => $positions,
             'roles' => $roles,

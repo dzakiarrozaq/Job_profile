@@ -14,36 +14,31 @@ use App\Imports\BehaviorMatrixImport;
 
 class CompetencyController extends Controller
 {
-    // Halaman List Kompetensi
     public function index(Request $request)
     {
-        $query = \App\Models\CompetenciesMaster::query();
+        $query = CompetenciesMaster::query();
 
-        // Logika Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('competency_name', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%"); // Ganti 'definition' jadi 'description'
+                ->orWhere('description', 'like', "%{$search}%"); 
             });
         }
 
-        // Logika Filter Tipe
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        // Urutkan dan Paginate
         $competencies = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return view('admin.competencies.index', compact('competencies'));
     }
 
-    // Proses Import Excel
     public function import(Request $request)
     {
-        ini_set('memory_limit', '-1'); // Unlimited RAM (Hati-hati, pakai secukupnya)
-        ini_set('max_execution_time', 0); // 5 Menit
+        ini_set('memory_limit', '-1'); 
+        ini_set('max_execution_time', 0); 
 
         $request->validate([
             'file' => 'required|mimes:xlsx,csv,xls',
@@ -57,7 +52,6 @@ class CompetencyController extends Controller
         }
     }
 
-    // Hapus Kompetensi
     public function destroy($id)
     {
         try {
@@ -69,47 +63,39 @@ class CompetencyController extends Controller
         }
     }
 
-    // Halaman Edit Manual
     public function edit($id)
     {
         $competency = CompetenciesMaster::with('keyBehaviors')->findOrFail($id);
         return view('admin.competencies.edit', compact('competency'));
     }
 
-    // Proses Update Manual
     public function update(Request $request, $id)
     {
         $request->validate([
             'competency_name' => 'required|string|max:255',
             'description'     => 'nullable|string',
-            'behaviors'       => 'nullable|array', // Array of levels
+            'behaviors'       => 'nullable|array', 
         ]);
 
         $competency = CompetenciesMaster::findOrFail($id);
         
-        // 1. Update Header
         $competency->update([
             'competency_name' => $request->competency_name,
             'description'     => $request->description,
         ]);
 
-        // 2. Update Behaviors
         if ($request->has('behaviors')) {
             foreach ($request->behaviors as $level => $text) {
                 
-                // Hapus data lama di level ini
                 $competency->keyBehaviors()->where('level', $level)->delete();
 
                 if (trim($text) === '') continue;
 
-                // KHUSUS PERILAKU (Level 0) - Perlu dipecah lagi baris per baris
                 if ($level == 0) {
-                    // Normalisasi Enter
                     $lines = explode("\n", str_replace("\r", "", $text));
                     
                     foreach ($lines as $line) {
                         $clean = trim($line);
-                        // Hapus nomor di depan (1. A -> A)
                         $clean = preg_replace('/^[\d\-\)\.]+\s*/', '', $clean);
                         
                         if (!empty($clean)) {
@@ -120,7 +106,6 @@ class CompetencyController extends Controller
                         }
                     }
                 } 
-                // KOMPETENSI TEKNIS (Level 1-5) - Simpan langsung
                 else {
                     $competency->keyBehaviors()->create([
                         'level' => $level,
@@ -155,7 +140,6 @@ class CompetencyController extends Controller
         ]);
 
         try {
-            // Langsung panggil tanpa parameter type
             Excel::import(new BehaviorMatrixImport, $request->file('file'));
             
             return redirect()->back()->with('success', 'Matrix Struktural & Fungsional berhasil diimport sekaligus!');

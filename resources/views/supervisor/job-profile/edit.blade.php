@@ -9,7 +9,6 @@
 
     <x-slot name="header">
         <div class="flex items-center">
-            {{-- PERUBAHAN ROUTE --}}
             <a href="{{ route('supervisor.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -19,10 +18,8 @@
     </x-slot>
 
     @php
-        // A. AMBIL DATA EXISTING (YANG SUDAH TERSIMPAN DI PROFILE INI)
         $allComps = $jobProfile->competencies;
 
-        // Filter Kompetensi Teknis yang sudah tersimpan
         $savedTechnicals = $allComps
             ->filter(fn($c) => strtolower(trim($c->type)) !== 'perilaku')
             ->map(fn($comp) => [
@@ -31,47 +28,34 @@
                 'competency_master_id' => $comp->competency_master_id,
                 'competency_name' => $comp->competency_name,
                 'ideal_level' => $comp->ideal_level,
-                // Ambil behaviors dari relasi competency master
                 'behaviors' => optional($comp->competency)->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
-                'is_standard' => false // Penanda ini data manual/existing
+                'is_standard' => false 
             ]);
 
-        // B. AMBIL DATA PAKEM (DARI TABEL STANDARD YANG BARU DI-IMPORT)
-        // Kita load standard beserta relasi master & behaviors-nya untuk efisiensi
         $standardComps = $jobProfile->position->technicalStandards()
             ->with(['competencyMaster.keyBehaviors'])
             ->get();
 
-        // Mapping data pakem ke format array JS
         $pakemTechnicals = $standardComps->map(fn($std) => [
             'key' => 'std_' . $std->id,
-            'id' => null, // Null karena belum tersimpan di tabel job_profile_competencies
+            'id' => null, 
             'competency_master_id' => $std->competency_master_id,
             'competency_name' => $std->competencyMaster->competency_name ?? 'Unknown',
             'ideal_level' => $std->ideal_level,
             'behaviors' => $std->competencyMaster->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
-            'is_standard' => true // Penanda ini data pakem
+            'is_standard' => true 
         ]);
-
-        // C. GABUNGKAN (MERGE)
-        // Logika: Tampilkan yang Saved. Jika Pakem belum ada di Saved, tambahkan Pakem.
         
-        // Ambil ID Master yang sudah ada di Saved agar tidak duplikat
         $existingMasterIds = $savedTechnicals->pluck('competency_master_id')->toArray();
 
-        // Filter Pakem yang BELUM ada di Saved
         $newStandards = $pakemTechnicals->filter(function($item) use ($existingMasterIds) {
             return !in_array($item['competency_master_id'], $existingMasterIds);
         });
 
-        // Gabungkan Saved + New Standards
         $finalTechnicals = $savedTechnicals->merge($newStandards)->values()->toArray();
 
-        // D. FINALISASI DATA UNTUK VIEW
-        // Gunakan old() jika ada validasi error, jika tidak gunakan hasil merge di atas
         $technicals = old('technicals', $finalTechnicals);
 
-        // Kompetensi Perilaku (Tetap sama seperti sebelumnya)
         $behaviorals = old('behaviorals', $allComps
             ->filter(fn($c) => strtolower(trim($c->type)) === 'perilaku')
             ->map(fn($comp) => [
@@ -81,8 +65,6 @@
                 'competency_name' => $comp->competency_name,
                 'description' => optional($comp->competency)->description ?? '-', 
                 
-                // === UBAH BARIS INI ===
-                // Paksa jadi integer. Jika null, default ke 1.
                 'ideal_level' => (int) ($comp->ideal_level ?? 1), 
                 
                 'behaviors' => optional($comp->competency)->keyBehaviors->where('level', 0)->values() ?? []
@@ -133,7 +115,6 @@
                 technicals: [],  
                 behaviorals: [], 
 
-                // Array Spesifikasi
                 educations: [], experiences: [], certifications: [], 
                 languages: [], computers: [], healths: [],
                 
@@ -173,7 +154,6 @@
                     this.healths = loadSpec('kesehatan');
                 },
                 
-                // Fungsi Tambah Baris
                 addRow(type) {
                     const key = 'new_' + Date.now() + Math.random(); 
 
@@ -194,7 +174,6 @@
                         });
                     }
 
-                    // Specs
                     if (type === 'educations') this.educations.push({ key: key, id: null, type: 'pendidikan', requirement: '', level_or_notes: '' });
                     if (type === 'experiences') this.experiences.push({ key: key, id: null, type: 'pengalaman', requirement: '', level_or_notes: '' });
                     if (type === 'certifications') this.certifications.push({ key: key, id: null, type: 'sertifikasi', requirement: '', level_or_notes: '' });
@@ -203,7 +182,6 @@
                     if (type === 'healths') this.healths.push({ key: key, id: null, type: 'kesehatan', requirement: '', level_or_notes: '' });
                 },
                 
-                // Fungsi Hapus Baris
                 removeRow(arrName, key) {
                     const specsArrays = ['educations', 'experiences', 'certifications', 'languages', 'computers', 'healths'];
                     
@@ -219,12 +197,10 @@
                             this[arrName][0].level_or_notes = '';
                         }
                     } else {
-                        // Default remove (responsibilities, workRelations)
                         this[arrName] = this[arrName].filter(item => item.key !== key);
                     }
                 },
 
-                // AI Suggestion (Tidak Berubah)
                 async getAiSuggestion(fieldType) {
                     this.isLoadingAI = true;
                     try {
@@ -255,7 +231,6 @@
                     this.activeSuggestionIndex = index; 
                     if (query.length < 2) { this.searchResults = []; return; }
                     
-                    // Reset ID di array technicals
                     this.technicals[index].competency_master_id = null; 
                     
                     try {
@@ -286,7 +261,6 @@
             </div>
         @endif
 
-        {{-- FORM UPDATE KE ROUTE SUPERVISOR --}}
         <form action="{{ route('supervisor.job-profile.update', $jobProfile->id) }}" method="POST">
             @csrf
             @method('PATCH')
@@ -348,7 +322,7 @@
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
-                            <span class="text-gray-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
+                            <span class="text-gray-900 dark:text-white font-bold">
                                 {{ $namaDepartemen ?? '-' }}
                             </span>
                         </div>
@@ -453,9 +427,6 @@
                 {{-- TAB 4: KOMPETENSI --}}
                 <div x-show="currentTab === 'kompetensi'" class="p-6 space-y-12">
                     
-                    {{-- =================================================================
-                        4.1 KOMPETENSI TEKNIS (Hard Skills - Editable Table)
-                    ================================================================= --}}
                     <div class="space-y-4">
                         <div class="flex justify-between items-center border-b pb-2">
                             <div>
@@ -494,13 +465,10 @@
                                                         :class="{'border-red-400 bg-red-50': row.competency_master_id === null && row.competency_name.length > 0, 'bg-orange-50 border-orange-200': row.is_standard}"
                                                         placeholder="Cari kompetensi...">
                                                     
-                                                    {{-- Ikon Penanda --}}
                                                     <div class="absolute left-2 top-2.5 text-gray-400">
-                                                        {{-- Jika ini Pakem, tampilkan ikon Kunci/Lock --}}
                                                         <template x-if="row.is_standard">
                                                             <ion-icon name="lock-closed" class="text-orange-500" title="Standar Posisi"></ion-icon>
                                                         </template>
-                                                        {{-- Jika Manual, tampilkan ikon Search --}}
                                                         <template x-if="!row.is_standard">
                                                             <ion-icon name="search"></ion-icon>
                                                         </template>
@@ -519,7 +487,6 @@
                                                     </button>
                                                 </div>
 
-                                                {{-- Suggestions --}}
                                                 <div x-show="activeSuggestionIndex === index && searchResults.length > 0" 
                                                     @click.away="searchResults = []"
                                                     class="absolute z-50 left-0 right-0 bg-white dark:bg-gray-700 shadow-xl border rounded-md mt-1 max-h-60 overflow-y-auto">
@@ -550,7 +517,6 @@
                                             </td>
                                         </tr>
 
-                                        {{-- Baris Panduan Level (Accordion) --}}
                                         <tr x-show="showGuide" x-transition.opacity class="bg-indigo-50/50 dark:bg-gray-900/50 border-t border-indigo-100">
                                             <td colspan="3" class="p-4">
                                                 <div class="grid grid-cols-1 gap-2">
@@ -603,7 +569,6 @@
                                         <div class="flex-shrink-0 text-center">
                                             <label class="text-[9px] text-gray-400 block uppercase font-bold mb-1">Target</label>
                                             
-                                            {{-- PERBAIKAN: Tambahkan .number pada x-model dan :value pada option --}}
                                             <select :name="'behaviorals['+index+'][ideal_level]'" 
                                                     x-model.number="row.ideal_level" 
                                                     class="w-16 rounded-lg border-indigo-200 text-xs text-center font-black text-indigo-700 focus:ring-indigo-500 py-1">
@@ -616,7 +581,6 @@
                                         </div>
                                     </div>
                                     
-                                    {{-- Indikator Perilaku Utama (Level 0) --}}
                                     <div class="p-2.5 bg-indigo-50/50 dark:bg-gray-900 rounded-lg border border-indigo-50/50">
                                         <div class="text-[9px] font-bold text-indigo-400 uppercase mb-1">Indikator Perilaku Utama:</div>
                                         <div class="space-y-1.5 custom-scrollbar max-h-40 overflow-y-auto pr-1">

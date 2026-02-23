@@ -100,13 +100,11 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm text-gray-500 dark:text-gray-400">
 
-                                    {{-- ATAU jika relasi many-to-many manual --}}
                                     {{ $member->roles->pluck('name')->implode(', ') ?? '-' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 @php
-                                    // Contoh logika: jika ada data di employee_profile
                                     $status = $member->employeeProfile->status ?? 'belum_mengisi';
                                 @endphp
 

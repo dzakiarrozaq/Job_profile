@@ -12,8 +12,6 @@
     </x-slot>
 
     @php
-        // Memisahkan Kompetensi berdasarkan tipe
-        // Asumsi: tipe 'Perilaku' untuk behavioral, sisanya dianggap Teknis
         $technicalCompetencies = $competencies->filter(fn($c) => strtolower($c->type) !== 'perilaku');
         $behavioralCompetencies = $competencies->filter(fn($c) => strtolower($c->type) === 'perilaku');
     @endphp
@@ -47,7 +45,6 @@
                         </thead>
                         
                         @forelse($technicalCompetencies as $comp)
-                            {{-- Panggil Component Baris Tabel (Reuse logic yang sama) --}}
                             @include('components.supervisor-verification-row', ['comp' => $comp])
                         @empty
                             <tbody>
@@ -84,7 +81,6 @@
                         </thead>
                         
                         @forelse($behavioralCompetencies as $comp)
-                            {{-- Panggil Component Baris Tabel (Reuse logic yang sama) --}}
                             @include('components.supervisor-verification-row', ['comp' => $comp])
                         @empty
                             <tbody>
@@ -102,21 +98,17 @@
             {{-- ==================================================== --}}
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 flex justify-between items-center">
                 
-                {{-- KIRI: Tombol Batal --}}
                 <a href="{{ route('supervisor.persetujuan') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                     Batal
                 </a>
 
-                {{-- KANAN: Group Tombol Aksi --}}
                 <div class="flex gap-3">
-                    {{-- TOMBOL TOLAK (REJECT) --}}
                     <button type="submit" name="action" value="reject" 
                             onclick="return confirm('Yakin ingin menolak? Status akan kembali ke Draft dan karyawan harus mengisi ulang.')"
                             class="px-4 py-2 text-sm font-bold text-red-700 bg-red-100 border border-red-200 rounded-lg hover:bg-red-200 focus:ring-2 focus:ring-red-500 transition flex items-center">
                         <ion-icon name="close-circle-outline" class="mr-1 text-lg"></ion-icon> Tolak / Revisi
                     </button>
 
-                    {{-- TOMBOL SIMPAN (APPROVE) --}}
                     <button type="submit" name="action" value="approve" 
                             onclick="return confirm('Apakah Anda yakin ingin menyetujui penilaian ini?')" 
                             class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 shadow-md transition flex items-center">
@@ -132,5 +124,4 @@
 {
 
 @push('scripts')
-{{-- Tidak butuh script tambahan, hanya catatan --}}
 @endpush

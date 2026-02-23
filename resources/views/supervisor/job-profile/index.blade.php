@@ -5,7 +5,6 @@
                 Manajemen Job Profile (Supervisor)
             </h2>
             <div class="flex gap-2">
-                {{-- Tombol Tambah Baru --}}
                 <a href="{{ route('supervisor.job-profile.create') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center shadow-sm">
                     <ion-icon name="add-outline" class="mr-2 text-lg"></ion-icon>
                     Tambah Baru
@@ -14,7 +13,6 @@
         </div>
     </x-slot>
 
-    {{-- Pesan Sukses/Error --}}
     @if(session('success'))
         <div class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -72,12 +70,11 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                                <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" class="...">Edit</a>
+                                <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
                                 
-                                {{-- Tombol Hapus Muncul Tanpa Syarat Status --}}
                                 <form action="{{ route('supervisor.job-profile.destroy', $profile->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin hapus data Verified ini?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 ...">Hapus</button>
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
                                 </form>
                             </td>
                         </tr>

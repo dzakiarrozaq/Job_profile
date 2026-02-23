@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Idp;
 use App\Models\IdpDetail;
-use App\Models\User; // Tambahkan Model User untuk mencari atasan
+use App\Models\User; 
 
 class IdpController extends Controller
 {
@@ -31,36 +31,29 @@ class IdpController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. VALIDASI DATA
         $request->validate([
-            // Header
             'successor_position' => 'nullable|string|max:255',
             
-            // Career Aspiration (Array Input dari View)
             'career_interest_a'     => 'nullable|array',
             'future_job_interest_a' => 'nullable|array',
             'career_interest_b'     => 'nullable|array',
             'future_job_interest_b' => 'nullable|array',
 
-            // Development Goals (Nested Array)
             'goals'                 => 'nullable|array',
             'goals.*.goal'          => 'required|string',
             'goals.*.category'      => 'nullable|string',
             
-            // Activities (Array di dalam Goal)
             'goals.*.activities'    => 'nullable|array',
             'goals.*.activities.*.desc' => 'required|string',
             'goals.*.activities.*.date' => 'nullable|string',
             'goals.*.activities.*.progress' => 'nullable|string',
         ]);
 
-        // 2. OLAH DATA CAREER ASPIRATION (Jadi JSON Array Rapi)
         $careerAspirations = [
-            'a' => [], // Job Family Sama
-            'b' => []  // Job Family Beda
+            'a' => [], 
+            'b' => []  
         ];
 
-        // Gabungkan Input Bagian A
         if ($request->has('career_interest_a')) {
             foreach ($request->career_interest_a as $key => $interest) {
                 if (!empty($interest) || !empty($request->future_job_interest_a[$key])) {
@@ -72,7 +65,6 @@ class IdpController extends Controller
             }
         }
 
-        // Gabungkan Input Bagian B
         if ($request->has('career_interest_b')) {
             foreach ($request->career_interest_b as $key => $interest) {
                 if (!empty($interest) || !empty($request->future_job_interest_b[$key])) {
@@ -84,19 +76,14 @@ class IdpController extends Controller
             }
         }
 
-        // 3. CARI DATA MANAGER (SUPERVISOR)
-        // Ini langkah krusial untuk mencegah Error 403 saat approval
         $user = Auth::user();
         $managerId = null;
 
-        // Cek apakah user punya posisi dan punya atasan
         if ($user->position && $user->position->atasan_id) {
-            // Cari User yang memegang jabatan atasan tersebut
             $manager = User::where('position_id', $user->position->atasan_id)->first();
             $managerId = $manager ? $manager->id : null;
         }
 
-        // 4. UPDATE / CREATE DATA UTAMA IDP
         $idp = Idp::updateOrCreate(
             [
                 'user_id' => Auth::id(),
@@ -104,32 +91,26 @@ class IdpController extends Controller
             ],
             [
                 'successor_position' => $request->successor_position,
-                'career_aspirations' => $careerAspirations, // Disimpan sebagai JSON
+                'career_aspirations' => $careerAspirations, 
                 'status'             => $request->action == 'submit' ? 'submitted' : 'draft',
                 
-                // --- PERBAIKAN PENTING DI SINI ---
-                // Jika disubmit, kita kunci siapa managernya saat itu.
                 'manager_id'         => $request->action == 'submit' ? $managerId : null,
             ]
         );
 
-        // 5. SIMPAN DETAIL (GOALS & ACTIVITIES)
-        // Hapus detail lama, ganti dengan yang baru (reset)
         $idp->details()->delete();
 
         if ($request->has('goals') && is_array($request->goals)) {
             foreach ($request->goals as $goalData) {
-                // Skip jika baris kosong
                 if (empty($goalData['goal'])) continue;
 
                 $idp->details()->create([
                     'development_goal' => $goalData['goal'],
                     'dev_category'     => $goalData['category'] ?? null,
                     
-                    // Simpan activities sebagai JSON Array
                     'activities'       => $goalData['activities'] ?? [], 
                     
-                    'progress'         => null // Progress diisi nanti saat review
+                    'progress'         => null 
                 ]);
             }
         }

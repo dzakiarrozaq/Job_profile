@@ -16,7 +16,6 @@
         <style>
             body { font-family: 'Plus Jakarta Sans', sans-serif; }
             
-            /* Animasi Halus */
             .fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; transform: translateY(20px); }
             @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
             .delay-200 { animation-delay: 0.2s; }

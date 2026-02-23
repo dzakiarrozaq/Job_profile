@@ -87,10 +87,6 @@
                 
                 @if($gapRecords->count() > 0)
                     @php
-                        /** * SARINGAN GANDA: 
-                         * Menggunakan str_contains + strtolower + trim 
-                         * supaya tidak "bocor" meskipun di DB tulisannya huruf kecil atau ada spasi.
-                         */
                         $behavioralGaps = $gapRecords->filter(function($g) {
                             $tipe = strtolower(trim($g->type ?? ''));
                             return str_contains($tipe, 'perilaku');
@@ -103,7 +99,6 @@
                     @endphp
 
                     <div class="space-y-10">
-                        {{-- 1. TABEL KOMPETENSI TEKNIS (HARD SKILLS) --}}
                         <div class="space-y-3">
                             <h4 class="flex items-center gap-2 text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
                                 <ion-icon name="construct-outline" class="text-lg"></ion-icon>
@@ -152,7 +147,6 @@
                             </div>
                         </div>
 
-                        {{-- 2. TABEL KOMPETENSI PERILAKU (SOFT SKILLS) --}}
                         <div class="space-y-3">
                             <h4 class="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
                                 <ion-icon name="people-circle-outline" class="text-lg"></ion-icon>

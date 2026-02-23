@@ -80,7 +80,6 @@
                             </div>
                         </div>
                     @endif
-                    {{-- ================================================= --}}
 
                     <form action="{{ route('admin.job-profile.store') }}" method="POST" id="jobProfileForm">
                         @csrf

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Lp;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Training;
-use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TrainingController extends Controller
 {
@@ -44,9 +44,9 @@ class TrainingController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'provider'    => 'required|string|max:255',
-            'method'      => 'required|in:Online,Offline,Hybrid', // Disesuaikan dengan View (method)
-            'level'       => 'nullable|in:Basic,Intermediate,Advanced', // Tambahan sesuai View
-            'duration'    => 'required|integer|min:1', // Disesuaikan dengan View (duration)
+            'method'      => 'required|in:Online,Offline,Hybrid',
+            'level'       => 'nullable|in:Basic,Intermediate,Advanced', 
+            'duration'    => 'required|integer|min:1', 
             'description' => 'nullable|string',
         ]);
 

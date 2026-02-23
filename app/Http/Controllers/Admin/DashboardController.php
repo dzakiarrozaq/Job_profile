@@ -8,7 +8,7 @@ use Illuminate\View\View;
 use App\Models\User;
 use App\Models\JobProfile;
 use App\Models\Training;
-use App\Models\TrainingPlan; // <--- Tambahkan Model TrainingPlan
+use App\Models\TrainingPlan; 
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,10 +23,8 @@ class DashboardController extends Controller
 
         $totalJobProfile = JobProfile::count();
 
-        // Menghitung Katalog Pelatihan yang sudah disetujui
         $totalPelatihan = Training::where('status', 'approved')->count();
         
-        // Menghitung Rencana Pelatihan yang tertunda (Gunakan TrainingPlan)
         $persetujuanTertunda = TrainingPlan::whereIn('status', ['pending_supervisor', 'pending_lp'])->count();
 
         $recentLogs = AuditLog::with('user') 
@@ -34,7 +32,6 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
         
-        // Perbaikan: Gunakan TrainingPlan & user_id (bukan created_by)
         $pendingKatalog = TrainingPlan::where('user_id', Auth::id()) 
             ->whereIn('status', ['pending_supervisor', 'pending_lp'])
             ->orderBy('created_at', 'desc')

@@ -6,14 +6,12 @@
             </h2>
             <div class="flex gap-2">
                 
-                {{-- PERBAIKAN UTAMA: Tambahkan 'x-data' di sini agar tombol berfungsi --}}
                 <button x-data @click="$dispatch('open-import-modal')" 
                         class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center shadow-sm">
                     <ion-icon name="cloud-upload-outline" class="mr-2 text-lg"></ion-icon>
                     Import Tanggung Jawab
                 </button>
 
-                {{-- Tombol Tambah Baru --}}
                 <a href="{{ route('admin.job-profile.create') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center shadow-sm">
                     <ion-icon name="add-outline" class="mr-2 text-lg"></ion-icon>
                     Tambah Baru
@@ -22,7 +20,6 @@
         </div>
     </x-slot>
 
-    {{-- Pesan Sukses/Error --}}
     @if(session('success'))
         <div class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -108,8 +105,6 @@
         </div>
     </div>
 
-    {{-- MODAL IMPORT MASTER --}}
-    {{-- Kita pasang listener global .window agar bisa dipanggil dari Header --}}
     <div x-data="{ show: false }" 
          x-show="show" 
          @open-import-modal.window="show = true" 
@@ -140,7 +135,6 @@
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 
-                {{-- Pastikan Route Name di sini sesuai dengan yang ada di web.php --}}
                 <form action="{{ route('admin.master.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

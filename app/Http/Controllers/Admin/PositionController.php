@@ -15,16 +15,13 @@ class PositionController extends Controller
      */
     public function index(Request $request)
     {
-        // Mulai Query
         $query = Position::query();
 
-        // 1. Lakukan JOIN ke tabel organizations agar bisa sort berdasarkan nama unit
         $query->join('organizations', 'positions.organization_id', '=', 'organizations.id')
-            ->select('positions.*') // PENTING: Ambil data posisi saja agar ID tidak bentrok
-            ->orderBy('organizations.name', 'asc') // Urutkan A-Z berdasarkan Nama Unit
-            ->orderBy('positions.title', 'asc');   // Opsi tambahan: Urutkan nama jabatan setelah unit
+            ->select('positions.*') 
+            ->orderBy('organizations.name', 'asc') 
+            ->orderBy('positions.title', 'asc');  
 
-        // 2. Logika Pencarian (Jika ada search)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -33,7 +30,6 @@ class PositionController extends Controller
             });
         }
 
-        // 3. Eager Load relasi (agar tidak N+1 query di view) & Paginate
         $positions = $query->with(['organization', 'atasan'])->paginate(10);
 
         return view('admin.positions.index', compact('positions'));
@@ -66,7 +62,6 @@ class PositionController extends Controller
             $validated['title'] = Str::finish($validated['title'], ' (OS)');
         }
 
-        // 3. Simpan
         Position::create($validated);
 
         return redirect()->route('admin.positions.index')
@@ -119,10 +114,9 @@ class PositionController extends Controller
     {
         $position = Position::findOrFail($id);
         
-        // Cek apakah posisi ini punya bawahan? (Opsional: mencegah hapus atasan yg punya bawahan)
-        // if($position->bawahan()->count() > 0) {
-        //     return back()->with('error', 'Gagal hapus! Posisi ini masih menjadi atasan posisi lain.');
-        // }
+        if($position->bawahan()->count() > 0) {
+            return back()->with('error', 'Gagal hapus! Posisi ini masih menjadi atasan posisi lain.');
+        }
 
         $position->delete();
 

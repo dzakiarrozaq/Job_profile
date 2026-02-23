@@ -17,7 +17,6 @@ class LaporanController extends Controller
         $supervisor = Auth::user();
         $supervisorPositionId = $supervisor->position_id;
         
-        // --- PERBAIKAN: Ambil ID Tim lewat relasi Position (atasan_id) ---
         $teamIds = User::whereHas('position', function($query) use ($supervisorPositionId) {
             $query->where('atasan_id', $supervisorPositionId);
         })->pluck('id');

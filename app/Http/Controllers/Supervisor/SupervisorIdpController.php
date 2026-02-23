@@ -17,7 +17,6 @@ class SupervisorIdpController extends Controller
     {
         $supervisor = Auth::user();
         
-        // 1. PERBAIKAN: Ambil ID Bawahan berdasarkan Posisi (Bukan kolom manager_id)
         $subordinateUserIds = $this->getAllSubordinateUserIds($supervisor);
 
         $pendingIdps = Idp::with('user')
@@ -33,7 +32,6 @@ class SupervisorIdpController extends Controller
     {
         $idp = Idp::with(['user', 'details'])->findOrFail($id);
         
-        // 2. PERBAIKAN: Validasi menggunakan Helper Position
         if (!$this->checkIfSubordinate($idp->user)) {
             abort(403, 'Akses Ditolak: Anda bukan atasan karyawan ini (berdasarkan struktur jabatan).');
         }
@@ -45,7 +43,6 @@ class SupervisorIdpController extends Controller
     {
         $idp = Idp::findOrFail($id);
 
-        // 3. PERBAIKAN: Validasi menggunakan Helper Position
         if (!$this->checkIfSubordinate($idp->user)) {
             abort(403, 'Akses Ditolak.');
         }
@@ -53,11 +50,10 @@ class SupervisorIdpController extends Controller
         if ($request->action == 'approve') {
             $idp->update([
                 'status' => 'approved',
-                'manager_id' => Auth::id(), // Catat siapa yang approve
+                'manager_id' => Auth::id(), 
                 'approved_at' => now(),
             ]);
 
-            // Kirim Notifikasi (Pastikan user punya email valid/setup notifikasi benar)
             try {
                 $idp->user->notify(new StatusDiperbarui(
                     'IDP Disetujui', 
@@ -66,7 +62,6 @@ class SupervisorIdpController extends Controller
                     'success' 
                 ));
             } catch (\Exception $e) {
-                // Abaikan error notifikasi agar tidak membatalkan approval
             }
 
             AuditLog::record('APPROVE IDP', 'Menyetujui IDP milik: ' . $idp->user->name, $idp);
@@ -75,10 +70,7 @@ class SupervisorIdpController extends Controller
         } else {
             $idp->update([
                 'status' => 'rejected',
-                'manager_id' => Auth::id(), 
-                // Pastikan kolom ini ada di migration idps, jika tidak gunakan 'rejection_note' di tabel lain atau log
-                // Jika belum ada kolom rejection_note di tabel idps, hapus baris ini:
-                // 'rejection_note' => $request->rejection_note, 
+                'manager_id' => Auth::id(),
             ]);
 
             // Kirim Notifikasi
@@ -95,14 +87,9 @@ class SupervisorIdpController extends Controller
             $msg = 'IDP ditolak.';
         }
 
-        // Redirect kembali ke halaman persetujuan dashboard
         return redirect()->route('supervisor.persetujuan') 
                          ->with('success', $msg);
     }
-
-    // =========================================================================
-    // HELPER FUNCTIONS (Logic Hirarki Jabatan)
-    // =========================================================================
 
     /**
      * Helper: Cek apakah targetUser adalah bawahan dari Supervisor yg login
@@ -111,12 +98,10 @@ class SupervisorIdpController extends Controller
     {
         $supervisor = Auth::user();
 
-        // Cek kelengkapan data posisi
         if (!$supervisor->position_id || !$targetUser->position_id) {
             return false; 
         }
 
-        // Ambil semua ID posisi di bawah supervisor (Level 1 & 2)
         $allowedPositionIds = $this->getAllSubordinatePositionIds($supervisor->position_id);
 
         return in_array($targetUser->position_id, $allowedPositionIds);
@@ -137,10 +122,8 @@ class SupervisorIdpController extends Controller
      */
     private function getAllSubordinatePositionIds($supervisorPositionId)
     {
-        // Level 1: Bawahan Langsung
         $directIds = Position::where('atasan_id', $supervisorPositionId)->pluck('id')->toArray();
         
-        // Level 2: Cucu Buah
         $indirectIds = [];
         if(!empty($directIds)){
             $indirectIds = Position::whereIn('atasan_id', $directIds)->pluck('id')->toArray();

@@ -16,7 +16,6 @@ use App\Http\Controllers\Supervisor\PersetujuanController as SupervisorPersetuju
 use App\Http\Controllers\Supervisor\VerifikasiKompetensiController;
 use App\Http\Controllers\Lp\DashboardController as LpDashboardController;
 use App\Http\Controllers\Lp\PersetujuanController as LpPersetujuanController;
-use App\Http\Controllers\Auth\RoleSelectionController;
 use App\Http\Controllers\Supervisor\TeamController;
 use App\Http\Controllers\Supervisor\LaporanController;
 use App\Http\Controllers\Admin\SystemReportController;
@@ -31,11 +30,8 @@ use App\Http\Controllers\Supervisor\PersetujuanController;
 use App\Http\Controllers\Lp\LaporanController as LpLaporanController;
 use App\Http\Controllers\Lp\TrainingController as LpTrainingController;
 use App\Http\Controllers\Lp\ProfileController as LpProfileController;
-use App\Http\Controllers\Lp\TrainingController;
 use App\Http\Controllers\Admin\PositionHierarchyController;
 use App\Http\Controllers\Admin\CompetencyController;
-use App\Models\JobGrade;
-use App\Models\Position;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,11 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
          ->middleware('throttle:3,1');
     
 
-    // Ubah dari GET ke POST (atau PATCH)
     Route::post('/notifikasi/{id}/baca', [App\Http\Controllers\NotificationController::class, 'markAsReadAndRedirect'])
         ->name('notifikasi.baca');
 
-    // Ini sudah benar pakai POST
     Route::post('/notifikasi/baca-semua', [App\Http\Controllers\NotificationController::class, 'markAllRead'])
         ->name('notifikasi.bacaSemua');
     
@@ -122,54 +116,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ==============================================================================
     Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
         
-        // Dashboard & Menu Utama Supervisor
         Route::get('/dashboard', [SupervisorDashboardController::class, 'index'])->name('dashboard');
         Route::get('/persetujuan', [SupervisorPersetujuanController::class, 'index'])->name('persetujuan');
         
-        // Verifikasi Kompetensi & Sertifikat
         Route::get('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'show'])->name('penilaian.show');
         Route::post('/verifikasi-kompetensi/{user}', [VerifikasiKompetensiController::class, 'store'])->name('penilaian.store');
         Route::get('/verifikasi-sertifikat', [App\Http\Controllers\Supervisor\CertificateController::class, 'index'])->name('sertifikat.index');
         Route::post('/verifikasi-sertifikat/{id}/approve', [App\Http\Controllers\Supervisor\CertificateController::class, 'approve'])->name('sertifikat.approve');
         Route::post('/verifikasi-sertifikat/{id}/reject', [App\Http\Controllers\Supervisor\CertificateController::class, 'reject'])->name('sertifikat.reject');
         
-        // Profil Diri & Tim
         Route::get('/profile', function () { return view('supervisor.profile', ['user' => Auth::user()]); })->name('profile');
         Route::patch('/profile', [ProfileController::class, 'updateSupervisorProfile'])->name('profile.update');
         Route::resource('tim', TeamController::class); // Menggantikan manual get/post/create
 
-        // Laporan & IDP
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
         Route::get('/idp-approval', [SupervisorIdpController::class, 'index'])->name('idp.index');
         Route::get('/idp-approval/{id}', [SupervisorIdpController::class, 'show'])->name('idp.show');
         Route::post('/idp-approval/{id}', [SupervisorIdpController::class, 'update'])->name('idp.update');
 
-        // Group Supervisor
         Route::get('/persetujuan/idp/{id}', [PersetujuanController::class, 'showIdp'])->name('persetujuan.idp.show');
         Route::post('/persetujuan/idp/{id}/approve', [PersetujuanController::class, 'approveIdp'])->name('persetujuan.idp.approve');
         Route::post('/persetujuan/idp/{id}/reject', [PersetujuanController::class, 'rejectIdp'])->name('persetujuan.idp.reject');
         
-        // Rencana Persetujuan Lainnya
         Route::get('/rencana/{id}', [PersetujuanController::class, 'show'])->name('rencana.show');
         Route::post('/rencana/{id}/approve', [PersetujuanController::class, 'approve'])->name('approve');
         Route::post('/rencana/{id}/reject', [PersetujuanController::class, 'reject'])->name('reject');
 
-        // --------------------------------------------------------------------------
-        // JOB PROFILE (Versi Supervisor)
-        // URL: /supervisor/job-profile/...
-        // Route Name: supervisor.job-profile.*
-        // --------------------------------------------------------------------------
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
         
-        // Gunakan Resource agar otomatis membuat index, create, store, edit, update, destroy
         Route::resource('job-profile', JobProfileController::class); 
 
-        // Route untuk Review Gabungan per User
         Route::get('/review-user/{userId}', [PersetujuanController::class, 'reviewByUser'])->name('review.user');
         
-        // Route Aksi Approve/Reject Massal
         Route::post('/approve-user/{userId}', [PersetujuanController::class, 'approveByUser'])->name('approve.user');
         Route::post('/reject-user/{userId}', [PersetujuanController::class, 'rejectByUser'])->name('reject.user');
 
@@ -188,19 +168,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        // Posisi & Hirarki
         Route::get('/positions/hierarchy', [PositionHierarchyController::class, 'index'])->name('positions.hierarchy');
         Route::post('/positions/hierarchy/update', [PositionHierarchyController::class, 'updateParent'])->name('positions.updateHierarchy');
         Route::resource('positions', PositionController::class);
 
-        // Training
         Route::post('/trainings/import', [AdminTrainingController::class, 'import'])
             ->name('trainings.import')
             ->middleware('throttle:5,1');
 
         Route::resource('trainings', AdminTrainingController::class);
 
-        // User Management
         Route::get('/manajemen-user', [AdminUserController::class, 'index'])->name('users.index');
         Route::resource('users', AdminUserController::class);
         Route::post('/users/import', [AdminUserController::class, 'import'])
@@ -209,7 +186,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users/template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
         
 
-        // Laporan & Logs
         Route::get('/laporan-sistem', [SystemReportController::class, 'index'])->name('laporan.index');
         Route::get('/laporan-sistem/export', [SystemReportController::class, 'export'])->name('laporan.admin.export'); 
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
@@ -218,7 +194,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/job-profile/suggest-text', [JobProfileController::class, 'suggestText'])->name('job-profile.suggestText');
         Route::get('/job-profile/search-competencies', [JobProfileController::class, 'searchCompetencies'])->name('competencies.search');
         
-        // Resource Controller otomatis membuat semua route CRUD
         Route::resource('job-profile', JobProfileController::class);
         
         Route::get('/competencies', [App\Http\Controllers\Admin\CompetencyController::class, 'index'])->name('competencies.index');
@@ -230,15 +205,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/api/get-responsibilities', [JobProfileController::class, 'getResponsibilitiesByBand'])->name('api.get-responsibilities');
 
-        // Route untuk Import Master Tanggung Jawab
         Route::post('/master-responsibilities/import', [JobProfileController::class, 'importMasterResponsibilities'])
-        ->name('master.import'); // Nama route jadi 'admin.master.import' otomatis karena group name('admin.')
-
+        ->name('master.import'); 
         Route::post('/competencies/import-definition', [App\Http\Controllers\Admin\CompetencyController::class, 'importBehaviorDefinition'])
         ->name('competencies.import.definition');
 
-        // 3. Route Import PERILAKU MATRIX (Untuk tombol ke-2 nanti)
-        // Tambahkan juga biar tidak error nanti:
         Route::post('/competencies/import-behavior', [App\Http\Controllers\Admin\CompetencyController::class, 'importBehaviorMatrix'])
             ->name('competencies.import.behavior');
 
@@ -250,39 +221,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Rute Learning Partner ---
     Route::middleware(['auth', 'verified', 'role:Learning Partner'])->prefix('lp')->name('lp.')->group(function () {
     
-        // --- DASHBOARD ---
         Route::get('/dashboard', [LpDashboardController::class, 'index'])->name('dashboard');
 
-        // --- PERSETUJUAN (VERIFIKASI) ---
-        // 1. Index (Daftar User)
         Route::get('/persetujuan', [LpPersetujuanController::class, 'index'])
             ->name('persetujuan.index'); 
 
-        // 2. Review Detail per User (Gunakan nama beda: review-user)
         Route::get('/persetujuan/user/{userId}', [LpPersetujuanController::class, 'reviewByUser'])
             ->name('persetujuan.review-user');
 
-        // 3. Review Detail per Plan (Opsional/Fallback)
         Route::get('/persetujuan/{id}', [LpPersetujuanController::class, 'show'])
             ->name('persetujuan.show');
 
-        // 4. Action Approve & Reject
         Route::post('/persetujuan/{id}/approve', [LpPersetujuanController::class, 'approve'])
             ->name('persetujuan.approve');
         Route::post('/persetujuan/{id}/reject', [LpPersetujuanController::class, 'reject'])
             ->name('persetujuan.reject');
 
-        // --- LAPORAN ---
         Route::get('/laporan', [LpLaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export', [LpLaporanController::class, 'export'])->name('laporan.export');
         Route::get('/laporan/{id}', [LpLaporanController::class, 'show'])->name('laporan.show');
 
-        // --- KATALOG TRAINING ---
-        // Import diletakkan SEBELUM resource agar tidak dianggap sebagai {id}
         Route::post('/katalog/import', [LpTrainingController::class, 'import'])->name('katalog.import');
         Route::resource('katalog', LpTrainingController::class);
 
-        // --- PROFILE ---
         Route::get('/profile', [LpProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [LpProfileController::class, 'update'])->name('profile.update');
         Route::put('/password', [LpProfileController::class, 'updatePassword'])->name('password.update');

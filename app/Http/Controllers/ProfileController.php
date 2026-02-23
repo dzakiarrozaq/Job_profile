@@ -261,10 +261,9 @@ class ProfileController extends Controller
      */
     public function destroyJobHistory($id): RedirectResponse
     {
-        // Cari data berdasarkan ID, TAPI pastikan user_id nya sama dengan yang login (Security)
         $job = JobHistory::where('id', $id)
             ->where('user_id', Auth::id())
-            ->firstOrFail(); // Akan return 404 jika id tidak ketemu atau punya orang lain
+            ->firstOrFail(); 
 
         $job->delete();
 
@@ -276,7 +275,6 @@ class ProfileController extends Controller
      */
     public function destroyEducation($id): RedirectResponse
     {
-        // Cari data berdasarkan ID, TAPI pastikan user_id nya sama dengan yang login (Security)
         $education = EducationHistory::where('id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();

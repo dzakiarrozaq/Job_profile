@@ -37,14 +37,11 @@
         }
     @endphp
 
-    {{-- Data State & Tab Management --}}
     <div class="max-w-7xl mx-auto space-y-6" x-data="{ activeTab: 'assessment' }">
 
-        {{-- NAVIGATION TABS --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border-b border-gray-200 dark:border-gray-700 overflow-x-auto no-scrollbar">
             <nav class="-mb-px flex px-6 space-x-8 min-w-max" aria-label="Tabs">
                 
-                {{-- Tab 1: Assessment --}}
                 <button @click="activeTab = 'assessment'" 
                         :class="activeTab === 'assessment' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors">
@@ -54,7 +51,6 @@
                     @endif
                 </button>
 
-                {{-- Tab 2: Pelatihan --}}
                 <button @click="activeTab = 'catalog'" 
                         :class="activeTab === 'catalog' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors">
@@ -64,7 +60,6 @@
                     @endif
                 </button>
 
-                {{-- Tab 3: Job Profile --}}
                 <button @click="activeTab = 'jobprofile'" 
                         :class="activeTab === 'jobprofile' ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors">
@@ -74,7 +69,6 @@
                     @endif
                 </button>
 
-                {{-- Tab 4: IDP --}}
                 <button @click="activeTab = 'idp'" 
                         :class="activeTab === 'idp' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors">
@@ -84,7 +78,6 @@
                     @endif
                 </button>
 
-                {{-- Tab 5: Sertifikat (BARU) --}}
                 <button @click="activeTab = 'certificate'" 
                         :class="activeTab === 'certificate' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors">
@@ -97,7 +90,6 @@
             </nav>
         </div>
 
-        {{-- CONTENT 1: ASSESSMENT --}}
         <div x-show="activeTab === 'assessment'" class="space-y-4" 
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 transform scale-95"
@@ -107,7 +99,6 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border-l-4 border-indigo-500 hover:shadow-md transition-shadow">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex items-center gap-4 w-full md:w-auto">
-                            {{-- FOTO PROFIL DARI DATABASE --}}
                             <img class="h-12 w-12 rounded-full object-cover ring-2 ring-indigo-50" 
                                  src="{{ $item->user->profile_photo_path ? asset('storage/' . $item->user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($item->user->name) . '&color=7F9CF5&background=EBF4FF' }}" 
                                  alt="Foto {{ $item->user->name }}">
@@ -154,17 +145,13 @@
                 @php
                     $user = $userPlans->first()->user;
                     
-                    // Gabungkan item dari semua plan user ini menjadi satu list
                     $allItems = $userPlans->flatMap->items; 
                 @endphp
 
-                {{-- CARD PER USER --}}
                 <div x-data="{ expanded: false }" class="bg-white dark:bg-gray-800 rounded-lg shadow mb-4 border-l-4 border-indigo-500 hover:shadow-md transition-all">
                     
-                    {{-- HEADER: Info User & Ringkasan --}}
                     <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 cursor-pointer" @click="expanded = !expanded">
                         <div class="flex items-center gap-4 w-full">
-                            {{-- Foto --}}
                             <img class="h-14 w-14 rounded-full object-cover ring-2 ring-indigo-50" 
                                 src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" 
                                 alt="{{ $user->name }}">
@@ -179,24 +166,20 @@
                                 </h4>
                                 <p class="text-sm text-gray-500 mb-1">{{ $user->position->title ?? 'Posisi Staff' }}</p>
                                 
-                                {{-- Ringkasan Status --}}
                                 <div class="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                     <ion-icon name="time-outline"></ion-icon> 
                                     Menunggu persetujuan Anda
                                 </div>
                             </div>
 
-                            {{-- Icon Toggle --}}
                             <div class="text-gray-400">
                                 <ion-icon :name="expanded ? 'chevron-up-circle' : 'chevron-down-circle'" class="text-2xl transition-transform text-indigo-500"></ion-icon>
                             </div>
                         </div>
                     </div>
 
-                    {{-- BODY: Daftar Gabungan Pelatihan --}}
                     <div x-show="expanded" x-collapse class="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
                         
-                        {{-- List Item --}}
                         <div class="divide-y divide-gray-200 dark:divide-gray-700">
                             @foreach($allItems as $item)
                                 <div class="p-4 hover:bg-white dark:hover:bg-gray-800 transition">
@@ -220,7 +203,6 @@
                             @endforeach
                         </div>
 
-                        {{-- FOOTER AKSI --}}
                         <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 flex justify-end items-center gap-3 border-t border-indigo-100">
                             <span class="text-xs text-gray-500 italic mr-auto hidden sm:block">
                                 Menggabungkan {{ $userPlans->count() }} form pengajuan.
@@ -237,7 +219,6 @@
                 </div>
 
             @empty
-                {{-- Empty State --}}
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 mb-4">
                         <ion-icon name="library-outline" class="text-4xl text-indigo-400"></ion-icon>
@@ -248,14 +229,12 @@
             @endforelse
         </div>
 
-        {{-- CONTENT 3: JOB PROFILE --}}
         <div x-show="activeTab === 'jobprofile'" class="space-y-4" style="display: none;"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 transform scale-95"
             x-transition:enter-end="opacity-100 transform scale-100">
             
             @forelse($jobProfiles as $profile)
-                {{-- LOGIKA HIRARKI (PHP) --}}
                 @php
                     $posOrg = $profile->position->organization ?? null;
                     $parent = $posOrg->parent ?? null;
@@ -282,7 +261,6 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border-l-4 border-yellow-500 hover:shadow-md transition-all duration-200 mb-4">
                     
-                    {{-- HEADER: JUDUL & VERSI --}}
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-3">
                             <div class="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-600 dark:text-yellow-500">
@@ -301,17 +279,14 @@
                             </div>
                         </div>
                         
-                        {{-- BADGE VERSI --}}
                         <span class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-md border border-gray-200 dark:border-gray-600">
                             v{{ $profile->version }}
                         </span>
                     </div>
 
-                    {{-- HIRARKI ORGANISASI (TAMPILAN BARU YANG RAPI) --}}
                     <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 p-3">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-y-3 sm:gap-x-4">
                             
-                            {{-- UNIT --}}
                             <div class="flex flex-col">
                                 <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Unit</span>
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate" title="{{ $unitName }}">
@@ -319,7 +294,6 @@
                                 </span>
                             </div>
 
-                            {{-- SECTION --}}
                             <div class="flex flex-col sm:border-l sm:border-gray-200 dark:sm:border-gray-600 sm:pl-4">
                                 <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Section</span>
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate" title="{{ $sectionName }}">
@@ -327,7 +301,6 @@
                                 </span>
                             </div>
 
-                            {{-- DEPARTEMEN --}}
                             <div class="flex flex-col sm:border-l sm:border-gray-200 dark:sm:border-gray-600 sm:pl-4">
                                 <span class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-0.5">Departemen</span>
                                 <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400 truncate" title="{{ $deptName }}">
@@ -338,7 +311,6 @@
                         </div>
                     </div>
 
-                    {{-- FOOTER TOMBOL --}}
                     <div class="mt-4 flex justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
                         <a href="{{ route('supervisor.job-profile.edit', $profile->id) }}" 
                         class="group inline-flex items-center text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors">
@@ -348,7 +320,6 @@
                     </div>
                 </div>
             @empty
-                {{-- EMPTY STATE --}}
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-50 mb-4">
                         <ion-icon name="briefcase-outline" class="text-4xl text-yellow-400"></ion-icon>
@@ -359,7 +330,6 @@
             @endforelse
         </div>
 
-        {{-- CONTENT 4: IDP --}}
         <div x-show="activeTab === 'idp'" class="space-y-4" style="display: none;" 
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 transform scale-95"
@@ -411,7 +381,6 @@
             @endforelse
         </div>
 
-        {{-- CONTENT 5: CERTIFICATE (GROUP BY USER) --}}
         <div x-data="{ fileModalOpen: false, fileUrl: '', fileType: '' }" 
             x-show="activeTab === 'certificate'" 
             class="space-y-6" 
@@ -426,10 +395,8 @@
                     $user = $firstItem->plan->user;
                 @endphp
 
-                {{-- CARD KARYAWAN --}}
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
                     
-                    {{-- Header Card --}}
                     <div class="bg-purple-50 dark:bg-gray-700/50 px-6 py-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-600">
                         <div class="p-2 bg-white dark:bg-gray-600 rounded-full text-purple-600 shadow-sm">
                             <ion-icon name="person" class="text-xl"></ion-icon>
@@ -440,12 +407,10 @@
                         </div>
                     </div>
 
-                    {{-- Body Card --}}
                     <div class="divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach($userCertificates as $certItem)
                             <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                                 
-                                {{-- Info Sertifikat --}}
                                 <div class="flex items-start gap-4 w-full md:w-auto">
                                     <div class="mt-1 text-purple-500">
                                         <ion-icon name="ribbon-outline" class="text-2xl"></ion-icon>
@@ -467,10 +432,8 @@
                                     </div>
                                 </div>
 
-                                {{-- Action Buttons --}}
                                 <div class="flex items-center gap-2 w-full md:w-auto justify-end pl-10 md:pl-0">
                                     
-                                    {{-- 1. TOMBOL LIHAT FILE --}}
                                     <button type="button" 
                                             @click="fileModalOpen = true; fileUrl = '{{ asset('storage/' . $certItem->certificate_path) }}'"
                                             class="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition flex items-center gap-2 cursor-pointer"
@@ -478,10 +441,8 @@
                                         <ion-icon name="eye-outline"></ion-icon>
                                     </button>
 
-                                    {{-- 2. TOMBOL TOLAK (BARU) --}}
                                     <form action="{{ route('supervisor.sertifikat.reject', $certItem->id) }}" method="POST">
                                         @csrf
-                                        {{-- Input hidden untuk menyimpan alasan dari prompt JS --}}
                                         <input type="hidden" name="reason" id="reject_reason_{{ $certItem->id }}">
                                         
                                         <button type="button" onclick="rejectCertificate(this, 'reject_reason_{{ $certItem->id }}')"
@@ -491,7 +452,6 @@
                                         </button>
                                     </form>
 
-                                    {{-- 3. TOMBOL VALIDASI --}}
                                     <form action="{{ route('supervisor.sertifikat.approve', $certItem->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" onclick="return confirm('Validasi sertifikat ini?')"
@@ -506,7 +466,6 @@
                     </div>
                 </div>
             @empty
-                {{-- Empty State --}}
                 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 border-dashed">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-50 mb-4">
                         <ion-icon name="ribbon-outline" class="text-4xl text-purple-400"></ion-icon>
@@ -520,7 +479,6 @@
                 class="fixed inset-0 z-50 overflow-y-auto" 
                 aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
                 
-                {{-- Backdrop Gelap --}}
                 <div x-show="fileModalOpen" 
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0"
@@ -531,7 +489,6 @@
                     class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" 
                     @click="fileModalOpen = false"></div>
 
-                {{-- Modal Content --}}
                 <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                     <div x-show="fileModalOpen" 
                         x-transition:enter="ease-out duration-300"
@@ -542,7 +499,6 @@
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl h-[80vh] flex flex-col">
                         
-                        {{-- Modal Header --}}
                         <div class="bg-white dark:bg-gray-800 px-4 py-3 sm:px-6 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
                             <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white" id="modal-title">
                                 Preview Sertifikat
@@ -552,12 +508,10 @@
                             </button>
                         </div>
 
-                        {{-- Modal Body (Iframe untuk PDF/Image) --}}
                         <div class="flex-1 bg-gray-100 dark:bg-gray-900 p-2 overflow-hidden relative">
                             <iframe :src="fileUrl" class="w-full h-full rounded border border-gray-300 dark:border-gray-700"></iframe>
                         </div>
 
-                        {{-- Modal Footer --}}
                         <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                             <a :href="fileUrl" download target="_blank" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto items-center gap-2">
                                 <ion-icon name="download-outline"></ion-icon> Download
@@ -576,22 +530,17 @@
 
 <script>
 function rejectCertificate(btn, inputId) {
-    // 1. Minta alasan penolakan
     const reason = prompt("Masukkan alasan penolakan sertifikat ini:");
     
-    // 2. Jika user menekan Cancel, berhenti
     if (reason === null) return;
 
-    // 3. Jika alasan kosong, beri peringatan
     if (reason.trim() === "") {
         alert("Alasan penolakan wajib diisi!");
         return;
     }
 
-    // 4. Masukkan alasan ke input hidden
     document.getElementById(inputId).value = reason;
 
-    // 5. Submit form
     btn.closest('form').submit();
 }
 </script>

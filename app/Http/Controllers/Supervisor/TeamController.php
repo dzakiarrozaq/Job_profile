@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; 
 use App\Models\User;
-use App\Models\Role; // Benar: Singular
+use App\Models\Role; 
 use App\Models\Position;
 use App\Models\Organization;
 use App\Models\EmployeeProfile;
@@ -26,7 +26,6 @@ class TeamController extends Controller
     {
         $supervisor = Auth::user();
         
-        // Pastikan supervisor punya posisi
         if (!$supervisor->position) {
             return view('supervisor.tim.index', [
                 'teamMembers' => collect([]), 'totalCount' => 0, 'organicCount' => 0, 
@@ -34,34 +33,28 @@ class TeamController extends Controller
             ]);
         }
 
-        // AMBIL SEMUA ID POSISI BAWAHAN (SM, AM, Officer, dst)
         $allSubordinatePositionIds = $supervisor->position->getAllSubordinateIds();
 
-        // Query User yang menduduki posisi-posisi tersebut
         $baseQuery = User::whereIn('position_id', $allSubordinatePositionIds)
                         ->with(['position.organization', 'roles', 'employeeProfile']);
 
-        // Filter Pencarian
         if ($request->filled('search')) {
             $search = $request->search;
             $baseQuery->where(fn($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
         }
 
-        // Filter Role
         if ($request->filled('roles') && $request->roles != 'all') {
             $baseQuery->whereHas('roles', fn($q) => $q->where('name', $request->roles));
         }
 
         $teamMembers = $baseQuery->paginate(10);
         
-        // Statistik menggunakan list ID yang sama
         $totalCount = User::whereIn('position_id', $allSubordinatePositionIds)->count();
         $organicCount = User::whereIn('position_id', $allSubordinatePositionIds)
                             ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Organik'))->count();
         $outsourcingCount = User::whereIn('position_id', $allSubordinatePositionIds)
                                 ->whereHas('roles', fn($q) => $q->where('name', 'Karyawan Outsourcing'))->count();
 
-        // Mapping Status Assessment
         foreach ($teamMembers as $member) {
             $member->assessment_status = $member->employeeProfile->status ?? 'not_started';
         }
@@ -84,7 +77,6 @@ class TeamController extends Controller
         $supervisor = Auth::user();
         $user = User::with('position')->findOrFail($id);
 
-        // Cek apakah posisi user tersebut masuk dalam daftar hirarki bawahan supervisor
         $allSubordinatePositionIds = $supervisor->position->getAllSubordinateIds();
         
         if (!in_array($user->position_id, $allSubordinatePositionIds)) {
@@ -127,7 +119,6 @@ class TeamController extends Controller
 
         $organizations = Organization::orderBy('name', 'asc')->get();
         
-        // Perbaikan: Gunakan Role::whereIn (Singular)
         $roles = Role::whereIn('name', ['Karyawan Organik', 'Karyawan Outsourcing'])->get();
 
         return view('supervisor.tim.create', [
@@ -175,7 +166,6 @@ class TeamController extends Controller
                 'hiring_date' => $request->hiring_date,
             ]);
 
-            // Jika menggunakan pivot table (roles jamak), aktifkan baris ini:
             $user->roles()->attach($request->role_id); 
         });
 

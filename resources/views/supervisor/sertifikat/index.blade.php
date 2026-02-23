@@ -45,7 +45,6 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        {{-- Tombol Tolak --}}
                                         <form action="{{ route('supervisor.sertifikat.reject', $item->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" onclick="return confirm('Yakin tolak sertifikat ini?')" 
@@ -54,7 +53,6 @@
                                             </button>
                                         </form>
 
-                                        {{-- Tombol Terima --}}
                                         <form action="{{ route('supervisor.sertifikat.approve', $item->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" onclick="return confirm('Validasi sertifikat ini? Status akan menjadi Completed.')" 

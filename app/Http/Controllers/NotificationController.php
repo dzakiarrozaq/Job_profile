@@ -11,10 +11,8 @@ class NotificationController extends Controller
     {
         $notification = Auth::user()->notifications()->findOrFail($id);
         
-        // Tandai sudah dibaca
         $notification->markAsRead();
 
-        // Redirect ke link yang ada di data notifikasi
         return redirect($notification->data['url'] ?? route('dashboard'));
     }
     

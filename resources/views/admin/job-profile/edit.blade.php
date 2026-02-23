@@ -333,7 +333,7 @@
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Departemen:</span>
-                            <span class="text-gray-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
+                            <span class="text-gray-900 dark:text-white font-bold">
                                 {{ $namaDepartemen ?? '-' }}
                             </span>
                         </div>

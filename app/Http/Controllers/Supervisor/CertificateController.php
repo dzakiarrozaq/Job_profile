@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Supervisor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\TrainingPlanItem;
-use App\Models\AuditLog; // Jangan lupa audit log biar aman
+use App\Models\AuditLog; 
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\StatusDiperbarui;
 
@@ -34,16 +34,16 @@ class CertificateController extends Controller
 
         $item->plan->update([
             'status' => 'completed',
-            'completed_at' => now() // Bagus untuk report durasi
+            'completed_at' => now() 
         ]);
 
         AuditLog::record('VERIFY CERTIFICATE', 'Memvalidasi kelulusan pelatihan: ' . $item->title, $item->plan);
 
         $item->plan->user->notify(new StatusDiperbarui(
-            'Sertifikat Valid', // Judul Notifikasi
-            'Selamat! Sertifikat pelatihan "' . $item->title . '" telah divalidasi. Status pelatihan kini Selesai.', // Pesan
-            route('riwayat'), // Link saat diklik (Ke halaman Riwayat)
-            'success' // Tipe (Ikon Hijau)
+            'Sertifikat Valid', 
+            'Selamat! Sertifikat pelatihan "' . $item->title . '" telah divalidasi. Status pelatihan kini Selesai.', 
+            route('riwayat'), 
+            'success' 
         ));
 
         return back()->with('success', 'Sertifikat divalidasi. Pelatihan dinyatakan SELESAI.');
@@ -60,10 +60,10 @@ class CertificateController extends Controller
         AuditLog::record('REJECT CERTIFICATE', 'Menolak sertifikat pelatihan: ' . $item->title, $item->plan);
 
         $item->plan->user->notify(new StatusDiperbarui(
-            'Sertifikat Ditolak', // Judul Notifikasi
-            'Maaf, sertifikat pelatihan "' . $item->title . '" ditolak. Mohon periksa kembali file Anda dan upload ulang.', // Pesan
-            route('rencana.sertifikat', $item->id), // Link saat diklik (Langsung ke halaman Upload Ulang)
-            'error' // Tipe (Ikon Merah)
+            'Sertifikat Ditolak', 
+            'Maaf, sertifikat pelatihan "' . $item->title . '" ditolak. Mohon periksa kembali file Anda dan upload ulang.', 
+            route('rencana.sertifikat', $item->id), 
+            'error' 
         ));
 
         return back()->with('error', 'Sertifikat ditolak. Karyawan diminta upload ulang.');

@@ -26,48 +26,39 @@ class PersetujuanController extends Controller
     {
         $supervisor = Auth::user();
         
-        // 1. Ambil ID User Bawahan (Untuk Training, IDP, Assessment)
         $teamMemberIds = $this->getAllSubordinateUserIds($supervisor);
         
-        // 2. Ambil ID Posisi Bawahan (Untuk Job Profile)
         $childPositionIds = $supervisor->position_id ? $this->getAllSubordinatePositionIds($supervisor->position_id) : [];
 
-        // A. Assessment (Sudah Oke)
         $assessments = EmployeeProfile::whereIn('user_id', $teamMemberIds)
             ->where('status', 'pending_verification')
             ->with('user.position')
             ->get()
             ->unique('user_id');
 
-        // B. Training Plan (INI YANG DIPERBAIKI)
         $trainings = TrainingPlan::where('status', 'pending_supervisor')
             ->whereIn('user_id', $teamMemberIds)
-            // 1. Filter Induk: Hanya ambil Plan yang MEMILIKI item pending
             ->whereHas('items', function($q) {
                 $q->where('status', 'pending'); 
             })
-            // 2. Filter Anak: Ketika diload, hanya ambil item yang pending saja
             ->with(['user', 'items' => function($q) {
                 $q->where('status', 'pending')->with('training'); 
             }])
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // C. Job Profile (Sudah Oke)
         $jobProfiles = JobProfile::whereIn('position_id', $childPositionIds)
             ->where('status', 'pending_verification')
             ->with('position', 'creator')
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        // D. IDP (Sudah Oke)
         $pendingIdps = Idp::with('user')
             ->whereIn('user_id', $teamMemberIds)
             ->where('status', 'submitted')
             ->latest()
             ->get();
 
-        // E. Sertifikat (Sudah Oke - Menggunakan whereHas)
         $pendingCertificates = TrainingPlanItem::whereHas('plan', function($q) use ($teamMemberIds) {
                 $q->whereIn('user_id', $teamMemberIds);
             })
@@ -76,17 +67,13 @@ class PersetujuanController extends Controller
             ->latest()
             ->get()
             ->groupBy(function($item) {
-                return $item->plan->user->id; // Grouping berdasarkan ID User
+                return $item->plan->user->id; 
             });
 
         return view('supervisor.persetujuan.index', compact(
             'assessments', 'trainings', 'jobProfiles', 'pendingIdps', 'pendingCertificates'
         ));
     }
-
-    // =========================================================================
-    // BAGIAN 1: APPROVAL TRAINING PLAN
-    // =========================================================================
 
     public function showTraining($id)
     {
@@ -117,9 +104,6 @@ class PersetujuanController extends Controller
         return redirect()->route('supervisor.persetujuan')->with('error', 'Rencana pelatihan ditolak.');
     }
 
-    // =========================================================================
-    // BAGIAN 2: APPROVAL IDP
-    // =========================================================================
 
     public function showIdp($id)
     {
@@ -153,9 +137,6 @@ class PersetujuanController extends Controller
         return redirect()->route('supervisor.persetujuan')->with('error', 'IDP telah ditolak.');
     }
 
-    // =========================================================================
-    // HELPER FUNCTIONS (KUNCI PERBAIKAN EROR)
-    // =========================================================================
 
     /**
      * Mengambil semua ID User bawahan (Level 1 & 2) berdasarkan JABATAN (Position)
@@ -165,10 +146,8 @@ class PersetujuanController extends Controller
     {
         if (!$supervisorUser->position_id) return [];
 
-        // 1. Ambil ID Posisi Bawahan
         $positionIds = $this->getAllSubordinatePositionIds($supervisorUser->position_id);
         
-        // 2. Cari User yang memegang posisi tersebut
         return User::whereIn('position_id', $positionIds)->pluck('id')->toArray();
     }
 
@@ -177,10 +156,8 @@ class PersetujuanController extends Controller
      */
     private function getAllSubordinatePositionIds($supervisorPositionId)
     {
-        // Level 1: Bawahan Langsung
         $directIds = Position::where('atasan_id', $supervisorPositionId)->pluck('id')->toArray();
         
-        // Level 2: Bawahan Tidak Langsung (Cucu)
         $indirectIds = [];
         if (!empty($directIds)) {
             $indirectIds = Position::whereIn('atasan_id', $directIds)->pluck('id')->toArray();
@@ -211,16 +188,12 @@ class PersetujuanController extends Controller
      */
     public function show($id)
     {
-        // 1. Cari Data Plan beserta Item dan User-nya
         $plan = TrainingPlan::with(['user.position', 'items.training'])->findOrFail($id);
 
-        // 2. Cek Validasi: Apakah user ini bawahan saya?
-        // Menggunakan helper private yang sudah Anda buat di bawah
         if (!$this->checkIfSubordinate($plan->user)) {
             abort(403, 'Akses ditolak: Karyawan ini bukan bawahan Anda.');
         }
 
-        // 3. Tampilkan View
         return view('supervisor.persetujuan.show', compact('plan'));
     }
 
@@ -233,15 +206,13 @@ class PersetujuanController extends Controller
         $plans = TrainingPlan::where('user_id', $userId)
             ->where('status', 'pending_supervisor')
             ->whereHas('items', function($q) {
-                $q->where('status', 'pending'); // Syarat: Harus punya anak pending
+                $q->where('status', 'pending'); 
             })
             ->with(['items' => function($q) {
-                $q->where('status', 'pending')->with('training'); // Load: Cuma ambil anak pending
+                $q->where('status', 'pending')->with('training'); 
             }, 'user.position'])
             ->get();
 
-        // Jika kosong (artinya semua item di semua plan user ini sudah diapprove/reject)
-        // Maka tendang balik ke dashboard
         if($plans->isEmpty()) {
             return redirect()->route('supervisor.persetujuan')
                 ->with('success', 'Seluruh pengajuan user ini telah selesai direview.');
@@ -261,7 +232,6 @@ class PersetujuanController extends Controller
         
         foreach($plans as $plan) {
             $plan->update(['status' => 'pending_lp', 'supervisor_approved_at' => now()]);
-            // Log audit jika perlu
         }
 
         return redirect()->route('supervisor.persetujuan')->with('success', 'Semua pengajuan karyawan tersebut telah disetujui.');
@@ -284,16 +254,13 @@ class PersetujuanController extends Controller
     public function approveItem($itemId)
     {
         $item = TrainingPlanItem::findOrFail($itemId);
-        $userId = $item->plan->user_id; // Simpan ID User sebelum diproses
+        $userId = $item->plan->user_id; 
 
-        // 1. Update status item ini
         $item->update(['status' => 'approved']);
 
-        // 2. Cek status Plan (Form) induk item ini
         $parentPlan = $item->plan;
         $sisaPendingDiPlanIni = $parentPlan->items()->where('status', 'pending')->count();
 
-        // Jika di form ini sudah tidak ada yang pending, update status formnya
         if ($sisaPendingDiPlanIni == 0) {
             $parentPlan->update([
                 'status' => 'pending_lp', 
@@ -302,20 +269,17 @@ class PersetujuanController extends Controller
             ]);
         }
 
-        // 3. KUNCI PERBAIKAN: Cek apakah USER ini masih punya item pending di form LAIN?
         $masihAdaItemPendingLain = TrainingPlanItem::whereHas('plan', function($q) use ($userId) {
                 $q->where('user_id', $userId)->where('status', 'pending_supervisor');
             })
             ->where('status', 'pending')
             ->exists();
 
-        // Jika sudah benar-benar habis untuk user ini, baru kembali ke index
         if (!$masihAdaItemPendingLain) {
             return redirect()->route('supervisor.persetujuan')
                 ->with('success', 'Seluruh pengajuan user ini telah selesai diproses.');
         }
 
-        // Jika masih ada sisa, tetap di halaman yang sama
         return back()->with('success', 'Item disetujui. Silakan lanjut ke item berikutnya.');
     }
 
@@ -365,8 +329,8 @@ class PersetujuanController extends Controller
         $item = TrainingPlanItem::findOrFail($id);
         
         $item->update([
-            'certificate_status' => 'rejected', // Atau status yang sesuai di DB Anda
-            'rejection_reason'   => $request->reason // Pastikan kolom ini ada di DB
+            'certificate_status' => 'rejected', 
+            'rejection_reason'   => $request->reason 
         ]);
 
         return back()->with('error', 'Sertifikat berhasil ditolak.');

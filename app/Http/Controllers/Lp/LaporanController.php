@@ -55,7 +55,7 @@ class LaporanController extends Controller
 
     public function show($id)
     {
-        $plan = \App\Models\TrainingPlan::with(['user.position', 'items', 'user.manager'])
+        $plan = TrainingPlan::with(['user.position', 'items', 'user.manager'])
             ->findOrFail($id);
 
         return view('lp.laporan.show', compact('plan'));

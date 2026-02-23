@@ -16,16 +16,11 @@ class PersetujuanController extends Controller
      */
     public function index()
     {
-        // 1. AMBIL DATA LEBIH LOOSE (LONGGAR)
-        // Cukup ambil yang status Plan-nya 'pending_lp'.
-        // Kita load relasi items agar bisa dihitung nanti, tapi TIDAK memfilter query utama berdasarkan item.
         $plans = TrainingPlan::with(['user.position', 'items', 'approver']) 
             ->where('status', 'pending_lp')
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        // 2. GROUPING MANUAL
-        // Kita kelompokkan data berdasarkan User ID
         $groupedPlans = $plans->groupBy('user_id')->map(function ($userPlans) {
             $firstPlan = $userPlans->first();
             
@@ -33,17 +28,14 @@ class PersetujuanController extends Controller
                 'user'          => $firstPlan->user,
                 'user_id'       => $firstPlan->user_id,
                 'total_plans'   => $userPlans->count(),
-                // Hitung total item dari collection yang sudah ditarik
                 'total_items'   => $userPlans->sum(function($p) {
                                         return $p->items->count();
                                    }),
                 'latest_update' => $userPlans->max('updated_at'),
-                // Pastikan relasi approver aman (cegah error jika null)
                 'approver_name' => $firstPlan->approver ? $firstPlan->approver->name : 'Data Kosong (Cek DB)',
             ];
         });
 
-        // 3. Kirim ke View (Gunakan values() untuk reset key array agar urut 0,1,2...)
         return view('lp.persetujuan.index', [
             'groupedPlans' => $groupedPlans->values() 
         ]);
@@ -56,14 +48,11 @@ class PersetujuanController extends Controller
      */
     public function reviewByUser($userId)
     {
-        // Ambil semua plan milik user ini yang statusnya pending_lp
-        // Di sini kita load items agar tampil di view detail
         $plans = TrainingPlan::where('user_id', $userId)
             ->where('status', 'pending_lp')
-            ->with(['items.training', 'user.position', 'approver']) // Eager load lengkap
+            ->with(['items.training', 'user.position', 'approver']) 
             ->get();
 
-        // Jika data kosong (misal sudah diapprove semua barusan atau ID salah), balik ke index
         if ($plans->isEmpty()) {
             return redirect()->route('lp.persetujuan.index')
                 ->with('success', 'Seluruh pengajuan user ini telah selesai diproses atau tidak ditemukan.');
@@ -71,7 +60,6 @@ class PersetujuanController extends Controller
 
         $user = $plans->first()->user;
 
-        // Tampilkan view detail (pastikan file view-nya ada)
         return view('lp.persetujuan.show', compact('plans', 'user'));
     }
 
@@ -88,15 +76,11 @@ class PersetujuanController extends Controller
     {
         $plan = TrainingPlan::with('user')->findOrFail($id);
         
-        // Update status Plan
         $plan->update([
             'status' => 'approved', 
             'lp_approved_at' => now(), 
             // 'approved_by_lp' => Auth::id() // Uncomment jika ada kolom ini
         ]);
-
-        // Opsional: Update status item-item di dalamnya menjadi 'approved' juga (jika belum)
-        // $plan->items()->update(['status' => 'approved']);
 
         AuditLog::record('APPROVE PLAN (LP)', 'Memverifikasi final rencana pelatihan milik: ' . $plan->user->name, $plan);
 
@@ -111,7 +95,6 @@ class PersetujuanController extends Controller
         $plan = TrainingPlan::with('user')->findOrFail($id);
         $alasan = $request->input('reason', 'Tidak ada alasan spesifik.');
 
-        // Update status Plan
         $plan->update([
             'status' => 'rejected',
             'rejection_reason' => $alasan            

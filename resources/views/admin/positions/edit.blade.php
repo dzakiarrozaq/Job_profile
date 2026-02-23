@@ -14,7 +14,6 @@
                         @csrf
                         @method('PUT')
 
-                        {{-- Nama Posisi --}}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Posisi</label>
                             <input type="text" name="title" value="{{ old('title', $position->title) }}" required 
@@ -22,7 +21,6 @@
                             @error('title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Tipe --}}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipe Pegawai</label>
                             <select name="tipe" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600">
@@ -31,7 +29,6 @@
                             </select>
                         </div>
 
-                        {{-- Organisasi / Unit --}}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit / Organisasi</label>
                             <select name="organization_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600">
@@ -45,7 +42,6 @@
                             @error('organization_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Atasan --}}
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Atasan Langsung (Opsional)</label>
                             <select name="atasan_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600">
