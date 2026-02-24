@@ -8,7 +8,6 @@
     <div class="py-12 max-w-4xl mx-auto">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
             
-            {{-- Header: Info Karyawan --}}
             <div class="flex items-center mb-8 border-b pb-6 dark:border-gray-700">
                 <img class="h-16 w-16 rounded-full object-cover mr-4" 
                      src="{{ $plan->user->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode($plan->user->name) }}" 
@@ -22,7 +21,6 @@
                 </div>
             </div>
 
-            {{-- Detail Item Pelatihan --}}
             <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Item Pelatihan</h4>
             
             @foreach($plan->items as $item)
@@ -47,13 +45,11 @@
                 </div>
             @endforeach
 
-            {{-- Tombol Action --}}
             <div class="flex justify-end gap-4 mt-8 pt-6 border-t dark:border-gray-700">
                 <a href="{{ route('supervisor.persetujuan') }}" class="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium">
                     Kembali
                 </a>
 
-                {{-- Form Tolak --}}
                 <form action="{{ route('supervisor.reject', $plan->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menolak pengajuan ini?');">
                     @csrf
                     <button type="submit" class="px-5 py-2.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-bold transition">
@@ -61,7 +57,6 @@
                     </button>
                 </form>
 
-                {{-- Form Setujui --}}
                 <form action="{{ route('supervisor.approve', $plan->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?');">
                     @csrf
                     <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-lg transition">

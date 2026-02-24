@@ -41,7 +41,6 @@
 
                 @foreach($plan->items as $item)
                     <div class="mb-6 pb-6 border-b last:border-0 dark:border-gray-700">
-                        {{-- PERBAIKAN: Cek title dari item atau relasi training --}}
                         <h4 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">
                             {{ $item->title ?? ($item->training->title ?? 'Pelatihan Tanpa Judul') }}
                         </h4>

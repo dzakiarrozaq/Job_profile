@@ -9,7 +9,6 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- Alert Messages --}}
             @if (session('success'))
                 <div class="mb-6 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2 shadow-sm">
                     <ion-icon name="checkmark-circle" class="text-xl"></ion-icon> 
@@ -19,7 +18,6 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
                 
-                {{-- Header Status --}}
                 <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
                     <div>
                         <h2 class="text-xl font-bold text-gray-900">Formulir Self-Assessment (Teknis)</h2>
@@ -51,9 +49,7 @@
                     @csrf
                     
                     @php
-                        // Di file penilaian.blade.php
                         $technicalAssessments = $assessments->filter(function($a) {
-                            // Tambahkan ?? '' agar jika type null tetap jadi string kosong dan tidak error
                             return !str_contains(strtolower(trim($a->type ?? '')), 'perilaku');
                         });
                     @endphp
@@ -78,14 +74,12 @@
                                            showDetails: false
                                        }">
                                     
-                                    {{-- BARIS UTAMA (INPUT) --}}
                                     <tr>
                                         <td class="px-4 py-5 align-top">
                                             <div class="flex flex-col">
                                                 <span class="font-black text-gray-900 text-base leading-tight">{{ $item->competency_name }}</span>
                                                 <span class="text-[10px] text-indigo-500 font-bold mt-0.5 tracking-widest">{{ $item->competency_code }}</span>
                                                 
-                                                {{-- Tombol Lihat Kamus --}}
                                                 <button type="button" @click="showDetails = !showDetails" 
                                                         class="mt-3 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition uppercase tracking-tighter">
                                                     <ion-icon :name="showDetails ? 'chevron-up-circle' : 'book'" class="text-base"></ion-icon>
@@ -123,7 +117,6 @@
 
                                         <td class="px-4 py-5 align-top">
                                             <div class="flex flex-col gap-3">
-                                                {{-- Indikator GAP Real-time --}}
                                                 <div x-show="selectedLevel > 0" class="flex items-center gap-2">
                                                     <span class="text-[10px] font-bold text-gray-400 uppercase">Gap:</span>
                                                     <span class="px-2 py-0.5 rounded text-[11px] font-black shadow-sm"
@@ -136,7 +129,6 @@
                                                     </span>
                                                 </div>
 
-                                                {{-- KOTAK BUKTI (Wajib jika Nilai > Target) --}}
                                                 <div>
                                                     <div x-show="parseInt(selectedLevel) > parseInt(idealLevel)" 
                                                          x-transition class="mb-2">
@@ -155,7 +147,6 @@
                                         </td>
                                     </tr>
 
-                                    {{-- BARIS PANDUAN LEVEL (ACCORDION) --}}
                                     <tr x-show="showDetails" x-cloak class="bg-indigo-50/30 border-t border-indigo-100">
                                         <td colspan="5" class="px-6 py-6">
                                             <div class="max-w-4xl">
@@ -211,7 +202,6 @@
                         </table>
                     </div>
 
-                    {{-- Tombol Submit --}}
                     <div class="mt-10 flex justify-end gap-3 pt-8 border-t border-gray-100">
                         @if($globalStatus === 'verified' || $globalStatus === 'pending_verification')
                             <button type="button" disabled class="px-8 py-3 bg-gray-100 text-gray-400 rounded-xl cursor-not-allowed font-black uppercase text-xs flex items-center gap-2 border border-gray-200">

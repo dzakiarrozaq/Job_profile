@@ -10,7 +10,6 @@
             
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl">
                 
-                {{-- Header Form --}}
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Formulir Pelatihan Baru</h3>
@@ -25,7 +24,6 @@
                     <form action="{{ route('lp.katalog.store') }}" method="POST" class="space-y-6">
                         @csrf
 
-                        {{-- Judul Pelatihan --}}
                         <div>
                             <x-input-label for="title" :value="__('Judul Pelatihan')" />
                             <x-text-input id="title" class="block mt-1 w-full placeholder-gray-400" type="text" name="title" :value="old('title')" required autofocus placeholder="Contoh: Mastering Laravel 11 for Beginners" />
@@ -33,7 +31,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Provider --}}
                             <div>
                                 <x-input-label for="provider" :value="__('Penyedia (Provider)')" />
                                 <div class="relative mt-1">
@@ -45,7 +42,6 @@
                                 <x-input-error :messages="$errors->get('provider')" class="mt-2" />
                             </div>
 
-                            {{-- Durasi (Opsional) - Menyesuaikan dengan Admin --}}
                             <div>
                                 <x-input-label for="duration" :value="__('Estimasi Durasi (Opsional)')" />
                                 <div class="relative mt-1">
@@ -58,7 +54,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Tipe Pelatihan (Method) --}}
                             <div>
                                 <x-input-label for="type" :value="__('Tipe Pelatihan (Metode)')" />
                                 <select id="type" name="type" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
@@ -70,7 +65,6 @@
                                 <x-input-error :messages="$errors->get('type')" class="mt-2" />
                             </div>
 
-                            {{-- Tingkat Kesulitan (Menyesuaikan Admin) --}}
                             <div>
                                 <x-input-label for="difficulty" :value="__('Tingkat Kesulitan')" />
                                 <select id="difficulty" name="difficulty" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
@@ -82,7 +76,6 @@
                             </div>
                         </div>
 
-                        {{-- Biaya (Khusus LP biasanya butuh input cost) --}}
                         <div>
                             <x-input-label for="cost" :value="__('Biaya (Rp)')" />
                             <div class="relative mt-1">
@@ -94,21 +87,18 @@
                             <x-input-error :messages="$errors->get('cost')" class="mt-2" />
                         </div>
 
-                        {{-- Link URL (Opsional) --}}
                         <div>
                             <x-input-label for="link_url" :value="__('Link Materi / Pendaftaran (Opsional)')" />
                             <x-text-input id="link_url" class="block mt-1 w-full" type="url" name="link_url" :value="old('link_url')" placeholder="https://..." />
                             <p class="text-xs text-gray-500 mt-1">Kosongkan jika pelatihan offline atau belum ada link.</p>
                         </div>
 
-                        {{-- Deskripsi --}}
                         <div>
                             <x-input-label for="description" :value="__('Deskripsi Lengkap')" />
                             <textarea id="description" name="description" rows="5" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Jelaskan tujuan, materi yang dipelajari, dan target peserta..." required>{{ old('description') }}</textarea>
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
 
-                        {{-- Tombol Aksi --}}
                         <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                             <a href="{{ route('lp.katalog.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
                                 Batal

@@ -2,44 +2,29 @@
     $user = Auth::user();
     $jobProfile = $user->position?->jobProfile;
     
-    // 1. DATA TARGET (Dari Job Profile)
     $profileCompetencies = $jobProfile?->competencies ?? collect([]);
 
-    // 2. DATA AKTUAL (Dari Gap Records User)
     $userGapRecords = $user->gapRecords ?? collect([]);
 
-    // --- PERBAIKAN UTAMA DI SINI ---
-    // Kita ubah Gap Records menjadi "Key-Value Pair" agar mudah dicari.
-    // Kuncinya adalah 'competency_master_id'.
     $gapMap = $userGapRecords->mapWithKeys(function ($item) {
         return [$item->competency_master_id => $item];
     });
 
-    // 3. MAPPING DATA (Menggabungkan Target + Aktual)
     $finalTableData = $profileCompetencies->map(function($profileComp) use ($gapMap) {
         
-        // Ambil ID Master Kompetensi (Pastikan tidak null)
-        // Kadang diakses via ->competency_master_id, kadang ->id tergantung struktur model
         $masterId = $profileComp->competency_master_id ?? $profileComp->id;
 
-        // A. Cek Tipe (Hanya Ambil yang BUKAN Perilaku)
-        // Ambil type dari relasi 'competency' (Master)
         $typeRaw = $profileComp->competency->type ?? $profileComp->type ?? '';
         $isBehavior = str_contains(strtolower(trim($typeRaw)), 'perilaku');
 
-        // B. Ambil Data Nilai dari GapMap menggunakan Master ID
         $match = $gapMap->get($masterId);
 
-        // C. Tentukan Nilai Aktual & Gap
-        // Jika ada record di gap map, pakai itu. 
-        // Jika tidak, cek apakah user pernah mengisi draft (opsional, tergantung struktur DB).
-        // Untuk aman, jika tidak ada match, set 0.
         $currentLevel = $match ? (int)$match->current_level : 0;
         $gapValue = $match ? (int)$match->gap_value : (0 - (int)$profileComp->ideal_level);
 
         return (object) [
             'id'              => $masterId,
-            'is_behavior'     => $isBehavior, // Flag filter
+            'is_behavior'     => $isBehavior, 
             'competency_name' => $profileComp->competency_name ?? $profileComp->competency->competency_name ?? '-',
             'competency_code' => $profileComp->competency->competency_code ?? '-',
             'ideal_level'     => (int) $profileComp->ideal_level,
@@ -48,13 +33,11 @@
             'has_record'      => $match ? true : false
         ];
     })
-    // 4. FILTER: HANYA TAMPILKAN JIKA TIPE BUKAN PERILAKU
     ->filter(function($item) {
         return $item->is_behavior === false;
     })
     ->values(); 
 
-    // 5. STATISTIK
     $totalComp = $finalTableData->count();
     $metComp = $finalTableData->filter(fn($d) => $d->has_record && $d->gap_value >= 0)->count();
     $percentMet = $totalComp > 0 ? round(($metComp / $totalComp) * 100) : 0;
@@ -70,7 +53,6 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
             
-            {{-- Alert Profil --}}
             @if(!$user->position)
                 <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex items-start gap-4">
                     <ion-icon name="warning" class="text-amber-500 text-2xl mt-0.5"></ion-icon>
@@ -91,7 +73,6 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 
-                {{-- KIRI: SIDEBAR PROFILE --}}
                 <div class="lg:col-span-1 space-y-6 lg:sticky lg:top-8">
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative group">
                         <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
@@ -124,7 +105,6 @@
                         </div>
                     </div>
 
-                    {{-- RINGKASAN STATISTIK --}}
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                         <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Ringkasan Teknis</h4>
                         <div class="mb-8 text-center">
@@ -152,11 +132,9 @@
                     </div>
                 </div>
 
-                {{-- KANAN: TABEL ANALISIS GAP --}}
                 <div class="lg:col-span-2 space-y-6">
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         
-                        {{-- Header Card --}}
                         <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50 dark:bg-gray-700/20">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -188,7 +166,6 @@
                         </div>
 
                         <div class="p-6">
-                            {{-- Notifikasi Status --}}
                             <div class="mb-8 border rounded-xl p-4 flex gap-4 items-start bg-{{ $statusClass }}-50 border-{{ $statusClass }}-100">
                                 <div class="bg-white p-2 rounded-full shadow-sm text-{{ $statusClass }}-600">
                                     <ion-icon name="notifications" class="text-xl"></ion-icon>
@@ -207,7 +184,6 @@
                                 </div>
                             </div>
 
-                            {{-- TABEL DATA --}}
                             <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
                                 <table class="min-w-full text-sm text-left">
                                     <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-300 font-semibold uppercase text-xs tracking-wider">
@@ -223,20 +199,17 @@
                                         @forelse($finalTableData as $item)
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                                                 
-                                                {{-- 1. Nama Kompetensi --}}
                                                 <td class="px-6 py-4">
                                                     <p class="font-bold text-gray-900 dark:text-white mb-0.5">{{ $item->competency_name }}</p>
                                                     <span class="text-[10px] text-gray-400 font-mono">{{ $item->competency_code }}</span>
                                                 </td>
 
-                                                {{-- 2. Level Ideal --}}
                                                 <td class="px-4 py-4 text-center">
                                                     <span class="inline-block w-8 h-8 leading-8 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
                                                         {{ $item->ideal_level }}
                                                     </span>
                                                 </td>
 
-                                                {{-- 3. Level Aktual --}}
                                                 <td class="px-4 py-4 text-center">
                                                     @if($item->has_record)
                                                         <span class="inline-block w-8 h-8 leading-8 rounded-full bg-gray-100 text-gray-700 font-bold border border-gray-200">
@@ -247,7 +220,6 @@
                                                     @endif
                                                 </td>
 
-                                                {{-- 4. GAP --}}
                                                 <td class="px-4 py-4 text-center">
                                                     @if(!$item->has_record)
                                                         <span class="text-gray-300">-</span>
@@ -283,7 +255,6 @@
                                 </table>
                             </div>
 
-                            {{-- Tombol Aksi --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 @if($jobProfile)
                                     <a href="{{ route('penilaian') }}" class="group relative flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-gray-100 hover:border-blue-500 text-gray-700 hover:text-blue-600 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden">

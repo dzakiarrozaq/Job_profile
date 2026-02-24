@@ -7,7 +7,6 @@
 
     <div class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {{-- Tombol Kembali --}}
         <a href="{{ route('lp.persetujuan.index') }}" class="inline-flex items-center mb-6 text-gray-500 hover:text-indigo-600 transition">
             <ion-icon name="arrow-back-outline" class="mr-1"></ion-icon> Kembali ke Daftar
         </a>
@@ -20,7 +19,6 @@
 
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             
-            {{-- HEADER: INFO USER --}}
             <div class="p-6 bg-indigo-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center gap-6">
                 <img class="h-16 w-16 rounded-full object-cover ring-4 ring-white dark:ring-gray-600" 
                      src="{{ $user->profile_photo_path ? asset('storage/'.$user->profile_photo_path) : 'https://ui-avatars.com/api/?name='.urlencode($user->name) }}" 
@@ -32,13 +30,11 @@
                 </div>
             </div>
 
-            {{-- BODY: LOOPING RENCANA PELATIHAN --}}
             <div class="p-6 space-y-8">
                 
                 @foreach($plans as $plan)
                     <div class="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50 dark:border-gray-600 shadow-sm">
                         
-                        {{-- Info Approval Supervisor --}}
                         <div class="mb-4 flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-800">
                             <ion-icon name="checkmark-circle"></ion-icon>
                             <span>
@@ -47,7 +43,6 @@
                             </span>
                         </div>
 
-                        {{-- Tabel Item Pelatihan --}}
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600 bg-white dark:bg-gray-800 rounded-md overflow-hidden">
                                 <thead class="bg-gray-100 dark:bg-gray-700">
@@ -55,7 +50,6 @@
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/4">Judul Pelatihan</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Provider</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Metode</th>
-                                        {{-- KOLOM DESKRIPSI (Lebar disesuaikan) --}}
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/3">Deskripsi / Tujuan</th>
                                     </tr>
                                 </thead>
@@ -63,29 +57,24 @@
                                     @foreach($plan->items as $item)
                                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                                             
-                                            {{-- Judul --}}
                                             <td class="px-4 py-3 align-top">
                                                 <div class="font-bold text-indigo-700 dark:text-indigo-400">
                                                     {{ $item->title ?? ($item->training->title ?? '-') }}
                                                 </div>
                                             </td>
 
-                                            {{-- Provider --}}
                                             <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 align-top">
                                                 {{ $item->provider ?? 'Internal' }}
                                             </td>
 
-                                            {{-- Metode --}}
                                             <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 align-top">
                                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
                                                     {{ $item->method ?? '-' }}
                                                 </span>
                                             </td>
 
-                                            {{-- Deskripsi (DENGAN TRIM UNTUK MENGHILANGKAN GAP ATAS) --}}
                                             <td class="px-4 pt-1 pb-3 text-sm text-gray-600 dark:text-gray-300 align-top">
                                                 @php
-                                                    // Ambil teks dan langsung bersihkan spasi/enter di awal & akhir kalimat
                                                     $rawDesc = $item->description ?? $item->objective ?? $item->training->description ?? 'Tidak ada keterangan.';
                                                     $desc = trim($rawDesc);
                                                     
@@ -94,7 +83,6 @@
                                                 @endphp
 
                                                 <div x-data="{ expanded: false }" class="min-w-[250px] mt-0">
-                                                    {{-- whitespace-pre-line akan mempertahankan enter di TENGAH teks, tapi trim() sudah menghapus enter di AWAL --}}
                                                     <div class="whitespace-pre-line leading-tight mt-0 pt-0 text-justify">
                                                         @if($isLong)
                                                             <span x-show="!expanded">
@@ -128,10 +116,8 @@
                             </table>
                         </div>
 
-                        {{-- Footer Aksi Per Plan --}}
                         <div class="mt-4 flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
                             
-                            {{-- Form Tolak --}}
                             <form action="{{ route('lp.persetujuan.reject', $plan->id) }}" method="POST">
                                 @csrf
                                 <button type="button" onclick="rejectPlan(this)" class="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-bold transition shadow-sm">
@@ -139,7 +125,6 @@
                                 </button>
                             </form>
 
-                            {{-- Form Setuju --}}
                             <form action="{{ route('lp.persetujuan.approve', $plan->id) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold shadow transition flex items-center gap-2">
@@ -155,7 +140,6 @@
         </div>
     </div>
 
-    {{-- Script untuk Reject dengan Alasan --}}
     <script>
         function rejectPlan(btn) {
             const reason = prompt("Masukkan alasan penolakan:");

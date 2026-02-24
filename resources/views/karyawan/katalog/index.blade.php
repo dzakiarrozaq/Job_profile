@@ -1,12 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            {{-- Judul Halaman --}}
             <h2 class="font-bold text-2xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Katalog Pelatihan') }}
             </h2>
 
-            {{-- Tombol Navigasi Tambahan --}}
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                 
                 {{-- Tombol Rencana Saya (Secondary / Ghost Style)
@@ -16,7 +14,6 @@
                     Rencana Saya
                 </a> --}}
 
-                {{-- Tombol Riwayat Pelatihan (Primary / Gradient Style) --}}
                 <a href="{{ route('riwayat') }}" 
                    class="group w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-xl font-bold text-sm text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 transform hover:-translate-y-0.5">
                     <ion-icon name="time-outline" class="text-lg mr-2 transition-transform group-hover:rotate-12"></ion-icon>
@@ -30,12 +27,10 @@
     <div class="py-8" x-data="{ showFilters: false, showGap: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            {{-- SEARCH & FILTER --}}
             <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <form method="GET" action="{{ route('katalog') }}">
                     <div class="flex flex-col lg:flex-row gap-4">
                         
-                        {{-- Search Input --}}
                         <div class="relative flex-grow group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <ion-icon name="search-outline" class="text-xl text-gray-400 group-focus-within:text-indigo-500 transition-colors"></ion-icon>
@@ -71,7 +66,6 @@
                          class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6"
                          style="display: none;">
                         
-                        {{-- Filter Level --}}
                         <div>
                             <h4 class="font-semibold text-gray-900 dark:text-white mb-3 text-sm uppercase tracking-wide">Pilih Level Pelatihan</h4>
                             <div class="flex flex-wrap gap-4">
@@ -86,7 +80,6 @@
                             </div>
                         </div>
 
-                        {{-- Action Buttons --}}
                         <div class="flex flex-col justify-end">
                             <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
                                 <p class="text-xs text-gray-500 mb-3">Terapkan filter untuk hasil yang lebih spesifik.</p>
@@ -106,24 +99,18 @@
 
             @if(request()->except(['search', 'page']))
                 <div class="flex flex-wrap gap-2 items-center mb-4">
-                    {{-- Cek jika ada filter aktif selain search dan page --}}
                     @if(count(request()->except(['search', 'page'])) > 0)
                         <span class="text-sm text-gray-500 dark:text-gray-400 mr-1">Active Filters:</span>
                         
                         @foreach(request()->except(['search', 'page']) as $key => $values)
                             
-                            {{-- KASUS 1: Jika Filternya Array (Contoh: Level Checkbox) --}}
                             @if(is_array($values))
                                 @foreach($values as $value)
                                     @php
-                                        // Ambil semua query param saat ini
                                         $params = request()->query();
                                         
-                                        // Hapus value spesifik ini dari array param tersebut
-                                        // array_diff akan membuang 'Basic' jika kita klik silang pada 'Basic'
                                         $params[$key] = array_diff($params[$key], [$value]);
                                         
-                                        // Jika array jadi kosong setelah dihapus, hapus key-nya sekalian supaya URL bersih
                                         if(empty($params[$key])) {
                                             unset($params[$key]);
                                         }
@@ -132,26 +119,21 @@
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700">
                                         {{ ucfirst($key) }}: {{ $value }}
                                         
-                                        {{-- Link Generate URL Baru --}}
                                         <a href="{{ route('katalog', $params) }}" class="ml-2 text-indigo-600 hover:text-red-600 dark:text-indigo-300 transition-colors">
                                             <ion-icon name="close-circle" class="text-base align-middle"></ion-icon>
                                         </a>
                                     </span>
                                 @endforeach
 
-                            {{-- KASUS 2: Jika Filternya String Tunggal (Bukan Array) --}}
                             @else
                                 @php
-                                    // Ambil semua query param
                                     $params = request()->query();
-                                    // Hapus key ini sepenuhnya
                                     unset($params[$key]);
                                 @endphp
 
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700">
                                     {{ ucfirst($key) }}: {{ $values }}
                                     
-                                    {{-- Link Generate URL Baru --}}
                                     <a href="{{ route('katalog', $params) }}" class="ml-2 text-indigo-600 hover:text-red-600 dark:text-indigo-300 transition-colors">
                                         <ion-icon name="close-circle" class="text-base align-middle"></ion-icon>
                                     </a>
@@ -159,7 +141,6 @@
                             @endif
                         @endforeach
 
-                        {{-- Tombol Clear All --}}
                         <a href="{{ route('katalog') }}" class="text-xs text-red-500 hover:text-red-700 font-bold ml-2 underline decoration-dashed">
                             Clear All
                         </a>
@@ -173,7 +154,6 @@
                         
                         <div class="h-40 bg-gradient-to-br {{ $training->type == 'internal' ? 'from-blue-600 to-indigo-600' : 'from-purple-600 to-fuchsia-600' }} relative p-6 flex flex-col justify-between">
                             <div class="flex justify-between items-start">
-                                {{-- 1. TAG TYPE DIHAPUS --}}
                                 <div></div>
                                 
                                 @if(isset($training->level))
@@ -187,7 +167,6 @@
                             </div>
                         </div>
 
-                        {{-- Card Body --}}
                         <div class="p-6 flex-1 flex flex-col">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-3">
@@ -240,7 +219,6 @@
                         </div>
                     </div>
                 @empty
-                    {{-- Empty State --}}
                     <div class="col-span-1 md:col-span-2 lg:col-span-3">
                         <div class="flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                             <div class="p-6 rounded-full bg-gray-50 dark:bg-gray-700 mb-6 animate-pulse">
@@ -265,47 +243,35 @@
         </div>
     </div>
 
-    {{-- === FLOATING GAP ANALYSIS WIDGET (TEKNIS ONLY - NAME MATCHING) === --}}
     @if(isset($competencyGaps) && $competencyGaps->count() > 0)
         @php
-            // 1. AMBIL DAFTAR NAMA KOMPETENSI TEKNIS DARI PROFIL
-            // Ini sumber kebenaran (Source of Truth)
             $userRef = Auth::user();
             $technicalNames = [];
 
             if ($userRef->position && $userRef->position->jobProfile) {
                 $technicalNames = $userRef->position->jobProfile->competencies->filter(function($c) {
-                    // Ambil tipe, pastikan lowercase
                     $type = strtolower(trim($c->competency->type ?? $c->type ?? ''));
-                    // Ambil yang BUKAN Perilaku
                     return !str_contains($type, 'perilaku');
                 })
-                // Kita ambil NAMANYA saja, lalu kecilkan hurufnya biar gampang dicocokkan
                 ->map(fn($c) => strtolower(trim($c->competency_name)))
                 ->toArray();
             }
 
-            // 2. FILTER WIDGET BERDASARKAN KECOCOKAN NAMA
             $technicalGaps = $competencyGaps->filter(function($gap) use ($technicalNames) {
-                // Ambil nama dari gap object (handle jika properti beda nama)
                 $gapName = strtolower(trim($gap->name ?? $gap->competency_name ?? ''));
                 
-                // Cek apakah nama ini ada di daftar teknis user
                 return in_array($gapName, $technicalNames);
             });
 
-            // 3. HITUNG GAP NEGATIF (Badge Merah)
             $gapCount = $technicalGaps->filter(function($item) {
                 $val = $item->gap ?? $item->gap_value ?? 0;
                 return $val < 0;
             })->count();
         @endphp
 
-        {{-- Tampilkan Widget HANYA jika ada data Teknis --}}
         @if($technicalGaps->count() > 0)
             <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
                 
-                {{-- Panel Konten --}}
                 <div x-show="open" 
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4 scale-95"
@@ -316,7 +282,6 @@
                     class="mb-4 w-[90vw] md:w-[600px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
                     style="display: none;">
                     
-                    {{-- Header --}}
                     <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
                         <h3 class="text-white font-bold text-lg flex items-center gap-2">
                             <ion-icon name="analytics"></ion-icon>
@@ -327,7 +292,6 @@
                         </button>
                     </div>
 
-                    {{-- Isi Tabel --}}
                     <div class="max-h-[60vh] overflow-y-auto p-0">
                         <table class="w-full text-sm text-left">
                             <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm">
@@ -378,13 +342,11 @@
                         </table>
                     </div>
                     
-                    {{-- Footer --}}
                     <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-xs text-gray-500 text-center border-t border-gray-100 dark:border-gray-700">
                         * Menampilkan Kompetensi Teknis Saja.
                     </div>
                 </div>
 
-                {{-- Tombol Floating (FAB) --}}
                 <button @click="open = !open" 
                         class="group flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-5 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-indigo-300">
                     <span class="font-bold text-sm hidden group-hover:block transition-all duration-300 whitespace-nowrap">

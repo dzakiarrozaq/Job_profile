@@ -7,14 +7,12 @@
 
     <div class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {{-- Tombol Kembali --}}
         <a href="{{ route('supervisor.dashboard') }}" class="inline-flex items-center mb-6 text-gray-500 hover:text-indigo-600 transition">
             <ion-icon name="arrow-back-outline" class="mr-1"></ion-icon> Kembali ke Dashboard
         </a>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             
-            {{-- HEADER: INFO USER --}}
             <div class="p-6 bg-indigo-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row items-center gap-6">
                 <img class="h-20 w-20 rounded-full object-cover ring-4 ring-white dark:ring-gray-600" 
                      src="{{ $user->profile_photo_path ? asset('storage/'.$user->profile_photo_path) : 'https://ui-avatars.com/api/?name='.urlencode($user->name) }}" 
@@ -29,7 +27,6 @@
                     </div>
                 </div>
 
-                {{-- Opsi Aksi Massal (Opsional, dipindah ke kanan atas biar rapi) --}}
                 <div class="ml-auto mt-4 sm:mt-0 flex gap-2">
                     <form action="{{ route('supervisor.approve.user', $user->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menyetujui SEMUA item sekaligus?');">
                         @csrf
@@ -41,7 +38,6 @@
                 </div>
             </div>
 
-            {{-- BODY: DAFTAR ITEM PELATIHAN --}}
             <div class="p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h4 class="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
@@ -65,7 +61,6 @@
                                 @foreach($plan->items as $item)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition group">
                                         
-                                        {{-- KOLOM 1: JUDUL --}}
                                         <td class="px-6 py-4 align-top">
                                             <div class="text-sm font-bold text-indigo-700 dark:text-indigo-400 mb-1">
                                                 {{ $item->title ?? ($item->training->title ?? '-') }}
@@ -76,7 +71,6 @@
                                             </div>
                                         </td>
 
-                                        {{-- KOLOM 2: PROVIDER --}}
                                         <td class="px-6 py-4 align-top">
                                             <div class="text-sm text-gray-700 dark:text-gray-300 font-medium">
                                                 {{ $item->provider ?? '-' }}
@@ -86,19 +80,15 @@
                                             </div>
                                         </td>
 
-                                        {{-- KOLOM 3: DESKRIPSI (VERSI RAPI & SMOOTH) --}}
                                         <td class="px-6 py-4 align-top text-sm text-gray-600 dark:text-gray-300">
                                             @php
-                                                // Ambil data dan hapus enter/spasi kosong di awal-akhir
                                                 $rawDesc = $item->description ?? $item->objective ?? $item->training->description ?? 'Tidak ada deskripsi.';
                                                 $desc = trim($rawDesc);
                                                 
-                                                // Cek apakah teks cukup panjang untuk membutuhkan fitur 'Expand'
                                                 $isLong = strlen($desc) > 120;
                                             @endphp
 
                                             <div x-data="{ expanded: false }" class="max-w-xs md:max-w-md lg:max-w-lg">
-                                                {{-- Teks Utama --}}
                                                 <div 
                                                     class="whitespace-pre-line leading-relaxed transition-all duration-300 overflow-hidden"
                                                     :class="expanded ? '' : 'line-clamp-3'"
@@ -106,7 +96,6 @@
                                                 >{{ $desc }}</div>
 
                                                 @if($isLong)
-                                                    {{-- Tombol Toggle yang Lebih Elegan --}}
                                                     <button 
                                                         @click="expanded = !expanded" 
                                                         class="mt-2 text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 focus:outline-none group transition"
@@ -120,11 +109,9 @@
                                             </div>
                                         </td>
 
-                                        {{-- KOLOM 4: AKSI PER ITEM --}}
                                         <td class="px-6 py-4 align-top text-center">
                                             <div class="flex justify-center gap-2">
                                                 
-                                                {{-- Tombol Setuju Per Item --}}
                                                 <form action="{{ route('supervisor.approve.item', $item->id) }}" method="POST">
                                                     @csrf
                                                     <button type="submit" 
@@ -134,7 +121,6 @@
                                                     </button>
                                                 </form>
 
-                                                {{-- Tombol Tolak Per Item --}}
                                                 <button type="button" 
                                                         onclick="rejectItem(this, '{{ route('supervisor.reject.item', $item->id) }}')"
                                                         class="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
@@ -153,25 +139,22 @@
                 </div>
             </div>
 
-            {{-- FOOTER: SUMMARY --}}
             <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 text-right text-sm text-gray-500">
                 Total {{ $plans->flatMap->items->count() }} item perlu direview.
             </div>
         </div>
     </div>
 
-    {{-- Script untuk Modal Reject Per Item --}}
     <script>
         function rejectItem(btn, url) {
             const reason = prompt("Masukkan alasan penolakan untuk ITEM ini:");
-            if (reason === null) return; // Cancel
+            if (reason === null) return; 
             
             if (reason.trim() === "") {
                 alert("Alasan penolakan wajib diisi!");
                 return;
             }
 
-            // Buat form dinamis untuk submit rejection
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = url;

@@ -9,7 +9,6 @@
 
     <x-slot name="header">
         <div class="flex items-center">
-            {{-- ROUTE SUPERVISOR --}}
             <a href="{{ route('supervisor.job-profile.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Manajemen Job Profile</a>
             <ion-icon name="chevron-forward-outline" class="mx-2 text-gray-400"></ion-icon>
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -238,7 +237,6 @@
                             </div>
 
                             <div class="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700 mt-6">
-                                {{-- ROUTE SUPERVISOR --}}
                                 <a href="{{ route('supervisor.job-profile.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                                     Batal
                                 </a>
