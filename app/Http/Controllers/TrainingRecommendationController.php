@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Training;
 
@@ -21,12 +22,9 @@ class TrainingRecommendationController extends Controller
             return view('karyawan.rekomendasi', ['recommendations' => [], 'gapText' => '']);
         }
 
-        $pythonPath = "C:\\Users\\Asus\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
+        $pythonPath = config('services.recommender.python_binary', PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3');
         $scriptPath = base_path('recommender.py');
-        
-        $command = "\"{$pythonPath}\" \"{$scriptPath}\" \"" . addslashes($gapText) . "\"";
 
-        
         $process = Process::env([
             'SYSTEMROOT' => getenv('SYSTEMROOT') ?: 'C:\\Windows',
             'WINDIR'     => getenv('WINDIR') ?: 'C:\\Windows',
@@ -34,7 +32,7 @@ class TrainingRecommendationController extends Controller
             'TEMP'       => getenv('TEMP'),
             
             'PYTHONIOENCODING' => 'utf-8',
-        ])->run($command);
+        ])->run([$pythonPath, $scriptPath, $gapText]);
 
 
         if ($process->successful()) {
@@ -42,16 +40,20 @@ class TrainingRecommendationController extends Controller
             $recommendationData = json_decode($output, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                dd([
-                    'Status' => 'Output bukan JSON Valid',
-                    'Raw Output' => $output, 
-                    'Json Error' => json_last_error_msg()
+                Log::error('Recommendation script returned invalid JSON.', [
+                    'raw_output' => $output,
+                    'json_error' => json_last_error_msg(),
                 ]);
+
+                $recommendations = [];
             }
 
             if (isset($recommendationData['error'])) {
+                Log::error('Recommendation script returned an error.', [
+                    'error' => $recommendationData['error'],
+                ]);
                 $recommendations = [];
-            } else {
+            } elseif (!empty($recommendationData)) {
                 $ids = array_column($recommendationData, 'id');
                 
                 if(!empty($ids)) {
@@ -62,14 +64,18 @@ class TrainingRecommendationController extends Controller
                 } else {
                     $recommendations = [];
                 }
+            } else {
+                $recommendations = [];
             }
         } else {
-            dd([
-                'Status' => 'Script Python Gagal Dijalankan',
-                'Command' => $command,
-                'Error Output' => $process->errorOutput(),
-                'Standard Output' => $process->output(),
+            Log::error('Failed to execute recommendation script.', [
+                'python_binary' => $pythonPath,
+                'script_path' => $scriptPath,
+                'error_output' => $process->errorOutput(),
+                'standard_output' => $process->output(),
             ]);
+
+            $recommendations = [];
         }
 
         return view('karyawan.rekomendasi', compact('recommendations', 'gapText'));
