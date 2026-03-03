@@ -79,7 +79,6 @@ class PersetujuanController extends Controller
         $plan->update([
             'status' => 'approved', 
             'lp_approved_at' => now(), 
-            // 'approved_by_lp' => Auth::id() // Uncomment jika ada kolom ini
         ]);
 
         AuditLog::record('APPROVE PLAN (LP)', 'Memverifikasi final rencana pelatihan milik: ' . $plan->user->name, $plan);

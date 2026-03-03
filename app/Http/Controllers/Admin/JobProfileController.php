@@ -437,19 +437,14 @@ class JobProfileController extends Controller
             $inputBehaviorals = $request->input('behaviorals', []);
             
             foreach ($inputBehaviorals as $beh) {
-                // Skip jika tidak ada Master ID
                 if (empty($beh['competency_master_id'])) continue;
 
-                // CARA KUAT: Update atau Buat Baru berdasarkan Master ID
-                // Ini mengatasi masalah jika ID pivot salah, terhapus, atau tipe tidak cocok.
                 $jobProfile->competencies()->updateOrCreate(
                     [
-                        // KUNCI PENCARIAN (WHERE)
                         'job_profile_id'       => $jobProfile->id,
                         'competency_master_id' => $beh['competency_master_id'],
                     ],
                     [
-                        // DATA YANG DISIMPAN/DIUPDATE
                         'ideal_level'     => (int) $beh['ideal_level'], // Paksa jadi angka
                         'type'            => 'Perilaku', // Kita paksa set 'Perilaku' biar seragam
                         'competency_name' => CompetenciesMaster::find($beh['competency_master_id'])?->competency_name ?? 'Unknown',

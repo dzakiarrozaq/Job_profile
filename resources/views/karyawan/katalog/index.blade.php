@@ -169,10 +169,21 @@
 
                         <div class="p-6 flex-1 flex flex-col">
                             <div class="flex-1">
+                                @php
+                                    $metode = strtolower(trim($training->delivery_method ?? ''));
+                                    
+                                    $isOnline = str_contains($metode, 'video') || 
+                                                str_contains($metode, 'film') || 
+                                                str_contains($metode, 'aplikasi') || 
+                                                str_contains($metode, 'software') || 
+                                                str_contains($metode, 'game');
+                                @endphp
+
                                 <div class="flex items-center gap-2 mb-3">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $training->method == 'Online' ? 'bg-green-500' : 'bg-orange-500' }}"></span>
-                                    <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        {{ $training->method ?? 'Online' }}
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $isOnline ? 'bg-green-500' : 'bg-red-500' }}"></span>
+                                    
+                                    <span class="text-xs font-semibold uppercase tracking-wider {{ $isOnline ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ $isOnline ? 'Digital Course' : 'Class' }}
                                     </span>
                                 </div>
 
@@ -194,7 +205,6 @@
 
                             <div class="pt-5 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
                                 <div>
-                                    {{-- 2. DIGANTI JADI DURASI --}}
                                     <p class="text-xs text-gray-400 uppercase font-semibold">Durasi</p>
                                     <p class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                                         {{ $training->duration ? $training->duration . ' Jam' : '-' }}

@@ -11,14 +11,15 @@ class Training extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',            // Course Title
-        'competency_name',  // Nama Kompetensi (Baru)
-        'level',            // Course Level (Pengganti difficulty)
-        'duration',         // Duration/Hours
-        'objective',        // Course Objective (Pengganti description)
-        'content',          // Course Content (Baru)
-        'provider',         // Penyedia (Default: Internal)
-        'status',           // Draft/Approved
+        'title',            
+        'competency_name',  
+        'level',            
+        'duration',         
+        'objective',        
+        'content',          
+        'provider',         
+        'status', 
+        'delivery_method',  
     ];
 
     public function getDescriptionAttribute()
