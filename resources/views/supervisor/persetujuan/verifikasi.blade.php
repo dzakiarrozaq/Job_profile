@@ -121,7 +121,5 @@
     </div>
 </x-supervisor-layout>
 
-{
-
 @push('scripts')
 @endpush

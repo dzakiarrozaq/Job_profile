@@ -21,8 +21,21 @@
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
                                 {{ $training->level }}
                             </span>
+                            @php
+                                $metode = strtolower(trim($training->delivery_method ?? ''));
+                                
+                                $isOnline = str_contains($metode, 'video') || 
+                                            str_contains($metode, 'film') || 
+                                            str_contains($metode, 'aplikasi') || 
+                                            str_contains($metode, 'software') || 
+                                            str_contains($metode, 'game') ||
+                                            str_contains($metode, 'online') ||
+                                            str_contains($metode, 'digital') ||
+                                            str_contains($metode, 'e-learning');
+                            @endphp
+
                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-wide">
-                                {{ $training->method ?? 'Online' }}
+                                {{ $isOnline ? 'Digital Course' : 'Class' }}
                             </span>
                         </div>
                         

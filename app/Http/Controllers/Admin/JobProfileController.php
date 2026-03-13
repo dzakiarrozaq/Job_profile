@@ -573,45 +573,55 @@ class JobProfileController extends Controller
 
         try {
             $apiKey = config('services.gemini.key');
-            $certificatePath = storage_path('app/cacert.pem'); 
+            $model = "gemini-2.5-flash"; // Gunakan versi stabil
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
 
-            $http = Http::asJson();
-            
-            if (file_exists($certificatePath)) {
-                $http = $http->withOptions(['verify' => $certificatePath]);
-            }
-
-            $response = $http->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
-                'contents' => [
-                    ['parts' => [['text' => $prompt]]]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.4, 
-                    'maxOutputTokens' => 1000,
-                ]
-            ]);
+            $response = Http::asJson()
+                ->withoutVerifying()
+                ->post($url, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.2, // Turunkan temperature agar lebih konsisten/kaku
+                        'maxOutputTokens' => 1000,
+                        'response_mime_type' => 'application/json', // <--- PAKSA JADI JSON MURNI
+                    ]
+                ]);
             
             if (!$response->successful()) {
                 return response()->json(['error' => 'AI Service Error', 'details' => $response->body()], 500);
             }
 
+            // Ambil teks asli dari Gemini
             $jsonText = $response->json('candidates.0.content.parts.0.text');
+
+            // Ekstraksi JSON lebih kuat (mencari kurung kurawal pertama { sampai terakhir })
+            $firstBracket = strpos($jsonText, '{');
+            $lastBracket = strrpos($jsonText, '}');
+            $firstSquare = strpos($jsonText, '[');
+            $lastSquare = strrpos($jsonText, ']');
+
+            // Logika cerdas untuk memotong teks sampah di luar JSON
+            if ($fieldType === 'tanggung_jawab') {
+                $jsonText = substr($jsonText, $firstSquare, ($lastSquare - $firstSquare) + 1);
+            } else {
+                $jsonText = substr($jsonText, $firstBracket, ($lastBracket - $firstBracket) + 1);
+            }
             
-            $jsonText = preg_replace('/^```json\s*|\s*```$/', '', $jsonText);
-            
-            $resultData = json_decode($jsonText);
+            $resultData = json_decode($jsonText, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return response()->json([
-                    'error' => 'Format JSON dari AI tidak valid.', 
-                    'raw' => $jsonText
+                    'error' => 'Format JSON tidak valid.',
+                    'debug_raw_ai_text' => $jsonText // Kita tampilkan apa yang salah di sini
                 ], 500);
             }
 
             return response()->json($resultData);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Server Error: ' . $e->getMessage()], 500);
         }
     }
 

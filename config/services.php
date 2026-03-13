@@ -39,9 +39,4 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
-    'recommender' => [
-        'python_binary' => env('RECOMMENDER_PYTHON_BINARY', PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3'),
-    ],
-
-
 ];

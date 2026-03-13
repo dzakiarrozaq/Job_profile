@@ -32,7 +32,6 @@
                 'is_standard' => false 
             ]);
 
-        // B. AMBIL DATA PAKEM (DARI TABEL STANDARD YANG BARU DI-IMPORT)
         $standardComps = $jobProfile->position->technicalStandards()
             ->with(['competencyMaster.keyBehaviors'])
             ->get();
@@ -46,8 +45,7 @@
             'behaviors' => $std->competencyMaster->keyBehaviors?->whereIn('level', [1,2,3,4,5])->values() ?? [],
             'is_standard' => true 
         ]);
-
-        // C. GABUNGKAN (MERGE)        
+        
         $existingMasterIds = $savedTechnicals->pluck('competency_master_id')->toArray();
 
         $newStandards = $pakemTechnicals->filter(function($item) use ($existingMasterIds) {
@@ -56,7 +54,6 @@
 
         $finalTechnicals = $savedTechnicals->merge($newStandards)->values()->toArray();
 
-        // D. FINALISASI DATA UNTUK VIEW
         $technicals = old('technicals', $finalTechnicals);
 
         $behaviorals = old('behaviorals', $allComps
@@ -67,7 +64,9 @@
                 'competency_master_id' => $comp->competency_master_id,
                 'competency_name' => $comp->competency_name,
                 'description' => optional($comp->competency)->description ?? '-', 
-                'ideal_level' => $comp->ideal_level,
+                
+                'ideal_level' => (int) ($comp->ideal_level ?? 1), 
+                
                 'behaviors' => optional($comp->competency)->keyBehaviors->where('level', 0)->values() ?? []
             ])->values()->toArray());
     @endphp
@@ -100,8 +99,8 @@
         }
     @endphp
 
-    <div class="max-w-7xl mx-auto" 
-         x-data="{ 
+    <div class="max-w-7xl mx-auto" \
+            x-data="{ 
                 currentTab: 'tujuan',
                 isLoadingAI: false,
                 positionTitle: '',
@@ -116,7 +115,6 @@
                 technicals: [],  
                 behaviorals: [], 
 
-                // Array Spesifikasi
                 educations: [], experiences: [], certifications: [], 
                 languages: [], computers: [], healths: [],
                 
@@ -156,7 +154,6 @@
                     this.healths = loadSpec('kesehatan');
                 },
                 
-                // Fungsi Tambah Baris
                 addRow(type) {
                     const key = 'new_' + Date.now() + Math.random(); 
 
@@ -177,7 +174,6 @@
                         });
                     }
 
-                    // Specs
                     if (type === 'educations') this.educations.push({ key: key, id: null, type: 'pendidikan', requirement: '', level_or_notes: '' });
                     if (type === 'experiences') this.experiences.push({ key: key, id: null, type: 'pengalaman', requirement: '', level_or_notes: '' });
                     if (type === 'certifications') this.certifications.push({ key: key, id: null, type: 'sertifikasi', requirement: '', level_or_notes: '' });
@@ -186,7 +182,6 @@
                     if (type === 'healths') this.healths.push({ key: key, id: null, type: 'kesehatan', requirement: '', level_or_notes: '' });
                 },
                 
-                // Fungsi Hapus Baris
                 removeRow(arrName, key) {
                     const specsArrays = ['educations', 'experiences', 'certifications', 'languages', 'computers', 'healths'];
                     
@@ -202,16 +197,14 @@
                             this[arrName][0].level_or_notes = '';
                         }
                     } else {
-                        // Default remove (responsibilities, workRelations)
                         this[arrName] = this[arrName].filter(item => item.key !== key);
                     }
                 },
 
-                // AI Suggestion (Tidak Berubah)
                 async getAiSuggestion(fieldType) {
                     this.isLoadingAI = true;
                     try {
-                        const response = await (await fetch('{{ route('supervisor.job-profile.suggestText') }}', {
+                        const response = await (await fetch('{{ route('admin.job-profile.suggestText') }}', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
                             body: JSON.stringify({ position_title: this.positionTitle, field_type: fieldType })
@@ -238,7 +231,6 @@
                     this.activeSuggestionIndex = index; 
                     if (query.length < 2) { this.searchResults = []; return; }
                     
-                    // Reset ID di array technicals
                     this.technicals[index].competency_master_id = null; 
                     
                     try {
@@ -286,11 +278,11 @@
                     </nav>
                 </div>
                 
+                {{-- TAB 1: IDENTIFIKASI --}}
                 <div x-show="currentTab === 'identifikasi'" class="p-6 lg:p-8 space-y-6">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">1. Identifikasi Jabatan (v{{ $jobProfile->version }})</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-    
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Jabatan:</span>
                             <span class="text-gray-900 dark:text-white font-medium">{{ $jobProfile->position->title ?? 'N/A' }}</span>
@@ -310,16 +302,13 @@
                             <div class="mt-1">
                                 @php
                                     $familyRaw = strtoupper($jobProfile->position->job_family ?? '');
-                                    
-                                    $badgeClass = 'bg-gray-100 text-gray-800 border-gray-200'; // Default abu-abu
-                                    
+                                    $badgeClass = 'bg-gray-100 text-gray-800 border-gray-200';
                                     if (str_contains($familyRaw, 'STRUKTURAL')) {
                                         $badgeClass = 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700';
                                     } elseif (str_contains($familyRaw, 'FUNGSIONAL')) {
                                         $badgeClass = 'bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900 dark:text-teal-200 dark:border-teal-700';
                                     }
                                 @endphp
-
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }}">
                                     {{ $jobProfile->position->job_family ?? 'Belum Ditentukan' }}
                                 </span>
@@ -340,18 +329,13 @@
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Unit (Biro):</span>
-                            <span class="text-gray-900 dark:text-white">
-                                {{ $namaUnit ?? '-' }}
-                            </span>
+                            <span class="text-gray-900 dark:text-white">{{ $namaUnit ?? '-' }}</span>
                         </div>
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md md:col-span-2">
                             <span class="font-semibold text-gray-600 dark:text-gray-300 block">Section (Seksi):</span>
-                            <span class="text-gray-900 dark:text-white">
-                                {{ $namaSection ?? '-' }}
-                            </span>
+                            <span class="text-gray-900 dark:text-white">{{ $namaSection ?? '-' }}</span>
                         </div>
-
                     </div>
                     <hr class="dark:border-gray-700">
                     <div>
@@ -560,38 +544,45 @@
                     </div>
 
                     {{-- 4.2 KOMPETENSI PERILAKU (Grid Cards) --}}
-                    <div class="space-y-4 pt-6 border-t border-gray-100">
-                        <div class="flex justify-between items-end border-b pb-2">
-                            <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">4.2 Kompetensi Perilaku (Standard)</h3>
-                            <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold uppercase tracking-widest">Fixed List</span>
+                    <div class="space-y-4 pt-6">
+                        <div class="border-b pb-2 flex justify-between items-end">
+                            <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400">4.2 Kompetensi Perilaku (Matrix Band)</h3>
+                            <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold uppercase tracking-wider">Fixed List</span>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <template x-for="(row, index) in behaviorals" :key="row.key">
-                                <div class="p-5 border rounded-2xl bg-white dark:bg-gray-800 shadow-sm border-indigo-100 hover:shadow-md transition-shadow">
+                                <div class="p-4 border rounded-xl bg-white dark:bg-gray-800 shadow-sm border-indigo-100 dark:border-indigo-900">
                                     <input type="hidden" :name="'behaviorals['+index+'][id]'" x-model="row.id">
                                     <input type="hidden" :name="'behaviorals['+index+'][competency_master_id]'" x-model="row.competency_master_id">
+                                    <input type="hidden" :name="'behaviorals['+index+'][type]'" value="Perilaku">
                                     
-                                    <div class="flex justify-between items-start mb-4">
+                                    <div class="flex justify-between items-start mb-3">
                                         <div class="pr-2">
                                             <div class="font-bold text-indigo-900 dark:text-indigo-200 text-sm uppercase" x-text="row.competency_name"></div>
-                                            <p class="text-[10px] text-gray-400 mt-1 leading-tight italic" x-text="row.description"></p>
+                                            <p class="text-[10px] text-gray-400 mt-1 leading-tight" x-text="row.description"></p>
                                         </div>
                                         <div class="flex-shrink-0 text-center">
                                             <label class="text-[9px] text-gray-400 block uppercase font-bold mb-1">Target</label>
-                                            <select :name="'behaviorals['+index+'][ideal_level]'" x-model="row.ideal_level" 
-                                                    class="w-14 rounded-lg border-indigo-200 text-xs text-center font-black text-indigo-700 focus:ring-indigo-500 py-1">
-                                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                            
+                                            <select :name="'behaviorals['+index+'][ideal_level]'" 
+                                                    x-model.number="row.ideal_level" 
+                                                    class="w-16 rounded-lg border-indigo-200 text-xs text-center font-black text-indigo-700 focus:ring-indigo-500 py-1">
+                                                <option :value="1">1</option>
+                                                <option :value="2">2</option>
+                                                <option :value="3">3</option>
+                                                <option :value="4">4</option>
+                                                <option :value="5">5</option>
                                             </select>
                                         </div>
                                     </div>
                                     
-                                    <div class="p-3 bg-indigo-50/50 dark:bg-gray-900 rounded-xl border border-indigo-50">
-                                        <div class="text-[9px] font-bold text-indigo-400 uppercase mb-2">Indikator Utama:</div>
-                                        <div class="space-y-2 custom-scrollbar max-h-40 overflow-y-auto">
+                                    <div class="p-2.5 bg-indigo-50/50 dark:bg-gray-900 rounded-lg border border-indigo-50/50">
+                                        <div class="text-[9px] font-bold text-indigo-400 uppercase mb-1">Indikator Perilaku Utama:</div>
+                                        <div class="space-y-1.5 custom-scrollbar max-h-40 overflow-y-auto pr-1">
                                             <template x-for="beh in row.behaviors" :key="beh.id">
                                                 <div class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed flex gap-2">
-                                                    <span class="text-indigo-400 font-bold">•</span>
+                                                    <span class="text-indigo-400">•</span>
                                                     <span x-text="beh.behavior"></span>
                                                 </div>
                                             </template>
